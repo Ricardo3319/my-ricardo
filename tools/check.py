@@ -18,9 +18,11 @@ PAGES = {
     "notes/index.html": ("笔记", "笔记", None),
     "notes/sample/index.html": ("版式样张", None, "笔记"),
     "contact/index.html": ("联系", "联系", None),
+    "board/index.html": ("告示牌", None, None),
 }
-# 用信纸的页，其余内页用木框菜单。
+# 用信纸的页、用告示牌的页，其余内页用木框菜单。
 LETTERS = {"notes/sample/index.html", "contact/index.html"}
+BOARDS = {"board/index.html"}
 NAME = "Ricardo"
 TABS = ["关于", "近况", "作品", "笔记", "联系"]
 CHOICES = [("about/", "关于"), ("now/", "近况"), ("work/", "作品"), ("notes/", "笔记"), ("contact/", "联系")]
@@ -102,7 +104,7 @@ def check_page(rel, html):
     for name in GAME:
         if name in html:
             bad(f"{rel} 出现了游戏里的名字「{name}」")
-    if "<form" in html.lower():
+    if "<form" in html.lower() and rel not in BOARDS:
         bad(f"{rel} 有表单")
     if "refs/" in html:
         bad(f"{rel} 链了 refs/")
@@ -152,7 +154,7 @@ def check_page(rel, html):
     close = re.search(r'<a class="close" href="([^"]+)" aria-label="[^"]+"></a>', html)
     if not close or resolve(rel, close.group(1)) != "index.html":
         bad(f"{rel} 没有链回农场的红叉")
-    kind = "letter" if rel in LETTERS else "menu"
+    kind = "letter" if rel in LETTERS else "board" if rel in BOARDS else "menu"
     if f'<main class="panel {kind}" id="content">' not in html:
         bad(f"{rel} 的 <main> 应是 class=\"panel {kind}\" id=\"content\"")
 
@@ -190,6 +192,14 @@ def check_content(rel, html):
             bad("作品页的箱子至少一排 12 格")
         if 'class="bundle"' not in html and "箱子还空着" not in html:
             bad("作品页既没有项目，也没有「箱子还空着。」")
+    if rel == "board/index.html":
+        if '<meta name="robots" content="noindex">' not in html:
+            bad("告示牌是本人自用的，应 noindex")
+        if not re.search(r'<script src="\.\./js/board\.js"></script>\s*<script src="\.\./js/farm\.js"></script>', html):
+            bad("告示牌应在 farm.js 前引 js/board.js")
+        for page in PAGES:
+            if page not in BOARDS and "board/" in read(page):
+                bad(f"{page} 链到了告示牌，告示牌不进页签和页脚")
     if rel == "contact/index.html":
         if "mailto:" not in html and "disabled" not in html:
             bad("联系页没有邮箱时，复制按钮应 disabled")
@@ -228,6 +238,12 @@ if "farm.season" not in js or "sessionStorage" not in js:
     bad("js/farm.js 换季应只记在 sessionStorage 的 farm.season")
 if "localStorage" in js:
     bad("js/farm.js 不该用 localStorage 记季节")
+if re.search(r"\bboard\b", js):
+    bad("js/farm.js 只管五件事，告示牌的脚本在 js/board.js")
+
+board_js = read("js/board.js")
+if "innerHTML" in board_js or "insertAdjacentHTML" in board_js:
+    bad("js/board.js 用了 innerHTML：便条的字只能用 textContent 写进页面，钥匙就在同一个源里")
 
 config = read("_config.yml")
 for item in ("AGENTS.md", "docs/", "tools/"):

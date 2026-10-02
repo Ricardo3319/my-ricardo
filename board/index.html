@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-season="spring" data-phase="day">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>告示牌 · Ricardo</title>
+  <meta name="description" content="Ricardo 自己记截止日期的告示牌。">
+  <meta name="robots" content="noindex">
+  <meta property="og:title" content="告示牌 · Ricardo">
+  <meta property="og:description" content="Ricardo 自己记截止日期的告示牌。">
+  <meta property="og:type" content="website">
+  <script>
+    (function () {
+      var d = document.documentElement, now = new Date(), h = now.getHours();
+      var s = ["winter", "winter", "spring", "spring", "spring", "summer", "summer", "summer", "autumn", "autumn", "autumn", "winter"][now.getMonth()];
+      try {
+        var v = sessionStorage.getItem("farm.season");
+        if (/^(spring|summer|autumn|winter)$/.test(v)) s = v;
+      } catch (e) {}
+      d.setAttribute("data-season", s);
+      d.setAttribute("data-phase", h < 5 || h >= 19 ? "night" : h < 7 ? "dawn" : h < 17 ? "day" : "dusk");
+      var l = document.createElement("link");
+      l.rel = "preload";
+      l.as = "image";
+      l.href = "../img/farm-" + s + ".png";
+      document.head.appendChild(l);
+    })();
+  </script>
+  <link rel="preload" href="../fonts/ark-pixel-12px-proportional-zh_hans.otf.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="../css/farm.css">
+  <link rel="icon" href="../img/favicon.png">
+</head>
+<body class="inner">
+  <a class="skip" href="#content">跳到内容</a>
+  <div class="world" aria-hidden="true"></div>
+
+  <header class="hud">
+    <div class="hud-box">
+      <div class="hud-sky" aria-hidden="true"><span class="hud-sun"></span></div>
+      <div class="hud-lines">
+        <p><time data-today>今天</time></p>
+        <p><time data-clock>现在</time><button class="hud-season" type="button" data-season-cycle aria-label="换季"><span class="hud-season-icon"></span><span class="hud-season-name"></span></button></p>
+      </div>
+    </div>
+  </header>
+
+  <div class="menu-wrap">
+    <nav class="tabs" aria-label="栏目">
+      <a href="../about/"><img class="pixel" src="../img/icon-about.png" width="33" height="33" alt=""><span>关于</span></a>
+      <a href="../now/"><img class="pixel" src="../img/icon-now.png" width="30" height="33" alt=""><span>近况</span></a>
+      <a href="../work/"><img class="pixel" src="../img/icon-work.png" width="33" height="24" alt=""><span>作品</span></a>
+      <a href="../notes/"><img class="pixel" src="../img/icon-notes.png" width="30" height="33" alt=""><span>笔记</span></a>
+      <a href="../contact/"><img class="pixel" src="../img/icon-contact.png" width="33" height="24" alt=""><span>联系</span></a>
+    </nav>
+    <main class="panel board" id="content">
+      <a class="close" href="../" aria-label="关上，回农场"></a>
+      <div class="page-head">
+        <h1>告示牌</h1>
+        <p class="stamp" role="status" data-sync>只存在这台设备</p>
+      </div>
+
+      <noscript><p class="sheet">告示牌要开脚本才能用。</p></noscript>
+
+      <form class="sheet pin-form" data-add>
+        <label class="sr-only" for="add-title">要做的事</label>
+        <input class="field pin-title" id="add-title" name="title" autocomplete="off" enterkeyhint="done" placeholder="比如：周五 交开题报告" required>
+        <label class="sr-only" for="add-date">哪天截止</label>
+        <input class="field" id="add-date" name="date" type="date">
+        <label class="sr-only" for="add-time">几点截止，可以不填</label>
+        <input class="field" id="add-time" name="time" type="time">
+        <button class="btn" type="submit">钉上</button>
+        <p class="pin-hint" data-hint>日子可以直接写进句子：明天、周五、下周三、10月9日、3天后、晚上8点。</p>
+      </form>
+
+      <div class="board-body">
+        <section class="notes" aria-labelledby="notes-title">
+          <h2 class="sr-only" id="notes-title">没做完的</h2>
+          <div data-notes></div>
+        </section>
+
+        <section class="sheet cal" aria-labelledby="cal-title">
+          <div class="cal-head">
+            <button class="cal-step" type="button" data-step="-1" aria-label="上个月"></button>
+            <h2 id="cal-title"><span class="cal-season" data-cal-season="autumn"></span><span data-month>这个月</span></h2>
+            <button class="cal-step" type="button" data-step="1" aria-label="下个月"></button>
+          </div>
+          <ol class="cal-grid cal-week" aria-hidden="true">
+            <li>一</li><li>二</li><li>三</li><li>四</li><li>五</li><li>六</li><li>日</li>
+          </ol>
+          <ol class="cal-grid cal-days" data-days></ol>
+          <p class="cal-foot"><button class="cal-today" type="button" data-step="0">回到今天</button></p>
+        </section>
+      </div>
+
+      <details class="drawer">
+        <summary>做完的 · <span data-done-count>0</span> 张</summary>
+        <ol class="rows" data-done></ol>
+      </details>
+
+      <details class="drawer" data-key-box>
+        <summary>钥匙 · <span data-key-state>还没连</span></summary>
+        <div class="sheet key">
+          <p>换了设备也想看到同一块告示牌，要一把钥匙：</p>
+          <ol>
+            <li>在 GitHub 新建一个私有仓库，比如 board，建的时候勾上 README。</li>
+            <li>在 GitHub 的 Settings → Developer settings → Fine-grained tokens 里生成一把钥匙：只选这个仓库，权限只开 Contents 的读写。</li>
+            <li>每台设备都在下面填一次「用户名/仓库名」和这把钥匙。</li>
+          </ol>
+          <p class="hint">钥匙只存在这台设备的浏览器里。告示牌每改一次，仓库里就多一次提交，撕错了也找得回来。</p>
+          <form class="key-form" data-key>
+            <label for="key-repo">仓库</label>
+            <input class="field" id="key-repo" name="repo" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="用户名/仓库名">
+            <label for="key-token">钥匙</label>
+            <input class="field" id="key-token" name="token" type="password" autocomplete="off" placeholder="github_pat_…">
+            <p class="key-actions"><button class="btn" type="submit">连上</button></p>
+          </form>
+          <p class="key-actions" data-key-on hidden><button class="btn" type="button" data-unlink>断开这台设备</button></p>
+          <p class="hint" role="status" data-key-note></p>
+        </div>
+      </details>
+    </main>
+  </div>
+
+  <p class="toast" role="status" data-toast hidden><span data-toast-text></span><button type="button" data-toast-undo>放回</button></p>
+
+  <footer class="credit">
+    <p>视觉受田园生活模拟游戏启发，非官方，与 ConcernedApe 无关。</p>
+    <p><a href="../">农场</a><a href="../about/">关于</a><a href="../now/">近况</a><a href="../log/">流水</a><a href="../work/">作品</a><a href="../notes/">笔记</a><a href="../contact/">联系</a></p>
+  </footer>
+  <script src="../js/board.js"></script>
+  <script src="../js/farm.js"></script>
+</body>
+</html>

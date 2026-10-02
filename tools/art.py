@@ -256,6 +256,7 @@ def ui_parts():
 
     parts["ui-letter"] = letter_edge()
     parts["paper-grain"] = paper_grain()
+    parts.update(board_parts())
     return parts
 
 
@@ -295,6 +296,71 @@ def paper_grain():
     for x, y in ((14, 1), (6, 7), (2, 13), (11, 9)):
         img.set(x, y, speck)
     return img
+
+
+# ---------------------------------------------------------------- 告示牌
+
+# 图钉：一个模板换四种颜色，红是逾期，橙是今天，金是三天内，绿是更远，灰是没定日子。
+PIN = [
+    "..ooo..",
+    ".oHhho.",
+    "oHhhhSo",
+    "ohhhhSo",
+    ".ohSSo.",
+    "..ooo..",
+    "...k...",
+]
+PIN_COLORS = {
+    "red": ("#d8412c", "#ff8c62", "#8f2416"),
+    "orange": ("#f08a2c", "#ffc07a", "#a8521a"),
+    "gold": ("#f2c230", "#fff09a", "#b0841a"),
+    "green": ("#5aa64a", "#9fd47a", "#2f7239"),
+    "gray": ("#a9998a", "#d8ccb6", "#6e6258"),
+}
+
+
+def board_parts():
+    parts = {}
+    # 告示牌的框：同一种木框，最里面一圈收成深色，中间留空，铺木板。
+    parts["ui-board"] = frame("oHWWSDDo", "oSWWSDDo", cut=3, nail=(3, "H", "D"))
+
+    # 木板：48×24 一块，三条横板，每条 8 像素高，接缝错开。左右上下都能接着铺。
+    base, lit, grain, seam, top = (rgb(c) for c in ("#a5592a", "#b86a33", "#8f4b22", "#5e2a10", "#c47a3f"))
+    img = Img(48, 24, base)
+    joints = (10, 34, 22)
+    streaks = (((3, 2, 6), (27, 4, 4), (40, 3, 5)), ((14, 2, 5), (44, 5, 6), (2, 4, 3)), ((30, 3, 7), (6, 5, 4), (37, 2, 3)))
+    for k in range(3):
+        y0 = k * 8
+        for x in range(48):
+            img.set(x, y0, top)
+            img.set(x, y0 + 7, seam)
+        for x, dy, length in streaks[k]:
+            for i in range(length):
+                img.set((x + i) % 48, y0 + dy, grain)
+            img.set((x + length) % 48, y0 + dy - 1, lit)
+        j = joints[k]
+        for dy in range(7):
+            img.set(j, y0 + dy, seam)
+            img.set(j + 1, y0 + dy, lit)
+    parts["board-planks"] = img
+
+    for name, (h, hi, sh) in PIN_COLORS.items():
+        parts[f"pin-{name}"] = sprite(PIN, {"o": "#3b1d0e", "h": h, "H": hi, "S": sh, "k": "#5b4a3e"})
+
+    # 完成的勾，画在便条左边的小格子里。
+    parts["ui-tick"] = sprite(
+        [
+            ".......",
+            "......o",
+            ".....oo",
+            "o...oo.",
+            "oo.oo..",
+            ".ooo...",
+            "..o....",
+        ],
+        UI,
+    )
+    return parts
 
 
 # ---------------------------------------------------------------- 右上角面板的小图

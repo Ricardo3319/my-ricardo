@@ -1,5 +1,5 @@
 /* 田园像素个人站。外观依据 docs/DESIGN.md，类名依据 docs/SPEC.md。
-   顺序：字体、令牌、世界、基础、HUD、对话框、肖像、菜单、页签、物品栏、内容、页脚、焦点、换页、中屏、窄屏、减少动效。 */
+   顺序：字体、令牌、世界、基础、HUD、对话框、肖像、菜单、页签、物品栏、内容、告示牌、页脚、焦点、换页、中屏、窄屏、减少动效。 */
 
 /* ---------------------------------------------------------------- 字体 */
 
@@ -105,6 +105,8 @@ h1, h2, h3, p, ol, ul, dl, dd { margin: 0; }
 h1, h2, h3 { font: inherit; }
 
 img { display: block; }
+
+[hidden] { display: none !important; }
 
 .pixel { image-rendering: pixelated; }
 
@@ -809,6 +811,448 @@ a.row:hover { background-color: var(--menu-deep); }
   transform: none;
 }
 
+/* ---------------------------------------------------------------- 告示牌：本人自己记截止日期 */
+
+/* 木框里铺横木板。纸片、便条用图钉钉在上面，字直接写在木板上时用奶油色加错位阴影。 */
+.board {
+  position: relative;
+  z-index: 1;
+  padding: calc(4 * var(--px)) calc(6 * var(--px)) calc(6 * var(--px));
+  border-style: solid;
+  border-width: calc(8 * var(--px));
+  border-image: url("../img/ui-board.png") 8 / calc(8 * var(--px)) stretch;
+  background: #a5592a url("../img/board-planks.png") 0 0 / calc(48 * var(--px)) calc(24 * var(--px)) padding-box;
+  image-rendering: pixelated;
+}
+
+.board .page-head h1,
+.board .stamp,
+.note-group h3,
+.drawer > summary {
+  color: var(--cream);
+  text-shadow: var(--px) var(--px) 0 var(--shadow);
+}
+
+.board .page-head { margin-bottom: calc(3 * var(--px)); }
+
+/* 钉在木板上的纸：和信纸同一种毛边、纤维，顶上正中一颗灰图钉。 */
+.sheet {
+  position: relative;
+  padding: calc(3 * var(--px)) calc(5 * var(--px)) calc(4 * var(--px));
+  border-style: solid;
+  border-width: calc(6 * var(--px));
+  border-image: url("../img/ui-letter.png") 6 / calc(6 * var(--px)) repeat;
+  background: #ffefc9 url("../img/paper-grain.png") 0 0 / calc(16 * var(--px)) padding-box;
+  filter: drop-shadow(calc(2 * var(--px)) calc(2 * var(--px)) 0 rgb(20 10 5 / 0.45));
+  image-rendering: pixelated;
+}
+
+.sheet::before {
+  content: "";
+  position: absolute;
+  top: calc(-5 * var(--px));
+  left: calc(50% - 3 * var(--px));
+  width: calc(7 * var(--px));
+  height: calc(7 * var(--px));
+  background: url("../img/pin-gray.png") 0 0 / 100% 100%;
+}
+
+/* 一格可以写字的凹槽：输入框、日期、钟点都用它。 */
+.field {
+  min-width: 0;
+  padding: 0 calc(2 * var(--px));
+  border-style: solid;
+  border-width: calc(2 * var(--px));
+  border-image: url("../img/ui-slot.png") 2 / calc(2 * var(--px)) stretch;
+  border-radius: 0;
+  background: var(--slot) padding-box;
+  color: var(--ink);
+  font: inherit;
+  line-height: var(--lh);
+  image-rendering: pixelated;
+}
+
+.field::placeholder { color: var(--ink-soft); }
+
+/* 钉一张：一句话、日子、钟点、钉上。 */
+.pin-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto auto;
+  gap: calc(2 * var(--px));
+  align-items: stretch;
+}
+
+.pin-hint {
+  grid-column: 1 / -1;
+  color: var(--ink-soft);
+}
+
+.board-body {
+  display: grid;
+  grid-template-columns: minmax(0, 8fr) minmax(0, 7fr);
+  grid-template-areas: "cal notes";
+  gap: calc(6 * var(--px));
+  align-items: start;
+  margin-top: calc(7 * var(--px));
+}
+
+.notes { grid-area: notes; }
+
+.notes .empty { margin-top: calc(2 * var(--px)); }
+
+/* 日历：一张钉上去的月历。今天描深框，过去的日子发灰，有事的日子插图钉。 */
+/* 宽屏时便条长，日历跟着往下滚，一直看得到。 */
+.cal {
+  position: sticky;
+  top: calc(4 * var(--px));
+  z-index: 2;
+  grid-area: cal;
+}
+
+.cal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: calc(2 * var(--px));
+}
+
+.panel .cal-head h2 {
+  display: flex;
+  align-items: center;
+  gap: calc(2 * var(--px));
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.cal-season {
+  width: calc(9 * var(--px));
+  height: calc(9 * var(--px));
+  background: url("../img/season-autumn.png") 0 0 / 100% 100%;
+  image-rendering: pixelated;
+}
+
+.cal-season[data-cal-season="spring"] { background-image: url("../img/season-spring.png"); }
+.cal-season[data-cal-season="summer"] { background-image: url("../img/season-summer.png"); }
+.cal-season[data-cal-season="winter"] { background-image: url("../img/season-winter.png"); }
+
+.cal-step {
+  width: calc(11 * var(--px));
+  height: calc(11 * var(--px));
+  border: 0;
+  background: url("../img/ui-pointer.png") 50% 50% / calc(7 * var(--px)) no-repeat;
+  cursor: pointer;
+  image-rendering: pixelated;
+}
+
+.cal-step:hover { background-color: var(--slot); }
+
+.cal-step[data-step="-1"] { transform: scaleX(-1); }
+
+.cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: var(--px);
+  padding: 0;
+  list-style: none;
+}
+
+.cal-week {
+  margin-bottom: var(--px);
+  color: var(--ink-soft);
+  font-size: 12px;
+  line-height: 2;
+  text-align: center;
+}
+
+.cal-days li { position: relative; }
+
+.day {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  width: 100%;
+  height: 100%;
+  min-height: calc(19 * var(--px));
+  padding: var(--px) calc(2 * var(--px)) calc(2 * var(--px));
+  border: var(--px) solid #d9b57e;
+  background: #fff7e2;
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.day:hover { background: var(--slot); }
+
+/* 过去的日子发灰，像翻过去的页。 */
+.day.is-past {
+  background: #ecdcbc;
+  color: var(--ink-soft);
+}
+
+.day[aria-current="date"] {
+  border-color: var(--ink);
+  box-shadow: inset 0 0 0 var(--px) var(--ink);
+}
+
+.day.is-picked { background: var(--menu-deep); }
+
+.day-n { line-height: 1; }
+
+.day-pins {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.day-pins i {
+  width: calc(7 * var(--px));
+  height: calc(7 * var(--px));
+  margin-right: calc(-2 * var(--px));
+  background: url("../img/pin-gray.png") 0 0 / 100% 100%;
+  image-rendering: pixelated;
+}
+
+.day-pins small {
+  margin-left: calc(3 * var(--px));
+  font-size: 12px;
+}
+
+.cal-foot {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: calc(2 * var(--px));
+}
+
+.cal-today {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ink-soft);
+  font: inherit;
+  cursor: pointer;
+}
+
+.cal-today:hover,
+.note-tools button:hover,
+.toast button:hover { text-decoration: underline; }
+
+/* 日历格子的提示框：哪天、几件事。靠两头的往里靠。 */
+.cal-days li:hover .tip,
+.cal-days li:focus-within .tip { display: block; }
+
+.cal-days .tip small { color: var(--ink); }
+
+.cal-days li:nth-child(7n + 1) .tip,
+.cal-days li:nth-child(7n + 2) .tip {
+  left: 0;
+  transform: none;
+}
+
+.cal-days li:nth-child(7n) .tip,
+.cal-days li:nth-child(7n + 6) .tip {
+  left: auto;
+  right: 0;
+  transform: none;
+}
+
+/* 便条：按急不急分组，图钉颜色跟着变，倒数一定写字。 */
+.note-group + .note-group { margin-top: calc(5 * var(--px)); }
+
+.note-group h3 { margin-bottom: calc(2 * var(--px)); }
+
+.note-list {
+  display: grid;
+  gap: calc(4 * var(--px));
+  padding: 0;
+  list-style: none;
+}
+
+.note {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: calc(3 * var(--px));
+  align-items: start;
+  padding: calc(3 * var(--px)) calc(3 * var(--px)) calc(2 * var(--px));
+  border: var(--px) solid #c99a5a;
+  background: #ffefc9 url("../img/paper-grain.png") 0 0 / calc(16 * var(--px));
+  box-shadow: calc(2 * var(--px)) calc(2 * var(--px)) 0 rgb(20 10 5 / 0.45);
+  image-rendering: pixelated;
+}
+
+.note::before {
+  content: "";
+  position: absolute;
+  top: calc(-4 * var(--px));
+  left: calc(50% - 3 * var(--px));
+  width: calc(7 * var(--px));
+  height: calc(7 * var(--px));
+  background: url("../img/pin-gray.png") 0 0 / 100% 100%;
+}
+
+.note[data-due="late"]::before,
+.day-pins [data-pin="red"] { background-image: url("../img/pin-red.png"); }
+.note[data-due="today"]::before,
+.day-pins [data-pin="orange"] { background-image: url("../img/pin-orange.png"); }
+.note[data-due="soon"]::before,
+.day-pins [data-pin="gold"] { background-image: url("../img/pin-gold.png"); }
+.note[data-due="later"]::before,
+.day-pins [data-pin="green"] { background-image: url("../img/pin-green.png"); }
+
+/* 左边一个小凹格，点一下就算做完；指上去先露出勾。 */
+.note-check {
+  width: calc(11 * var(--px));
+  height: calc(11 * var(--px));
+  margin-top: calc(1 * var(--px));
+  padding: 0;
+  border-style: solid;
+  border-width: calc(2 * var(--px));
+  border-image: url("../img/ui-slot.png") 2 / calc(2 * var(--px)) stretch;
+  background: var(--slot) padding-box;
+  cursor: pointer;
+  image-rendering: pixelated;
+}
+
+.note-check:hover,
+.note-check:focus-visible {
+  background: url("../img/ui-tick.png") 50% 50% / calc(7 * var(--px)) no-repeat, var(--menu-deep) padding-box;
+}
+
+.note-title { overflow-wrap: anywhere; }
+
+.panel .note-when {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0 calc(3 * var(--px));
+  margin-top: 0;
+  color: var(--ink-soft);
+}
+
+.due {
+  padding: 0 calc(2 * var(--px));
+  border: var(--px) solid var(--focus);
+  background: #c7e6a8;
+  color: var(--focus);
+  font-size: 12px;
+  line-height: 2;
+  white-space: nowrap;
+}
+
+.due[data-due="late"] { background: #f09a84; }
+.due[data-due="today"] { background: #ffb65c; }
+.due[data-due="soon"] { background: #ffd34d; }
+.due[data-due="none"] { background: #d8ccb6; }
+
+.note-tools {
+  display: flex;
+  gap: calc(2 * var(--px));
+}
+
+.note-tools button,
+.toast button {
+  padding: 0 var(--px);
+  border: 0;
+  background: none;
+  color: var(--ink-soft);
+  font: inherit;
+  cursor: pointer;
+}
+
+/* 改便条：同一张纸上换成小表单。 */
+.note.is-editing { grid-template-columns: minmax(0, 1fr); }
+
+.note-edit {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: calc(2 * var(--px));
+}
+
+.note-edit .field:first-child,
+.note-edit-actions { grid-column: 1 / -1; }
+
+.note-edit-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: calc(3 * var(--px));
+}
+
+/* 做完的、钥匙：木板底下两个抽屉。 */
+.drawer { margin-top: calc(7 * var(--px)); }
+
+.drawer + .drawer { margin-top: calc(4 * var(--px)); }
+
+.drawer > summary {
+  list-style: none;
+  cursor: pointer;
+}
+
+.drawer > summary::-webkit-details-marker { display: none; }
+
+.drawer > summary::before { content: "＋ "; }
+
+.drawer[open] > summary::before { content: "－ "; }
+
+.drawer[open] > summary { margin-bottom: calc(3 * var(--px)); }
+
+.done-row {
+  align-items: center;
+  justify-content: space-between;
+}
+
+.done-info {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 calc(4 * var(--px));
+}
+
+.key ol {
+  margin: calc(2 * var(--px)) 0;
+  padding-left: 1.2em;
+}
+
+.key-form {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: calc(2 * var(--px)) calc(4 * var(--px));
+  align-items: center;
+  margin-top: calc(4 * var(--px));
+}
+
+.key-actions {
+  display: flex;
+  justify-content: flex-end;
+  grid-column: 1 / -1;
+}
+
+.panel .key-actions { margin-top: calc(2 * var(--px)); }
+
+/* 刚做的事和「放回」：浮在屏幕底下，几秒后自己收起。 */
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: calc(6 * var(--px));
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: calc(4 * var(--px));
+  width: max-content;
+  max-width: calc(100% - 12 * var(--px));
+  padding: 0 calc(3 * var(--px));
+  border-style: solid;
+  border-width: calc(5 * var(--px));
+  border-image: url("../img/ui-tab.png") 5 fill / calc(5 * var(--px)) stretch;
+  transform: translateX(-50%);
+  image-rendering: pixelated;
+}
+
+.toast button {
+  color: var(--ink);
+  text-decoration: underline;
+}
+
 /* ---------------------------------------------------------------- 页脚 */
 
 .credit {
@@ -844,7 +1288,8 @@ a.row:hover { background-color: var(--menu-deep); }
 }
 
 .credit :focus-visible,
-.skip:focus-visible { outline-color: var(--cream); }
+.skip:focus-visible,
+.drawer > summary:focus-visible { outline-color: var(--cream); }
 
 :focus:not(:focus-visible) { outline: none; }
 
@@ -900,6 +1345,14 @@ a.row:hover { background-color: var(--menu-deep); }
     --px: 2px;
     --pp: 2px;
   }
+
+  /* 告示牌放不下两栏：便条在上，日历在下。 */
+  .board-body {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: "notes" "cal";
+  }
+
+  .cal { position: relative; }
 }
 
 /* ---------------------------------------------------------------- 窄屏 */
@@ -939,6 +1392,21 @@ a.row:hover { background-color: var(--menu-deep); }
   }
 
   .letter { padding: calc(6 * var(--px)) calc(6 * var(--px)) calc(8 * var(--px)); }
+
+  .board { padding: calc(3 * var(--px)) calc(2 * var(--px)) calc(4 * var(--px)); }
+
+  .sheet { padding: calc(2 * var(--px)) calc(3 * var(--px)) calc(3 * var(--px)); }
+
+  .pin-form { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto; }
+
+  .pin-title { grid-column: 1 / -1; }
+
+  .day {
+    min-height: calc(17 * var(--px));
+    padding: var(--px);
+  }
+
+  .day-pins i { margin-right: calc(-3 * var(--px)); }
 
   .row { flex-wrap: wrap; gap: 0 calc(4 * var(--px)); }
 

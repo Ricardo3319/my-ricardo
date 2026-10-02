@@ -1,4 +1,5 @@
-/* 只做五件事：季节、日期、钟点和天色、首页打字、信箱复制。导航写在 HTML 里，不靠这里。 */
+/* 只做五件事：季节、日期、钟点和天色、首页打字、信箱复制。导航写在 HTML 里，不靠这里；
+   站内换页在 js/nav.js，换完以后这里把首页打字和信箱复制重新挂上。 */
 (function () {
   var SEASONS = ["spring", "summer", "autumn", "winter"];
   var NAMES = { spring: "春", summer: "夏", autumn: "秋", winter: "冬" };
@@ -71,18 +72,24 @@
   tick();
   window.setInterval(tick, 30000);
 
-  // 首页打字：每字 30ms，这次浏览只打一遍。点一下或按任意键直接出全文。减少动效时不打字。
-  var box = document.querySelector("[data-type-box]");
-  var line = box && box.querySelector("[data-type]");
+  // 下面两件跟着页面走：整页打开时做一次，站内换页（js/nav.js 发 farm:page）后再做一次。
   var still = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  var seen = false;
-  try {
-    seen = !!(session && session.getItem("farm.greeted"));
-    if (session) session.setItem("farm.greeted", "1");
-  } catch (error) {
-    seen = false;
-  }
-  if (line && !still && !seen) {
+  var stopTyping = null;
+
+  // 首页打字：每字 30ms，这次浏览只打一遍。点一下或按任意键直接出全文。减少动效时不打字。
+  function typing() {
+    if (stopTyping) stopTyping();
+    var box = document.querySelector("[data-type-box]");
+    var line = box && box.querySelector("[data-type]");
+    if (!line) return;
+    var seen = false;
+    try {
+      seen = !!(session && session.getItem("farm.greeted"));
+      if (session) session.setItem("farm.greeted", "1");
+    } catch (error) {
+      seen = false;
+    }
+    if (still || seen) return;
     var nodes = [];
     var walker = document.createTreeWalker(line, NodeFilter.SHOW_TEXT);
     while (walker.nextNode()) nodes.push({ node: walker.currentNode, text: walker.currentNode.nodeValue });
@@ -102,6 +109,7 @@
       box.classList.remove("is-typing");
       box.removeEventListener("click", finish);
       document.removeEventListener("keydown", finish);
+      stopTyping = null;
     }
 
     function step() {
@@ -117,11 +125,13 @@
 
     box.addEventListener("click", finish);
     document.addEventListener("keydown", finish);
+    stopTyping = finish;
   }
 
   // 信箱复制。没有地址时按钮是 disabled，不绑定。
-  var copy = document.querySelector("[data-copy]");
-  if (copy && !copy.disabled) {
+  function copying() {
+    var copy = document.querySelector("[data-copy]");
+    if (!copy || copy.disabled) return;
     var idle = copy.textContent;
     copy.addEventListener("click", function () {
       var value = copy.getAttribute("data-copy");
@@ -145,4 +155,11 @@
       }
     });
   }
+
+  function page() {
+    typing();
+    copying();
+  }
+  page();
+  document.addEventListener("farm:page", page);
 })();

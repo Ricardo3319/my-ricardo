@@ -1,7 +1,8 @@
-/* 告示牌：本人自己记截止日期，只在 /board/ 引。
+/* 告示牌：本人自己记截止日期，只在 /board/ 引；站内换页时由 js/nav.js 补加载。
    没连钥匙时，便条只存在这台设备的 localStorage。连上以后，整块告示牌是私有仓库里的一份 board.json：
    每次改动先记进待办队列，再拉最新的、把队列补上去、推回去，几台设备轮流改也不会互相盖掉。
-   便条的字一律用 textContent 写进页面，不拼 HTML，钥匙就在同一个源里。 */
+   便条的字一律用 textContent 写进页面，不拼 HTML，钥匙就在同一个源里。
+   存储和同步不跟着页面走：离开告示牌再回来，队列、同步都还在；页面元素每次回来重新找、重新绑。 */
 (function () {
   var API = "https://api.github.com/repos/";
   var FILE = "board.json";
@@ -11,28 +12,37 @@
   var PIN = { late: "red", today: "orange", soon: "gold", later: "green", none: "gray" };
   var DAY = 86400000;
 
-  var form = document.querySelector("[data-add]");
-  if (!form) return;
-  var titleField = form.elements.title;
-  var dateField = form.elements.date;
-  var timeField = form.elements.time;
-  var hintLine = document.querySelector("[data-hint]");
-  var syncLine = document.querySelector("[data-sync]");
-  var notesBox = document.querySelector("[data-notes]");
-  var monthLine = document.querySelector("[data-month]");
-  var seasonMark = document.querySelector("[data-cal-season]");
-  var daysBox = document.querySelector("[data-days]");
-  var doneBox = document.querySelector("[data-done]");
-  var doneCount = document.querySelector("[data-done-count]");
-  var keyForm = document.querySelector("[data-key]");
-  var keyOn = document.querySelector("[data-key-on]");
-  var keyState = document.querySelector("[data-key-state]");
-  var keyNote = document.querySelector("[data-key-note]");
-  var unlink = document.querySelector("[data-unlink]");
-  var toastBox = document.querySelector("[data-toast]");
-  var toastText = document.querySelector("[data-toast-text]");
-  var toastUndo = document.querySelector("[data-toast-undo]");
-  var hint = hintLine.textContent;
+  var form, titleField, dateField, timeField, hintLine, syncLine, notesBox, monthLine, seasonMark, daysBox;
+  var doneBox, doneCount, keyForm, keyOn, keyState, keyNote, unlink, toastBox, toastText, toastUndo, hint;
+
+  function find() {
+    form = document.querySelector("[data-add]");
+    titleField = form.elements.title;
+    dateField = form.elements.date;
+    timeField = form.elements.time;
+    hintLine = document.querySelector("[data-hint]");
+    syncLine = document.querySelector("[data-sync]");
+    notesBox = document.querySelector("[data-notes]");
+    monthLine = document.querySelector("[data-month]");
+    seasonMark = document.querySelector("[data-cal-season]");
+    daysBox = document.querySelector("[data-days]");
+    doneBox = document.querySelector("[data-done]");
+    doneCount = document.querySelector("[data-done-count]");
+    keyForm = document.querySelector("[data-key]");
+    keyOn = document.querySelector("[data-key-on]");
+    keyState = document.querySelector("[data-key-state]");
+    keyNote = document.querySelector("[data-key-note]");
+    unlink = document.querySelector("[data-unlink]");
+    toastBox = document.querySelector("[data-toast]");
+    toastText = document.querySelector("[data-toast-text]");
+    toastUndo = document.querySelector("[data-toast-undo]");
+    hint = hintLine.textContent;
+  }
+
+  // 告示牌在不在眼前。换到别的页以后，同步照常，只是不画。
+  function here() {
+    return !!(form && form.isConnected);
+  }
 
   // ---------------------------------------------------------------- 存取
 
@@ -335,6 +345,7 @@
   }
 
   function render() {
+    if (!here()) return;
     var now = new Date();
     var all = tasks();
     var open = all.filter(function (t) {
@@ -497,7 +508,6 @@
           pin.setAttribute("data-pin", PIN[urgency(t, now).level]);
           pins.append(pin);
         });
-        if (list.length > 3) pins.append(el("small", "", "+" + (list.length - 3)));
         cellButton.append(pins);
         label += "，" + list.length + " 件：" + list.map(function (t) {
           return t.title;
@@ -574,11 +584,13 @@
       toastBox.hidden = true;
     }, 6000);
   }
-  toastUndo.addEventListener("click", function () {
-    toastBox.hidden = true;
-    if (undoing) undoing();
-    undoing = null;
-  });
+  function bindToast() {
+    toastUndo.addEventListener("click", function () {
+      toastBox.hidden = true;
+      if (undoing) undoing();
+      undoing = null;
+    });
+  }
 
   // ---------------------------------------------------------------- 钉一张
 
@@ -596,64 +608,66 @@
     hintLine.textContent = (title ? "「" + title + "」" : "") + "钉在 " + nice(dateField.value, timeField.value) + " · " + u.text;
   }
 
-  titleField.addEventListener("input", function () {
-    var got = parse(titleField.value, new Date());
-    if (got.date) {
-      dateField.value = autoDate = ymd(got.date);
-    } else if (autoDate && dateField.value === autoDate) {
-      dateField.value = autoDate = "";
-    }
-    if (got.time) {
-      timeField.value = autoTime = got.time;
-    } else if (autoTime && timeField.value === autoTime) {
-      timeField.value = autoTime = "";
-    }
-    if (dateField.value) {
-      picked = dateField.value;
-      var d = day(picked);
-      shown = new Date(d.getFullYear(), d.getMonth(), 1);
-    } else {
-      picked = "";
-    }
-    showHint();
-    render();
-  });
-
-  [dateField, timeField].forEach(function (field) {
-    field.addEventListener("input", function () {
-      picked = dateField.value;
+  function bindForm() {
+    titleField.addEventListener("input", function () {
+      var got = parse(titleField.value, new Date());
+      if (got.date) {
+        dateField.value = autoDate = ymd(got.date);
+      } else if (autoDate && dateField.value === autoDate) {
+        dateField.value = autoDate = "";
+      }
+      if (got.time) {
+        timeField.value = autoTime = got.time;
+      } else if (autoTime && timeField.value === autoTime) {
+        timeField.value = autoTime = "";
+      }
+      if (dateField.value) {
+        picked = dateField.value;
+        var d = day(picked);
+        shown = new Date(d.getFullYear(), d.getMonth(), 1);
+      } else {
+        picked = "";
+      }
       showHint();
       render();
     });
-  });
 
-  form.addEventListener("submit", function (event) {
-    event.preventDefault();
-    var text = titleField.value.trim();
-    if (!text) return;
-    var title = parse(text, new Date()).rest;
-    var task = {
-      id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
-      title: title,
-      due: dateField.value,
-      time: dateField.value ? timeField.value : "",
-      done: "",
-      made: new Date().toISOString(),
-    };
-    form.reset();
-    autoDate = autoTime = picked = "";
-    hintLine.textContent = hint;
-    change({ op: "put", make: true, task: task, say: "钉上：" + title });
-    titleField.focus();
-  });
-
-  Array.prototype.forEach.call(document.querySelectorAll("[data-step]"), function (step) {
-    step.addEventListener("click", function () {
-      var n = +step.getAttribute("data-step");
-      shown = n ? new Date(shown.getFullYear(), shown.getMonth() + n, 1) : new Date(new Date().getFullYear(), new Date().getMonth(), 1);
-      render();
+    [dateField, timeField].forEach(function (field) {
+      field.addEventListener("input", function () {
+        picked = dateField.value;
+        showHint();
+        render();
+      });
     });
-  });
+
+    form.addEventListener("submit", function (event) {
+      event.preventDefault();
+      var text = titleField.value.trim();
+      if (!text) return;
+      var title = parse(text, new Date()).rest;
+      var task = {
+        id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+        title: title,
+        due: dateField.value,
+        time: dateField.value ? timeField.value : "",
+        done: "",
+        made: new Date().toISOString(),
+      };
+      form.reset();
+      autoDate = autoTime = picked = "";
+      hintLine.textContent = hint;
+      change({ op: "put", make: true, task: task, say: "钉上：" + title });
+      titleField.focus();
+    });
+
+    Array.prototype.forEach.call(document.querySelectorAll("[data-step]"), function (step) {
+      step.addEventListener("click", function () {
+        var n = +step.getAttribute("data-step");
+        shown = n ? new Date(shown.getFullYear(), shown.getMonth() + n, 1) : new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+        render();
+      });
+    });
+  }
 
   // ---------------------------------------------------------------- 同步
 
@@ -776,6 +790,7 @@
   }
 
   function renderSync() {
+    if (!here()) return;
     var waiting = state.queue.length ? "，" + state.queue.length + " 处等着推上去" : "";
     if (!key) syncLine.textContent = "只存在这台设备";
     else if (busy) syncLine.textContent = "同步中…";
@@ -786,69 +801,71 @@
     keyOn.hidden = !key;
   }
 
-  keyForm.addEventListener("submit", function (event) {
-    event.preventDefault();
-    var repo = keyForm.elements.repo.value.trim().replace(/^https?:\/\/github\.com\//, "").replace(/\.git$/, "").replace(/\/+$/, "");
-    var token = keyForm.elements.token.value.trim();
-    if (!/^[\w.-]+\/[\w.-]+$/.test(repo)) {
-      keyNote.textContent = "仓库写成「用户名/仓库名」。";
-      return;
-    }
-    if (!token) {
-      keyNote.textContent = "还没填钥匙。";
-      return;
-    }
-    keyNote.textContent = "正在试钥匙…";
-    call({ repo: repo, token: token }, "GET", "")
-      .then(function (info) {
-        if (!info.private) {
-          var error = new Error("public");
-          error.say = "这个仓库是公开的，谁都看得到。换一个私有仓库";
-          throw error;
-        }
-        key = { repo: info.full_name, token: token };
-        keep("board.key", key);
-        // 这台设备上原来的便条，一张张搬进仓库。
-        state.queue = state.base
-          .map(function (t) {
-            return { op: "put", make: true, task: t, say: "搬进来：" + t.title };
-          })
-          .concat(state.queue);
-        state.base = [];
-        state.sha = null;
-        save();
-        keyForm.reset();
-        keyNote.textContent = "连上了。换设备时，在那台设备上填同一把钥匙。";
-        render();
-        flush();
-      })
-      .catch(function (error) {
-        keyNote.textContent = explain(error) + "。";
-      });
-  });
+  function bindKey() {
+    keyForm.addEventListener("submit", function (event) {
+      event.preventDefault();
+      var repo = keyForm.elements.repo.value.trim().replace(/^https?:\/\/github\.com\//, "").replace(/\.git$/, "").replace(/\/+$/, "");
+      var token = keyForm.elements.token.value.trim();
+      if (!/^[\w.-]+\/[\w.-]+$/.test(repo)) {
+        keyNote.textContent = "仓库写成「用户名/仓库名」。";
+        return;
+      }
+      if (!token) {
+        keyNote.textContent = "还没填钥匙。";
+        return;
+      }
+      keyNote.textContent = "正在试钥匙…";
+      call({ repo: repo, token: token }, "GET", "")
+        .then(function (info) {
+          if (!info.private) {
+            var error = new Error("public");
+            error.say = "这个仓库是公开的，谁都看得到。换一个私有仓库";
+            throw error;
+          }
+          key = { repo: info.full_name, token: token };
+          keep("board.key", key);
+          // 这台设备上原来的便条，一张张搬进仓库。
+          state.queue = state.base
+            .map(function (t) {
+              return { op: "put", make: true, task: t, say: "搬进来：" + t.title };
+            })
+            .concat(state.queue);
+          state.base = [];
+          state.sha = null;
+          save();
+          keyForm.reset();
+          keyNote.textContent = "连上了。换设备时，在那台设备上填同一把钥匙。";
+          render();
+          flush();
+        })
+        .catch(function (error) {
+          keyNote.textContent = explain(error) + "。";
+        });
+    });
 
+    unlink.addEventListener("click", function () {
+      if (!armed) {
+        unlink.textContent = state.queue.length ? "还有 " + state.queue.length + " 处没推上去，再点一下也断开" : "再点一下就断开";
+        armed = window.setTimeout(function () {
+          armed = 0;
+          unlink.textContent = "断开这台设备";
+        }, 4000);
+        return;
+      }
+      window.clearTimeout(armed);
+      armed = 0;
+      unlink.textContent = "断开这台设备";
+      // 断开就把这台设备上的都清掉，仓库里的不动。
+      key = null;
+      keep("board.key", null);
+      state = { base: [], sha: null, queue: [], synced: "" };
+      problem = "";
+      save();
+      keyNote.textContent = "断开了。这台设备上的告示牌清空了，仓库里的还在。";
+      render();
+    });
+  }
   var armed = 0;
-  unlink.addEventListener("click", function () {
-    if (!armed) {
-      unlink.textContent = state.queue.length ? "还有 " + state.queue.length + " 处没推上去，再点一下也断开" : "再点一下就断开";
-      armed = window.setTimeout(function () {
-        armed = 0;
-        unlink.textContent = "断开这台设备";
-      }, 4000);
-      return;
-    }
-    window.clearTimeout(armed);
-    armed = 0;
-    unlink.textContent = "断开这台设备";
-    // 断开就把这台设备上的都清掉，仓库里的不动。
-    key = null;
-    keep("board.key", null);
-    state = { base: [], sha: null, queue: [], synced: "" };
-    problem = "";
-    save();
-    keyNote.textContent = "断开了。这台设备上的告示牌清空了，仓库里的还在。";
-    render();
-  });
 
   // 回到这一页、重新联网时，拉一次最新的。倒数每分钟走一次，正在点的时候不打断。
   document.addEventListener("visibilitychange", function () {
@@ -863,6 +880,21 @@
     if (!editing && !(active && active.closest && active.closest(".cal, .notes"))) render();
   }, 60000);
 
-  render();
+  // 挂上：整页打开告示牌时一次；站内换页到告示牌（js/nav.js 发 farm:page）时再一次。别的页上什么都不做。
+  function mount() {
+    var next = document.querySelector("[data-add]");
+    if (!next || next === form) return;
+    find();
+    shown = midnight(new Date());
+    shown.setDate(1);
+    picked = editing = autoDate = autoTime = "";
+    bindToast();
+    bindForm();
+    bindKey();
+    render();
+  }
+
+  mount();
+  document.addEventListener("farm:page", mount);
   flush();
 })();

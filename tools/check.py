@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """机器能查的验收，对照 docs/SPEC.md。不代替打开页面看。"""
 
+import json
 import posixpath
 import re
 import sys
@@ -115,7 +116,7 @@ def check_page(rel, html):
             bad(f"{rel} 的图缺 alt、width 或 height：{img}")
 
     hud = block(html, r'<header class="hud">.*?</header>')
-    for part in ('class="hud-sky"', "data-today", "data-clock", "data-season-cycle"):
+    for part in ('class="hud-sky"', "data-today", "data-clock", "data-season-cycle", "data-sound"):
         if part not in hud:
             bad(f"{rel} 的右上角面板缺 {part}")
 
@@ -129,6 +130,8 @@ def check_page(rel, html):
 
     if not re.search(r'<script src="[./]*js/farm\.js"></script>\s*</body>', html):
         bad(f"{rel} 应在 </body> 前引 js/farm.js")
+    if not re.search(r'<script src="[./]*js/nav\.js"></script>\s*<script src="[./]*js/sound\.js"></script>', html):
+        bad(f"{rel} 应在 farm.js 前依次引 js/nav.js、js/sound.js")
 
     if home:
         nav = block(html, r'<nav class="choices".*?</nav>')
@@ -154,18 +157,23 @@ def check_page(rel, html):
     close = re.search(r'<a class="close" href="([^"]+)" aria-label="[^"]+"></a>', html)
     if not close or resolve(rel, close.group(1)) != "index.html":
         bad(f"{rel} 没有链回农场的红叉")
+    if not re.search(r"<h1>[^<]+</h1>", html):
+        bad(f"{rel} 没有看得见的页标题 <h1>")
     kind = "letter" if rel in LETTERS else "board" if rel in BOARDS else "menu"
     if f'<main class="panel {kind}" id="content">' not in html:
         bad(f"{rel} 的 <main> 应是 class=\"panel {kind}\" id=\"content\"")
 
 
 def check_content(rel, html):
+    # 没写的地方每页最多留一处「待补」，空格子不画出来。
+    if len(re.findall(r'class="[^"]*\btodo\b', html)) > 1:
+        bad(f"{rel} 有不止一处 .todo，待补每页只留一行")
     if rel == "about/index.html":
         bag = block(html, r'<ul class="bag">.*?</ul>')
-        if len(re.findall(r'<li class="slot"', bag)) != 12:
-            bad("关于页的随身物品应是 12 个 .slot")
-        if html.count('<hr class="divider">') != 2:
-            bad("关于页应有两条木条 .divider")
+        if bag and len(re.findall(r'<li class="slot"', bag)) != 12:
+            bad("关于页有随身物品时，应是 12 个 .slot")
+        if html.count('<hr class="divider">') != (2 if bag else 1):
+            bad("关于页的木条：有随身物品时两条，没有时一条")
         for key in ("我是谁", "现在做什么", "不忙的时候"):
             if f'<dt class="row-key">{key}</dt>' not in html:
                 bad(f"关于页人物栏缺「{key}」")
@@ -176,20 +184,23 @@ def check_content(rel, html):
     if rel == "now/index.html":
         if "看流水" not in html or "../log/" not in html:
             bad("近况页没有去流水的「看流水」")
-        if "更新" not in html:
-            bad("近况页没有更新日期")
+        if 'class="row' in html and "更新" not in html:
+            bad("近况页有条目时要写更新日期")
+        if 'class="row' not in html and 'class="empty"' not in html:
+            bad("近况页既没有条目，也没有空状态")
     if rel == "log/index.html":
         if "回近况" not in html:
             bad("流水页没有「回近况」")
-        if "木板还空着" not in html and "<details" not in html and 'class="row' not in html:
+        if "日志还空着" not in html and "<details" not in html and 'class="row' not in html:
             bad("流水页既没有条目，也没有空状态")
     if rel == "notes/index.html" and "看版式" not in html:
         bad("笔记页没有「看版式」")
     if rel == "notes/sample/index.html" and "样张 · 不是文章" not in html:
         bad("版式样张没写「样张 · 不是文章」")
     if rel == "work/index.html":
-        if len(re.findall(r'<li class="slot"', html)) < 12:
-            bad("作品页的箱子至少一排 12 格")
+        slots = len(re.findall(r'<li class="slot"', html))
+        if 'class="bundle"' in html and (slots < 12 or slots % 12):
+            bad("作品页有项目时，箱子格子补满到 12 的倍数")
         if 'class="bundle"' not in html and "箱子还空着" not in html:
             bad("作品页既没有项目，也没有「箱子还空着。」")
     if rel == "board/index.html":
@@ -198,8 +209,8 @@ def check_content(rel, html):
         if not re.search(r'<script src="\.\./js/board\.js"></script>\s*<script src="\.\./js/farm\.js"></script>', html):
             bad("告示牌应在 farm.js 前引 js/board.js")
     if rel == "contact/index.html":
-        if "mailto:" not in html and "disabled" not in html:
-            bad("联系页没有邮箱时，复制按钮应 disabled")
+        if "mailto:" not in html and "邮箱还没写上" not in html:
+            bad("联系页没有邮箱时，应写「邮箱还没写上」")
         if "——Ricardo" not in html:
             bad("联系页没有署名「——Ricardo」")
 
@@ -237,6 +248,24 @@ if "localStorage" in js:
     bad("js/farm.js 不该用 localStorage 记季节")
 if re.search(r"\bboard\b", js):
     bad("js/farm.js 只管五件事，告示牌的脚本在 js/board.js")
+
+for name in ("js/nav.js", "js/sound.js"):
+    if re.search(r"https?://", read(name)):
+        bad(f"{name} 里有站外地址，声音和换页都不该连站外")
+
+# 站里另放的曲子：清单是一个列表，每首写文件、名字、许可，文件得在 audio/ 里。
+try:
+    tracks = json.loads(read("audio/tracks.json") or "null")
+except json.JSONDecodeError:
+    tracks = None
+if not isinstance(tracks, list):
+    bad("audio/tracks.json 应是一个列表，没有曲子时写 []")
+else:
+    for t in tracks:
+        if not (isinstance(t, dict) and all(isinstance(t.get(k), str) and t.get(k) for k in ("file", "name", "credit"))):
+            bad(f"audio/tracks.json 的 {t} 缺 file、name 或 credit")
+        elif not (ROOT / "audio" / t["file"]).is_file():
+            bad(f"audio/tracks.json 列了不存在的 audio/{t['file']}")
 
 board_js = read("js/board.js")
 if "innerHTML" in board_js or "insertAdjacentHTML" in board_js:

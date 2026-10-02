@@ -38,7 +38,7 @@
       <div class="hud-sky" aria-hidden="true"><span class="hud-sun"></span></div>
       <div class="hud-lines">
         <p><time data-today>今天</time></p>
-        <p><time data-clock>现在</time><button class="hud-season" type="button" data-season-cycle aria-label="换季"><span class="hud-season-icon"></span><span class="hud-season-name"></span></button></p>
+        <p><time data-clock>现在</time><button class="hud-season" type="button" data-season-cycle aria-label="换季"><span class="hud-season-icon"></span><span class="hud-season-name"></span></button><button class="hud-sound" type="button" data-sound aria-label="声音" hidden><span class="hud-sound-icon"></span></button></p>
       </div>
     </div>
   </header>
@@ -54,19 +54,7 @@
     </nav>
     <main class="panel menu" id="content">
       <a class="close" href="../" aria-label="关上，回农场"></a>
-      <h1 class="sr-only">关于</h1>
-
-      <section aria-labelledby="bag-title">
-        <h2 class="sr-only" id="bag-title">随身物品</h2>
-        <ul class="bag">
-          <li class="slot"></li><li class="slot"></li><li class="slot"></li><li class="slot"></li>
-          <li class="slot"></li><li class="slot"></li><li class="slot"></li><li class="slot"></li>
-          <li class="slot"></li><li class="slot"></li><li class="slot"></li><li class="slot"></li>
-        </ul>
-        <p class="bag-note todo">随身物品待补</p>
-      </section>
-
-      <hr class="divider">
+      <h1>关于</h1>
 
       <section class="character" aria-labelledby="who">
         <div class="profile-face">
@@ -100,6 +88,8 @@
     <p>视觉受田园生活模拟游戏启发，非官方，与 ConcernedApe 无关。</p>
     <p><a href="../">农场</a><a href="./">关于</a><a href="../now/">近况</a><a href="../log/">流水</a><a href="../work/">作品</a><a href="../notes/">笔记</a><a href="../contact/">联系</a><a href="../board/">告示牌</a></p>
   </footer>
+  <script src="../js/nav.js"></script>
+  <script src="../js/sound.js"></script>
   <script src="../js/farm.js"></script>
 </body>
 </html>

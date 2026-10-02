@@ -38,7 +38,7 @@
       <div class="hud-sky" aria-hidden="true"><span class="hud-sun"></span></div>
       <div class="hud-lines">
         <p><time data-today>今天</time></p>
-        <p><time data-clock>现在</time><button class="hud-season" type="button" data-season-cycle aria-label="换季"><span class="hud-season-icon"></span><span class="hud-season-name"></span></button></p>
+        <p><time data-clock>现在</time><button class="hud-season" type="button" data-season-cycle aria-label="换季"><span class="hud-season-icon"></span><span class="hud-season-name"></span></button><button class="hud-sound" type="button" data-sound aria-label="声音" hidden><span class="hud-sound-icon"></span></button></p>
       </div>
     </div>
   </header>
@@ -55,18 +55,7 @@
     <main class="panel letter" id="content">
       <a class="close" href="../" aria-label="关上，回农场"></a>
       <h1>联系</h1>
-      <section aria-labelledby="find">
-        <h2 id="find">怎么找到我</h2>
-        <p class="copy-row"><span class="todo">邮箱待补</span><button type="button" class="btn" disabled>抄下邮箱</button></p>
-        <p class="hint">还没有地址，先不能抄。</p>
-      </section>
-      <section aria-labelledby="how">
-        <h2 id="how">希望被怎么联系</h2>
-        <ul>
-          <li class="todo">待补</li>
-          <li class="todo">待补</li>
-        </ul>
-      </section>
+      <p class="todo">邮箱还没写上，先不能抄。</p>
       <p class="sign">——Ricardo</p>
     </main>
   </div>
@@ -75,6 +64,8 @@
     <p>视觉受田园生活模拟游戏启发，非官方，与 ConcernedApe 无关。</p>
     <p><a href="../">农场</a><a href="../about/">关于</a><a href="../now/">近况</a><a href="../log/">流水</a><a href="../work/">作品</a><a href="../notes/">笔记</a><a href="./">联系</a><a href="../board/">告示牌</a></p>
   </footer>
+  <script src="../js/nav.js"></script>
+  <script src="../js/sound.js"></script>
   <script src="../js/farm.js"></script>
 </body>
 </html>

@@ -13,13 +13,13 @@
 /* ---------------------------------------------------------------- 令牌 */
 
 :root {
-  /* 1 个美术像素等于几个 CSS 像素。所有图都按它整数倍放大。 */
-  --px: 3px;
-  --pp: 3px; /* 肖像单独放大 */
-  /* 方舟像素是 12px 字，只用整数倍。 */
+  /* 界面的 1 个美术像素等于几个 CSS 像素。木框、图标、肖像都按它放大。
+     字是 12px 的像素字放大成 --fs，字的一个像素和木框的一个像素一样粗：--fs = 12 × --px。 */
+  --px: 2px;
   --fs: 24px;
-  --fs-big: 36px;
   --lh: 1.5;
+  /* 农场是背景，单独放大，不和界面比粗细。 */
+  --wpx: 3px;
 
   --ink: #5b2a12;
   --ink-soft: #6e3b1b;
@@ -31,6 +31,7 @@
   --shadow: #2a140a;
   --focus: #3b1d0e;
   --dim: rgb(30 16 8 / 0.55);
+  --dim-inner: rgb(30 16 8 / 0.3);
 
   --edge: #4e974c;
   --grass: #84c669;
@@ -53,7 +54,7 @@ html {
   inset: 0;
   z-index: -1;
   background: var(--edge) url("../img/farm-spring.png") no-repeat 50% 38%;
-  background-size: calc(896 * var(--px)) calc(512 * var(--px));
+  background-size: calc(896 * var(--wpx)) calc(512 * var(--wpx));
   image-rendering: pixelated;
 }
 
@@ -72,17 +73,24 @@ html[data-phase="dawn"] .world::before { background: rgb(255 170 110 / 0.12); }
 html[data-phase="dusk"] .world::before { background: rgb(160 70 90 / 0.2); }
 html[data-phase="night"] .world::before { background: rgb(14 22 62 / 0.45); }
 
-/* 打开菜单时，世界压暗，像游戏里一样。 */
-.inner .world::after {
+/* 打开菜单时，世界压暗一点，农场还看得见。站内换页时世界不重画，压暗淡入淡出。 */
+.world::after {
   content: "";
   position: absolute;
   inset: 0;
-  background: var(--dim);
+  background: var(--dim-inner);
+  opacity: 0;
+  transition: opacity 260ms ease;
 }
+
+.inner .world::after { opacity: 1; }
 
 /* ---------------------------------------------------------------- 基础 */
 
 * { box-sizing: border-box; }
+
+/* 长页、短页之间换来换去时，给滚动条留好位置，菜单不左右晃。 */
+html { scrollbar-gutter: stable; }
 
 body {
   display: flex;
@@ -251,6 +259,151 @@ html[data-season="summer"] .hud-season-name::before { content: "夏"; }
 html[data-season="autumn"] .hud-season-name::before { content: "秋"; }
 html[data-season="winter"] .hud-season-name::before { content: "冬"; }
 
+/* 声音：季节小牌旁边一个小喇叭，点开是声音面板（js/sound.js 画）。没有脚本、出不了声时不露出来。 */
+.hud {
+  position: relative;
+  z-index: 5;
+}
+
+.hud-sound {
+  display: inline-flex;
+  align-items: center;
+  align-self: stretch;
+  padding: 0 var(--px);
+  border: 0;
+  background: none;
+  cursor: pointer;
+}
+
+.hud-sound:hover,
+.hud-sound[aria-expanded="true"] { background: var(--menu-deep); }
+
+.hud-sound-icon {
+  width: calc(9 * var(--px));
+  height: calc(9 * var(--px));
+  background: url("../img/sound-off.png") 0 0 / 100% 100%;
+  image-rendering: pixelated;
+}
+
+.hud-sound[data-state="on"] .hud-sound-icon,
+.hud-sound[data-state="wait"] .hud-sound-icon { background-image: url("../img/sound-on.png"); }
+
+/* 开着但浏览器还不让出声：喇叭淡一点，等访客点一下页面。 */
+.hud-sound[data-state="wait"] .hud-sound-icon { opacity: 0.5; }
+
+.sound-panel {
+  position: absolute;
+  top: 100%;
+  right: calc(4 * var(--px));
+  display: grid;
+  gap: calc(2 * var(--px));
+  width: min(100vw - 8 * var(--px), calc(190 * var(--px)));
+  margin-top: var(--px);
+  padding: calc(2 * var(--px)) calc(4 * var(--px)) calc(3 * var(--px));
+  border-style: solid;
+  border-width: calc(5 * var(--px));
+  border-image: url("../img/ui-tab.png") 5 fill / calc(5 * var(--px)) stretch;
+  image-rendering: pixelated;
+}
+
+.sound-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.sound-head b { font-weight: normal; }
+
+.sound-row {
+  display: grid;
+  grid-template-columns: 4em minmax(0, 1fr);
+  gap: calc(3 * var(--px));
+  align-items: center;
+}
+
+.sound-row .btn { justify-self: end; }
+
+/* 「加一首」是包着文件选择框的小木牌，键盘移到里面时照样有焦点框。 */
+.btn:has(:focus-visible) {
+  outline: var(--px) solid var(--focus);
+  outline-offset: var(--px);
+}
+
+.sound-note { color: var(--ink-soft); }
+
+.sound-note:empty { display: none; }
+
+.sound-mine {
+  display: grid;
+  gap: var(--px);
+  padding: 0;
+  list-style: none;
+}
+
+.sound-mine:empty { display: none; }
+
+.sound-mine li {
+  display: flex;
+  justify-content: space-between;
+  gap: calc(3 * var(--px));
+}
+
+.sound-mine span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sound-mine button {
+  padding: 0 var(--px);
+  border: 0;
+  background: none;
+  color: var(--ink-soft);
+  font: inherit;
+  cursor: pointer;
+}
+
+/* 音量滑块：一道凹槽，一块深色小木块。 */
+.sound-slider {
+  width: 100%;
+  height: calc(10 * var(--px));
+  margin: 0;
+  background: none;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.sound-slider::-webkit-slider-runnable-track {
+  height: calc(4 * var(--px));
+  border: var(--px) solid var(--line);
+  background: var(--slot);
+}
+
+.sound-slider::-moz-range-track {
+  height: calc(4 * var(--px));
+  border: var(--px) solid var(--line);
+  background: var(--slot);
+}
+
+.sound-slider::-webkit-slider-thumb {
+  width: calc(4 * var(--px));
+  height: calc(8 * var(--px));
+  margin-top: calc(-2 * var(--px));
+  border: 0;
+  background: var(--ink);
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.sound-slider::-moz-range-thumb {
+  width: calc(4 * var(--px));
+  height: calc(8 * var(--px));
+  border: 0;
+  border-radius: 0;
+  background: var(--ink);
+}
+
 /* ---------------------------------------------------------------- 首页：对话框 */
 
 .stage {
@@ -265,7 +418,7 @@ html[data-season="winter"] .hud-season-name::before { content: "冬"; }
   display: grid;
   grid-template-columns: 1fr auto;
   gap: calc(6 * var(--px));
-  width: min(100%, calc(372 * var(--px)));
+  width: min(100%, calc(460 * var(--px)));
   margin: 0 auto;
 }
 
@@ -340,19 +493,19 @@ html[data-season="winter"] .hud-season-name::before { content: "冬"; }
 }
 
 .portrait-box img {
-  width: calc(48 * var(--pp));
-  height: calc(48 * var(--pp));
+  width: calc(48 * var(--px));
+  height: calc(48 * var(--px));
   background: linear-gradient(#9fd3ec 0 40%, #bfe3f2 40% 75%, #e3efe0 75%);
   image-rendering: pixelated;
 }
 
 .nameplate {
-  height: calc(12 * var(--px));
+  height: calc(16 * var(--px));
   padding: 0 calc(2 * var(--px));
   border-style: solid;
   border-width: 0 calc(4 * var(--px));
   border-image: url("../img/ui-scroll.png") 0 4 fill / 0 calc(4 * var(--px)) stretch;
-  line-height: calc(12 * var(--px));
+  line-height: calc(16 * var(--px));
   white-space: nowrap;
   image-rendering: pixelated;
 }
@@ -361,7 +514,7 @@ html[data-season="winter"] .hud-season-name::before { content: "冬"; }
 
 .menu-wrap {
   position: relative;
-  width: min(100% - 12 * var(--px), calc(320 * var(--px)));
+  width: min(100% - 12 * var(--px), calc(440 * var(--px)));
   margin: calc(4 * var(--px)) auto 0;
 }
 
@@ -444,7 +597,6 @@ html[data-season="winter"] .hud-season-name::before { content: "冬"; }
   border-style: solid;
   border-width: calc(5 * var(--px));
   border-image: url("../img/ui-tab-dim.png") 5 fill / calc(5 * var(--px)) stretch;
-  font-size: 12px;
   line-height: 1;
   text-decoration: none;
   image-rendering: pixelated;
@@ -499,7 +651,7 @@ html[data-season="winter"] .hud-season-name::before { content: "冬"; }
 
 .bag-note {
   margin-top: calc(2 * var(--px));
-  font-size: 12px;
+  color: var(--ink-soft);
   text-align: center;
 }
 
@@ -515,13 +667,21 @@ html[data-season="winter"] .hud-season-name::before { content: "冬"; }
 
 /* ---------------------------------------------------------------- 内容 */
 
+/* 页标题和正文一样大，写在名字纸卷上，靠纸卷认出是标题。 */
 .panel h1 {
-  margin-bottom: calc(3 * var(--px));
-  font-size: var(--fs-big);
-  line-height: 1.5;
+  display: table;
+  height: calc(16 * var(--px));
+  margin: 0 0 calc(4 * var(--px)) calc(-2 * var(--px));
+  padding: 0 calc(3 * var(--px));
+  border-style: solid;
+  border-width: 0 calc(4 * var(--px));
+  border-image: url("../img/ui-scroll.png") 0 4 fill / 0 calc(4 * var(--px)) stretch;
+  line-height: calc(16 * var(--px));
+  white-space: nowrap;
+  image-rendering: pixelated;
 }
 
-.page-head h1 { margin: 0; }
+.page-head h1 { margin-bottom: 0; }
 
 .panel h2 {
   margin: 0 0 calc(2 * var(--px));
@@ -557,7 +717,14 @@ html[data-season="winter"] .hud-season-name::before { content: "冬"; }
 
 .back:hover { text-decoration: underline; }
 
-/* 空状态：一个凹格，字居中。 */
+/* 空状态：一个凹格，字居中。可以带一个物件图。 */
+.empty img {
+  width: calc(16 * var(--px));
+  height: calc(16 * var(--px));
+  margin: 0 auto calc(2 * var(--px));
+  image-rendering: pixelated;
+}
+
 .empty {
   padding: calc(4 * var(--px));
   border-style: solid;
@@ -683,6 +850,33 @@ a.row:hover { background-color: var(--menu-deep); }
   color: var(--ink-soft);
 }
 
+/* 任务日志：近况、流水的一行，左边一个小纸卷。信箱：笔记目录的一行，左边一个信封。
+   图标钉在行首的左边距里，对齐第一行字；后面的字怎么折行都不挤它。 */
+.quest,
+.mail {
+  position: relative;
+  padding-left: calc(17 * var(--px));
+}
+
+.quest::before,
+.mail::before {
+  --h: calc(9 * var(--px));
+  content: "";
+  position: absolute;
+  left: calc(4 * var(--px));
+  top: calc(var(--px) + (var(--fs) * var(--lh) - var(--h)) / 2);
+  width: calc(10 * var(--px));
+  height: var(--h);
+  background: url("../img/icon-quest.png") 0 0 / 100% 100%;
+  image-rendering: pixelated;
+}
+
+.mail::before {
+  --h: calc(8 * var(--px));
+  width: calc(11 * var(--px));
+  background-image: url("../img/icon-contact.png");
+}
+
 /* 状态标签：一定写字，颜色只是辅助。 */
 .tag {
   flex: none;
@@ -691,8 +885,7 @@ a.row:hover { background-color: var(--menu-deep); }
   border: var(--px) solid var(--focus);
   background: #ffd34d;
   color: var(--focus);
-  font-size: 12px;
-  line-height: 2;
+  line-height: calc(14 * var(--px));
   white-space: nowrap;
 }
 
@@ -773,7 +966,7 @@ a.row:hover { background-color: var(--menu-deep); }
   z-index: 5;
   display: none;
   width: max-content;
-  max-width: calc(110 * var(--px));
+  max-width: calc(160 * var(--px));
   padding: 0 calc(2 * var(--px));
   border-style: solid;
   border-width: calc(5 * var(--px));
@@ -825,7 +1018,6 @@ a.row:hover { background-color: var(--menu-deep); }
   image-rendering: pixelated;
 }
 
-.board .page-head h1,
 .board .stamp,
 .note-group h3,
 .drawer > summary {
@@ -960,8 +1152,6 @@ a.row:hover { background-color: var(--menu-deep); }
 .cal-week {
   margin-bottom: var(--px);
   color: var(--ink-soft);
-  font-size: 12px;
-  line-height: 2;
   text-align: center;
 }
 
@@ -1012,11 +1202,6 @@ a.row:hover { background-color: var(--menu-deep); }
   margin-right: calc(-2 * var(--px));
   background: url("../img/pin-gray.png") 0 0 / 100% 100%;
   image-rendering: pixelated;
-}
-
-.day-pins small {
-  margin-left: calc(3 * var(--px));
-  font-size: 12px;
 }
 
 .cal-foot {
@@ -1136,8 +1321,7 @@ a.row:hover { background-color: var(--menu-deep); }
   border: var(--px) solid var(--focus);
   background: #c7e6a8;
   color: var(--focus);
-  font-size: 12px;
-  line-height: 2;
+  line-height: calc(14 * var(--px));
   white-space: nowrap;
 }
 
@@ -1256,27 +1440,27 @@ a.row:hover { background-color: var(--menu-deep); }
 /* ---------------------------------------------------------------- 页脚 */
 
 .credit {
-  width: min(100% - 12 * var(--px), calc(372 * var(--px)));
+  width: min(100% - 12 * var(--px), calc(460 * var(--px)));
   margin: auto auto 0;
   padding: calc(4 * var(--px)) 0 calc(6 * var(--px));
   color: var(--cream);
-  font-size: 12px;
-  line-height: 2;
   text-align: center;
-  text-shadow: 1px 1px 0 var(--shadow), 2px 2px 0 var(--shadow);
+  text-shadow: var(--px) var(--px) 0 var(--shadow);
 }
 
-/* 首页没有压暗，声明垫一块暗底才读得清。 */
-.home .credit p {
+/* 世界只压暗一点，声明垫一块暗底才读得清。 */
+.credit p {
   display: table;
   margin: 0 auto;
   padding: 0 calc(2 * var(--px));
   background: var(--dim);
 }
 
+.credit p + p { margin-top: var(--px); }
+
 .credit a {
   display: inline-block;
-  padding: 0 0.5em;
+  padding: 0 0.4em;
   white-space: nowrap;
 }
 
@@ -1293,10 +1477,10 @@ a.row:hover { background-color: var(--menu-deep); }
 
 :focus:not(:focus-visible) { outline: none; }
 
-/* ---------------------------------------------------------------- 换页：同源跨页过渡 */
+/* ---------------------------------------------------------------- 换页：站内换页和跨页过渡 */
 
-/* 世界、右上角面板留在原地；菜单在内页之间就地换内容，从农场进出时浮起或落下。
-   浏览器不支持时，照常换页。 */
+/* 世界、右上角面板、页签留在原地；菜单在内页之间就地换内容、木框的大小顺着变，从农场进出时浮起或落下。
+   站内换页（js/nav.js）用同一套名字做页内过渡；整页打开时用跨页过渡。浏览器都不支持时，照常换页。 */
 @view-transition {
   navigation: auto;
 }
@@ -1305,6 +1489,7 @@ a.row:hover { background-color: var(--menu-deep); }
 .hud { view-transition-name: hud; }
 .dialogue { view-transition-name: dialogue; }
 .menu-wrap { view-transition-name: menu; }
+.tabs { view-transition-name: tabs; }
 .credit { view-transition-name: credit; }
 
 ::view-transition-group(*),
@@ -1315,11 +1500,13 @@ a.row:hover { background-color: var(--menu-deep); }
 }
 
 ::view-transition-new(menu):only-child,
+::view-transition-new(tabs):only-child,
 ::view-transition-new(dialogue):only-child {
   animation: panel-in 260ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
 
 ::view-transition-old(menu):only-child,
+::view-transition-old(tabs):only-child,
 ::view-transition-old(dialogue):only-child {
   animation: panel-out 180ms ease-in both;
 }
@@ -1340,11 +1527,16 @@ a.row:hover { background-color: var(--menu-deep); }
 
 /* ---------------------------------------------------------------- 中屏 */
 
-@media (max-width: 960px) {
+@media (min-width: 1800px) {
   :root {
-    --px: 2px;
-    --pp: 2px;
+    --px: 3px;
+    --fs: 36px;
+    --wpx: 4px;
   }
+}
+
+@media (max-width: 960px) {
+  :root { --wpx: 2px; }
 
   /* 告示牌放不下两栏：便条在上，日历在下。 */
   .board-body {
@@ -1358,11 +1550,6 @@ a.row:hover { background-color: var(--menu-deep); }
 /* ---------------------------------------------------------------- 窄屏 */
 
 @media (max-width: 640px) {
-  :root {
-    --fs: 16px;
-    --fs-big: 24px;
-  }
-
   .dialogue { grid-template-columns: 1fr; }
 
   .dialogue-face {
@@ -1391,15 +1578,27 @@ a.row:hover { background-color: var(--menu-deep); }
     transform: none;
   }
 
-  .letter { padding: calc(6 * var(--px)) calc(6 * var(--px)) calc(8 * var(--px)); }
+  .menu { padding: calc(5 * var(--px)) calc(3 * var(--px)); }
+
+  .letter { padding: calc(5 * var(--px)) calc(4 * var(--px)) calc(6 * var(--px)); }
 
   .board { padding: calc(3 * var(--px)) calc(2 * var(--px)) calc(4 * var(--px)); }
 
   .sheet { padding: calc(2 * var(--px)) calc(3 * var(--px)) calc(3 * var(--px)); }
 
-  .pin-form { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto; }
+  /* 手机上：第一行一句话加「钉上」，第二行日期和钟点各占一半。 */
+  .pin-form { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) auto; }
 
-  .pin-title { grid-column: 1 / -1; }
+  .pin-title { grid-column: 1 / 4; }
+
+  .pin-form .btn {
+    grid-column: 4;
+    grid-row: 1;
+  }
+
+  .pin-form [type="date"] { grid-column: 1 / 3; }
+
+  .pin-form [type="time"] { grid-column: 3 / 5; }
 
   .day {
     min-height: calc(17 * var(--px));
@@ -1410,19 +1609,27 @@ a.row:hover { background-color: var(--menu-deep); }
 
   .row { flex-wrap: wrap; gap: 0 calc(4 * var(--px)); }
 
+  /* 手机上六个页签放不下字：只留图标，字留给读屏。页标题在纸卷上写着。 */
   .tabs { padding-left: calc(3 * var(--px)); }
 
-  .tabs a { min-width: calc(21 * var(--px)); }
+  .tabs a {
+    min-width: calc(17 * var(--px));
+    padding-bottom: calc(2 * var(--px));
+  }
+
+  .tabs span {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
 
   .close {
     top: calc(-11 * var(--px));
     right: calc(-6 * var(--px));
   }
-}
-
-/* 2 倍屏上 18px 正好是每个字像素 3 个物理像素。 */
-@media (max-width: 640px) and (resolution: 2dppx) {
-  :root { --fs: 18px; }
 }
 
 /* ---------------------------------------------------------------- 减少动效 */

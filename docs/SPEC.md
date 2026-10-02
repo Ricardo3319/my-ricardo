@@ -1,6 +1,6 @@
 # 页面规格
 
-2026-10-02 重写，同日按本人意见改过一轮：昵称 Ricardo、季节自动、右上角面板、物品栏式内页、换页过渡；同日本人要了一块记截止日期的告示牌（4.9），后来又要它进网站，成了第六个页签。根目录旧的 `SPEC.md`、`FEATURES.md` 作废。长什么样看 `DESIGN.md`，正文看 `CONTENT.md`。
+2026-10-02 重写，同日按本人意见改过一轮：昵称 Ricardo、季节自动、右上角面板、物品栏式内页、换页过渡；同日本人要了一块记截止日期的告示牌（4.9），后来又要它进网站，成了第六个页签。同日第三轮：字和木框一样粗、空格子和待补收起来、近况流水像任务日志、笔记像信箱、站内换页、声音（5、6 节）。根目录旧的 `SPEC.md`、`FEATURES.md` 作废。长什么样看 `DESIGN.md`，正文看 `CONTENT.md`。
 
 ## 1. 这站做什么
 
@@ -30,7 +30,7 @@
 
 页签六个，顺序固定：关于、近况、作品、笔记、联系、告示牌。不再加，不藏进汉堡菜单。
 
-不做，连空壳也不建：`/uses`、`/colophon`、`/cv`、`/blogroll`、搜索、评论、订阅、登录、联系表单、统计、访问计数、技能百分比、可走动地图、多窗口桌面、声音。履历放在 `/about`。告示牌的「钥匙」只存在本人自己的设备上，不是访客登录。
+不做，连空壳也不建：`/uses`、`/colophon`、`/cv`、`/blogroll`、搜索、评论、订阅、登录、联系表单、统计、访问计数、技能百分比、可走动地图、多窗口桌面。声音有，但默认关着（5 节）。履历放在 `/about`。告示牌的「钥匙」只存在本人自己的设备上，不是访客登录。
 
 ## 3. 每页共有
 
@@ -66,13 +66,14 @@
     <div class="hud-sky" aria-hidden="true"><span class="hud-sun"></span></div>
     <div class="hud-lines">
       <p><time data-today>今天</time></p>
-      <p><time data-clock>现在</time><button class="hud-season" type="button" data-season-cycle aria-label="换季"><span class="hud-season-icon"></span><span class="hud-season-name"></span></button></p>
+      <p><time data-clock>现在</time><button class="hud-season" type="button" data-season-cycle aria-label="换季"><span class="hud-season-icon"></span><span class="hud-season-name"></span></button><button class="hud-sound" type="button" data-sound aria-label="声音" hidden><span class="hud-sound-icon"></span></button></p>
     </div>
   </div>
 </header>
 ```
 
 - 小天窗、日期、钟点由 `js/farm.js` 填，每 30 秒更新。
+- 小喇叭 `data-sound` 写在 HTML 里但先 `hidden`，`js/sound.js` 在浏览器能出声时才露出来，并把声音面板挂在 `.hud` 里。站内换页时 `.hud` 不换，面板和声音都不断。
 - 季节由月份自动定，不需要访客动手。季节小牌点一下换到下一季，只在这次浏览里有效（`sessionStorage`），关掉标签页后回到真实季节。季节字由 CSS 按 `data-season` 写，不靠脚本，换页时不闪。
 - 只改 `html[data-season]` 和 `html[data-phase]`，界面颜色不变。
 
@@ -97,9 +98,13 @@
     <p>视觉受田园生活模拟游戏启发，非官方，与 ConcernedApe 无关。</p>
     <p><a>农场</a><a>关于</a><a>近况</a><a>流水</a><a>作品</a><a>笔记</a><a>联系</a><a>告示牌</a></p>
   </footer>
-  <script src="../js/farm.js"></script>
+  <script src="../js/nav.js"></script>
+  <script src="../js/sound.js"></script>
+  <script src="../js/farm.js"></script>     <!-- 告示牌在 farm.js 前面多一个 board.js -->
 </body>
 ```
+
+- 每个内页都有看得见的 `<h1>`，写在名字纸卷上，就是页名。
 
 - 当前页的页签用 `aria-current="page"`。`/log` 和 `/notes/sample` 不是页签本身，给父页签加 `.is-section`，不加 `aria-current`。
 - 页脚是站点地图，补上页签里没有的「农场」和「流水」。
@@ -124,12 +129,15 @@
     </section>
   </main>
   <footer class="credit">声明 + 关于 近况 流水 作品 笔记 联系 告示牌</footer>
+  <script src="js/nav.js"></script>
+  <script src="js/sound.js"></script>
+  <script src="js/farm.js"></script>
 </body>
 ```
 
 ### 3.5 待补
 
-正文没给的地方写「待补」，套 `<span class="todo">` 或给段落加 `.todo`。不编介绍、年限、经历、项目、文章、邮箱、照片。正文给了以后，去掉 `.todo`。
+正文没给的地方，每页最多留一行「待补」（`.todo`），或者干脆换成一行空状态 `.empty`。没有东西时不画空格子、不排一串「待补」。不编介绍、年限、经历、项目、文章、邮箱、照片。正文给了以后，去掉 `.todo`。
 
 ## 4. 每页
 
@@ -154,10 +162,11 @@
 
 ### 4.2 关于 `/about`
 
-目的：你是谁、现在做什么、履历。样子照物品栏：上面一排格子，木条隔开，中间是人物，下面是履历。
+目的：你是谁、现在做什么、履历。样子照人物卡：标题，有随身物品时一排格子，人物，木条隔开，履历。
 
 ```
-▢ ▢ ▢ ▢ ▢ ▢ ▢ ▢ ▢ ▢ ▢ ▢          随身物品
+⟦关于⟧
+▢ ▢ ▢ ▢ ▢ ▢ ▢ ▢ ▢ ▢ ▢ ▢          随身物品（有了才有这排和下面的木条）
 ════════════════════════════
 ╔ 肖像 ╗  〔进来吧。椅子还有空。〕
 ╚══════╝  我是谁        ……
@@ -168,34 +177,36 @@
 〔2026  一句〕
 ```
 
-- `<h1 class="sr-only">关于</h1>`：位置由页签表明，标题只给读屏。
-- 随身物品：`<ul class="bag">` 12 个 `.slot`。放 `CONTENT.md` 里的随身物品，一件一格，图标从 Kenney 的物件里挑；悬停或聚焦出提示框（名字、类别、一句说明），结构同 4.5。没有时格子全空，下面一行 `.bag-note.todo`「随身物品待补」。
-- 两条 `<hr class="divider">` 把页面分成三段。
+- `<h1>关于</h1>`，写在纸卷上。
+- 随身物品：`<ul class="bag">` 12 个 `.slot`。放 `CONTENT.md` 里的随身物品，一件一格，图标从 Kenney 的物件里挑；悬停或聚焦出提示框（名字、类别、一句说明），结构同 4.5。还没有随身物品时，这一段和它下面的木条都不出现。
+- `<hr class="divider">`：有随身物品时两条，没有时一条（人物和履历之间）。
 - 人物：左肖像加名字纸卷，右边先是凹格 `.greet` 里的第一句，再是 `<dl class="rows">` 三行：我是谁、现在做什么、不忙的时候，值取自 `CONTENT.md`，没有就「待补」。窄屏改成上下排。
 - 履历：`<h2>履历</h2>` 加 `<ol class="rows">`，一条一个 `.row`：`.row-key` 放年份（本人没给年份时放阶段，如「读研」「本科」），后面一句。新的在上。没有条目时只留一条「年份待补 · 待补」。
 
 ### 4.3 近况 `/now`
 
-目的：给一年没见的人看的快照。不是博客，不是看板。
+目的：给一年没见的人看的快照。不是博客，不是看板。样子照任务日志。
 
 ```
-近况                              更新 2026-10-02
-〔一句〕
-〔一句〕
-〔一句〕
+⟦近况⟧                            更新 2026-10-02
+📜 〔一句〕
+📜 〔一句〕
+📜 〔一句〕
                                        [看流水 →]
 ```
 
-- 标题右边是更新日期 `.stamp`：`更新 YYYY-MM-DD`，没有就是「更新 待补」。
-- 三到五条，每条一个 `.row`，一行一句，不带状态。超过五条删旧的，不在本页折叠。
+- 标题右边是更新日期 `.stamp`：`更新 YYYY-MM-DD`。还没有条目时不写日期，只放一行空状态「还没写近况。」。
+- 三到五条，每条一个 `.row.quest`（左边一个小纸卷），一行一句，不带状态。超过五条删旧的，不在本页折叠。
 - 「看流水 →」是去 `/log` 的链接，样子是小木牌按钮 `.btn`，放在 `.actions` 里靠右，不是第六个页签。
 - 不和 `/log` 共用列表，也不共用存储。
 
 ```html
 <div class="page-head"><h1>近况</h1><p class="stamp">更新 2026-10-02</p></div>
-<ul class="rows"><li class="row">一句</li>…</ul>
+<ul class="rows"><li class="row quest">一句</li>…</ul>
 <p class="actions"><a class="btn" href="../log/">看流水 →</a></p>
 ```
+
+还没有条目时：`<h1>近况</h1><div class="empty"><p>还没写近况。</p></div>`，下面照样留「看流水 →」。
 
 ### 4.4 流水 `/log`
 
@@ -223,7 +234,7 @@
 
 - 当月展开，更早的月份用 `<details>` 折起，摘要写「YYYY 年 M 月 · N 条」。
 - 完成的留着，不删，不挪到另一栏。不做看板。
-- 空状态两句：「木板还空着。」「写下来的一行，会按月钉在这里。」
+- 每条是任务日志的一行 `.row.quest`。空状态一句：「日志还空着。」
 - 不写客户名、内部地址、账号、密钥、未公开的决定。私密草稿不进仓库里会发布的目录。
 
 ```html
@@ -232,7 +243,7 @@
 <section class="month" aria-labelledby="m-2026-10">
   <h2 id="m-2026-10">2026 年 10 月</h2>
   <ol class="rows">
-    <li class="row"><time class="row-key" datetime="2026-10-02">10-02</time><span class="tag" data-status="doing">进行中</span><span>一句话</span><a class="entry-link" href="../work/#slug">→ 作品</a></li>
+    <li class="row quest"><time class="row-key" datetime="2026-10-02">10-02</time><span class="tag" data-status="doing">进行中</span><span>一句话</span><a class="entry-link" href="../work/#slug">→ 作品</a></li>
   </ol>
 </section>
 <details class="month">
@@ -241,7 +252,7 @@
 </details>
 ```
 
-空状态写成 `<div class="empty"><p>木板还空着。</p><p>写下来的一行，会按月钉在这里。</p></div>`。
+空状态写成 `<div class="empty"><p>日志还空着。</p></div>`。
 
 ### 4.5 作品 `/work`
 
@@ -256,11 +267,12 @@
 └──┘ 〔站外 →〕
 ```
 
-- 上半是物品栏：两排 `.bag`，一个项目占一格，图标从 Kenney 的作物、木箱里挑（CC0）。格子是链到下面对应说明的 `<a href="#slug">`。
+- 标题 `<h1>作品</h1>` 写在纸卷上。
+- 上半是物品栏 `.bag`，一个项目占一格，图标从 Kenney 的作物、木箱里挑（CC0），格子补满到 12 的倍数。格子是链到下面对应说明的 `<a href="#slug">`。
 - 悬停或聚焦格子时出提示框 `.tip`：名字、浅色一行「已完成」或「未完成」、一句说明。提示框只是辅助，内容在下半都有。
 - 木条下面是同样这些项目的说明，一个项目一个 `.bundle`：左边凹格放同一个图标，右边名字、一句话、状态标签，可选一个站外链接。
 - 状态写字，不只靠颜色。站外链接在新标签打开，链接字后面写「站外」。
-- 空状态：格子全空，下面一句「箱子还空着。」。不放假项目、假链接。
+- 空状态：不画空格子，只放一块 `<div class="empty"><img class="pixel" src="../img/item-crate.png" width="32" height="32" alt=""><p>箱子还空着。</p></div>`。不放假项目、假链接。
 
 ```html
 <ul class="bag">
@@ -268,7 +280,7 @@
     <a class="item" href="#slug" aria-describedby="tip-slug"><img src="../img/item-carrot.png" width="48" height="48" alt="项目名"></a>
     <span class="tip" role="tooltip" id="tip-slug"><b>项目名</b><small>已完成</small>一句话。</span>
   </li>
-  <li class="slot"></li> …一共 24 格
+  <li class="slot"></li> …补满到 12 的倍数
 </ul>
 <hr class="divider">
 <article class="bundle" id="slug">
@@ -287,11 +299,11 @@
 
 ### 4.6 笔记 `/notes`
 
-目的：值得留下的长文目录。
+目的：值得留下的长文目录。样子照信箱：一篇一封信，点开是信纸。
 
-- 有文章时：`<ol class="rows">`，一篇一个 `<li><a class="row" href="slug/"><span class="row-key">YYYY-MM-DD</span><span>标题<span class="row-note"> · 一句提要</span></span></a></li>`，整行是一个链接。新的在上。
-- 空状态：`.empty` 里一句「还没有值得钉上的笔记。」。
-- 不管有没有文章，下面都留「看版式 →」小木牌按钮，链到 `/notes/sample`。
+- 一篇一个 `<li><a class="row mail" href="slug/"><span class="row-key">YYYY-MM-DD</span><span>标题<span class="row-note"> · 一句提要</span></span></a></li>`，整行是一个链接，左边一个信封。新的在上。
+- 版式样张也是信箱里的一封，放在最后：`<li><a class="row mail" href="sample/"><span class="row-key">样张</span><span>看版式<span class="row-note"> · 不是文章</span></span></a></li>`。
+- 还没有正式的笔记时，信箱下面一行浅字「还没有正式的笔记。」（`.bag-note`）。
 - 不做标签、搜索、反向链接、关系图。两篇以上再考虑 RSS。
 
 ### 4.7 版式样张 `/notes/sample`
@@ -299,7 +311,7 @@
 目的：先把正文页的版式定下来，以后的文章照抄。它不是一篇文章。
 
 - 页签「笔记」加 `.is-section`。窗换成信纸 `.letter`。
-- 结构：`.back`「← 回笔记」、`<h1>`、`.meta`「样张 · 不是文章」、`.meta` 日期、`.prose` 正文（段落、`<h2>` 小标题、`<ul>` 列表）。
+- 结构：`.back`「← 回笔记」、`<h1>`、`.meta`「样张 · 不是文章」、`.prose` 正文（段落、`<h2>` 小标题、`<ul>` 列表）。正式文章在 `.meta` 写日期，样张不写。
 - 正文是像素字，段落之间空一行。图片按整数倍放大，写宽高。
 - 以后的文章放 `/notes/<英文短横线>/index.html`，结构照这一页。
 
@@ -319,7 +331,7 @@
 
 - 窗换成信纸 `.letter`。地址和按钮放在一行 `.copy-row`，署名 `.sign` 靠右。
 - 有邮箱时写成 `<a href="mailto:…" data-copy-text>`，按钮 `<button class="btn" data-copy="地址">抄下邮箱</button>`。点了两秒内变「已抄下」；失败时选中地址，按钮写「请手动复制」。
-- 邮箱待补时按钮加 `disabled`，下面一行「还没有地址，先不能抄。」。
+- 邮箱还没给时，信纸上只有标题、一行 `<p class="todo">邮箱还没写上，先不能抄。</p>` 和署名；「希望被怎么联系」也等正文给了再写。
 - 没有表单、没有第三方嵌入、没有假 GitHub。
 
 ### 4.9 告示牌 `/board`
@@ -376,7 +388,8 @@
 
 | 动作 | 行为 |
 | --- | --- |
-| 换页 | 同源跨页过渡：世界和右上角面板不动，菜单就地换内容；从农场进出时对话框和菜单一落一起，约 260ms |
+| 换页 | 站内换页（`js/nav.js`）：点站内链接时取回下一页，只把右上角面板以外的内容换掉，网址、标题、页签跟着变，前进后退照常、回到原来滚到的地方；世界、右上角面板、页签、声音都不动；菜单就地换内容，从农场进出时对话框和菜单一落一起，约 260ms。鼠标停上去就先取。取不到、或者不是本站的页，照常整页跳转。整页打开时用同源跨页过渡 |
+| 换页之后 | `js/nav.js` 发 `farm:page` 事件：`js/farm.js` 重新挂上首页打字和抄邮箱，`js/board.js` 重新挂上告示牌；新页要的脚本没加载过的补加载一次 |
 | 首页打字 | 每字 30ms，同一次浏览只打一遍；点一下或按任意键出全文；打完才出选项 |
 | 选项、页签悬停或聚焦 | 选项整行加深并出箭头；页签换亮色 |
 | 红叉 | 链回 `/` |
@@ -388,8 +401,13 @@
 | 告示牌：做完、撕掉 | 立即挪走，底下出一行小字和「放回」，6 秒后收起 |
 | 告示牌：点月历的一天 | 填进钉一张的日期；悬停或聚焦出那天的事 |
 | 告示牌：同步 | 打开、改动、回到这一页、重新联网时拉一次推一次 |
+| 小喇叭 | 打开、收起声音面板；Esc 或点外面收起 |
+| 声音开关 | 默认关着；开了记在本机 `localStorage` 的 `sound.settings`，下次打开要访客先点一下页面才出声 |
+| 曲子 | 跟着季节（默认）、四首自带、站里的、我加的；换季时「跟着季节」跟着换 |
+| 音量 | 音乐、环境音各一个滑块，记在本机 |
+| 加一首 | 选本机的音频文件，存进这台设备浏览器的 IndexedDB（`farm-sound`），只在本机放，可以删 |
 
-减少动效时不做过渡、不打字。没有声音。
+减少动效时不做过渡、不打字。声音只在访客自己打开后才有。
 
 ## 6. 技术
 
@@ -407,7 +425,10 @@ contact/index.html         /contact
 board/index.html           /board，本人自用
 css/farm.css               全部样式
 js/farm.js                 季节、日期、钟点和天色、首页打字、邮箱复制，只这五件
+js/nav.js                  站内换页、提前取页
+js/sound.js                声音：合成四首小曲和环境音、声音面板、自己加的音乐
 js/board.js                告示牌：认日子、画便条和月历、本机存储、和私有仓库同步。只在 /board 引
+audio/tracks.json          站里另放的曲子清单，现在是空的 []
 fonts/                     方舟像素 + OFL 全文
 img/                       tools/art.py 生成，不手改
 _config.yml                不发布 docs/、tools/、AGENTS.md
@@ -421,15 +442,20 @@ tools/third-party/         Kenney 原图和许可
 - 没有模板引擎，每页重复 HUD、页签、页脚。改它们要所有页一起改。不用脚本注入导航。
 - `farm.css` 的顺序：字体、令牌、世界、基础、HUD、对话框、肖像、菜单、页签、物品栏、内容、告示牌、页脚、焦点、换页、中屏、窄屏、减少动效。
 - 图片写 `width`、`height`。
+- 脚本都放在 `</body>` 前，顺序是 `nav.js`、`sound.js`、（告示牌的 `board.js`）、`farm.js`。
+- 往站里放曲子：文件放进 `audio/`，在 `audio/tracks.json` 里加一条 `{"file": "文件名.mp3", "name": "面板上显示的名字", "credit": "作者 · 许可"}`。只放本人有权公开的，不放游戏原声；自己买的原声只用面板里的「加一首」在本机听。
 
 
 ## 7. 响应式
 
-| 视口宽 | `--px` | 正文 | 布局 |
-| --- | --- | --- | --- |
-| > 960px | 3 | 24px | 菜单最宽 960px，对话框带肖像 |
-| 641–960px | 2 | 24px | 同上，零件小一号 |
-| ≤ 640px | 2 | 16px（2 倍屏 18px） | 对话框藏肖像；页签只留字；关于页上下排 |
+| 视口宽 | `--px` | 字 | 农场 `--wpx` | 布局 |
+| --- | --- | --- | --- | --- |
+| ≥ 1800px | 3 | 36px | 4 | 菜单最宽 1320px，对话框带肖像 |
+| 961–1799px | 2 | 24px | 3 | 菜单最宽 880px，对话框带肖像 |
+| 641–960px | 2 | 24px | 2 | 同上；告示牌便条在上、月历在下 |
+| ≤ 640px | 2 | 24px | 2 | 对话框藏肖像；页签只留图标；关于页上下排 |
+
+字永远是 12 × `--px`，和木框一样粗。
 
 ## 8. 验收
 
@@ -444,9 +470,11 @@ tools/third-party/         Kenney 原图和许可
 7. 关掉脚本，所有链接照样能走。
 8. 页面上没有假项目、假文章、假邮箱、假年限。
 9. 本地服务器打不开 `/docs/`、`/tools/`。
-10. Chrome 或 Safari 里换页没有闪白、没有字体跳动；世界和右上角面板不动。
+10. Chrome 或 Safari 里换页没有闪白、没有字体跳动；世界、右上角面板、页签不动；前进后退回到原来滚到的地方。
 11. 告示牌：没连钥匙时，钉上、做完、放回、改、撕都能用，刷新还在；连上私有仓库后，另一台设备能看到同样的便条；两台设备轮流改，谁的也不丢。
 12. 告示牌：390px 宽能钉、能点做完，月历七列不挤出屏幕。
+13. 打开声音以后在页签之间来回换页，音乐不断；点季节小牌，「跟着季节」的曲子跟着换；关掉就没声；刷新后要先点一下页面才出声。
+14. 每页最多一处「待补」，没有一排排的空格子。
 
 ## 9. 以后再加，现在不留坑
 

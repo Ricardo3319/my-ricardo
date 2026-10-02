@@ -224,10 +224,10 @@ def ui_parts():
                 img.set(x, y, rgb(red["o"]))
     parts["ui-close"] = img
 
-    # 名字卷轴：左右两个纸卷，中间一列纸面，CSS 横向拉伸中段。
-    end = [".ooo"] + ["orpq"] * 10 + [".ooo"]
-    band = "ojsssssssiio"
-    rows = [end[y] + band[y] + end[y][::-1].replace("r", "x").replace("q", "r").replace("x", "q") for y in range(12)]
+    # 名字卷轴：左右两个纸卷，中间一列纸面，CSS 横向拉伸中段。16 高，放大 2 倍正好装下一行 24px 的字。
+    end = [".ooo"] + ["orpq"] * 14 + [".ooo"]
+    band = "ojsssssssssssiio"
+    rows = [end[y] + band[y] + end[y][::-1].replace("r", "x").replace("q", "r").replace("x", "q") for y in range(16)]
     pal = dict(UI, r="#fff0cc", p="#f3c987", q="#cf9752")
     parts["ui-scroll"] = sprite(rows, pal)
 
@@ -429,6 +429,29 @@ HUD_ICONS = {
         ".o..b..o.",
         "....o....",
     ],
+    # 声音：小喇叭，开着带两道声波，关着打个叉
+    "sound-on": [
+        "....o....",
+        "...oo..o.",
+        "ooomo...o",
+        "ommmo.o.o",
+        "ommmo.o.o",
+        "ommmo.o.o",
+        "ooomo...o",
+        "...oo..o.",
+        "....o....",
+    ],
+    "sound-off": [
+        "....o....",
+        "...oo....",
+        "ooomo....",
+        "ommmo.o.o",
+        "ommmo..o.",
+        "ommmo.o.o",
+        "ooomo....",
+        "...oo....",
+        "....o....",
+    ],
     # 天上的太阳和月亮
     "sky-sun": [
         "..ooo..",
@@ -537,6 +560,18 @@ ICONS = {
         "oTtWWWWWtdo",
         "oTddddddddo",
         "ooooooooooo",
+    ],
+    # 近况、流水的一条：卷起来的小纸条，像任务日志里的一行
+    "icon-quest": [
+        ".oooooooo.",
+        "otTTTTTTto",
+        ".owwwwwwo.",
+        ".owkkkkwo.",
+        ".owwwwwwo.",
+        ".owkkkWwo.",
+        ".owwwwwwo.",
+        "otTTTTTTto",
+        ".oooooooo.",
     ],
     # 联系：信封
     "icon-contact": [

@@ -524,6 +524,20 @@ ICONS = {
         "oppppppppo",
         ".oooooooo.",
     ],
+    # 告示牌：木板上钉一张纸
+    "icon-board": [
+        "ooooooooooo",
+        "oTTTTTTTTTo",
+        "oTttRrtttdo",
+        "oTtwrwwwtdo",
+        "oTtwwwwwtdo",
+        "oTtwkkkwtdo",
+        "oTtwwwwwtdo",
+        "oTtwkkwWtdo",
+        "oTtWWWWWtdo",
+        "oTddddddddo",
+        "ooooooooooo",
+    ],
     # 联系：信封
     "icon-contact": [
         "ooooooooooo",

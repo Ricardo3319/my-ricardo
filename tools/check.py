@@ -18,15 +18,15 @@ PAGES = {
     "notes/index.html": ("笔记", "笔记", None),
     "notes/sample/index.html": ("版式样张", None, "笔记"),
     "contact/index.html": ("联系", "联系", None),
-    "board/index.html": ("告示牌", None, None),
+    "board/index.html": ("告示牌", "告示牌", None),
 }
 # 用信纸的页、用告示牌的页，其余内页用木框菜单。
 LETTERS = {"notes/sample/index.html", "contact/index.html"}
 BOARDS = {"board/index.html"}
 NAME = "Ricardo"
-TABS = ["关于", "近况", "作品", "笔记", "联系"]
+TABS = ["关于", "近况", "作品", "笔记", "联系", "告示牌"]
 CHOICES = [("about/", "关于"), ("now/", "近况"), ("work/", "作品"), ("notes/", "笔记"), ("contact/", "联系")]
-SITEMAP = ["农场", "关于", "近况", "流水", "作品", "笔记", "联系"]
+SITEMAP = ["农场", "关于", "近况", "流水", "作品", "笔记", "联系", "告示牌"]
 DISCLAIMER = "视觉受田园生活模拟游戏启发，非官方，与 ConcernedApe 无关。"
 GAME = ("星露谷", "Stardew", "鹈鹕镇", "Pelican Town", "祝尼魔", "Junimo", "刘易斯", "威利", "罗宾", "阿比盖尔", "皮埃尔")
 
@@ -197,9 +197,6 @@ def check_content(rel, html):
             bad("告示牌是本人自用的，应 noindex")
         if not re.search(r'<script src="\.\./js/board\.js"></script>\s*<script src="\.\./js/farm\.js"></script>', html):
             bad("告示牌应在 farm.js 前引 js/board.js")
-        for page in PAGES:
-            if page not in BOARDS and "board/" in read(page):
-                bad(f"{page} 链到了告示牌，告示牌不进页签和页脚")
     if rel == "contact/index.html":
         if "mailto:" not in html and "disabled" not in html:
             bad("联系页没有邮箱时，复制按钮应 disabled")

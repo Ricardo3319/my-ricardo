@@ -1,0 +1,971 @@
+/* 田园像素个人站。外观依据 docs/DESIGN.md，类名依据 docs/SPEC.md。
+   顺序：字体、令牌、世界、基础、HUD、对话框、肖像、菜单、页签、物品栏、内容、页脚、焦点、换页、中屏、窄屏、减少动效。 */
+
+/* ---------------------------------------------------------------- 字体 */
+
+@font-face {
+  font-family: "Ark Pixel";
+  src: url("../fonts/ark-pixel-12px-proportional-zh_hans.otf.woff2") format("woff2");
+  /* 字已经预加载。宁可晚一点出字，也不要先闪一下系统字体。 */
+  font-display: block;
+}
+
+/* ---------------------------------------------------------------- 令牌 */
+
+:root {
+  /* 1 个美术像素等于几个 CSS 像素。所有图都按它整数倍放大。 */
+  --px: 3px;
+  --pp: 3px; /* 肖像单独放大 */
+  /* 方舟像素是 12px 字，只用整数倍。 */
+  --fs: 24px;
+  --fs-big: 36px;
+  --lh: 1.5;
+
+  --ink: #5b2a12;
+  --ink-soft: #6e3b1b;
+  --menu: #ffc97f;
+  --menu-deep: #f7b768;
+  --slot: #ffe2ad;
+  --line: #d48f4c;
+  --cream: #fff1d6;
+  --shadow: #2a140a;
+  --focus: #3b1d0e;
+  --dim: rgb(30 16 8 / 0.55);
+
+  --edge: #4e974c;
+  --grass: #84c669;
+  --grass-dark: #4e974c;
+  color-scheme: light;
+}
+
+html[data-season="summer"] { --edge: #3d8543; --grass: #6fb752; --grass-dark: #3d8543; }
+html[data-season="autumn"] { --edge: #9a7c3c; --grass: #c8ad60; --grass-dark: #9a7c3c; }
+html[data-season="winter"] { --edge: #b3c4d6; --grass: #e6eef5; --grass-dark: #b3c4d6; }
+
+/* ---------------------------------------------------------------- 世界 */
+
+html {
+  background: var(--edge);
+}
+
+.world {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background: var(--edge) url("../img/farm-spring.png") no-repeat 50% 38%;
+  background-size: calc(896 * var(--px)) calc(512 * var(--px));
+  image-rendering: pixelated;
+}
+
+html[data-season="summer"] .world { background-image: url("../img/farm-summer.png"); }
+html[data-season="autumn"] .world { background-image: url("../img/farm-autumn.png"); }
+html[data-season="winter"] .world { background-image: url("../img/farm-winter.png"); }
+
+/* 天色跟着钟点：清晨偏暖，傍晚偏红，夜里压一层蓝。界面不跟着变。 */
+.world::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+}
+
+html[data-phase="dawn"] .world::before { background: rgb(255 170 110 / 0.12); }
+html[data-phase="dusk"] .world::before { background: rgb(160 70 90 / 0.2); }
+html[data-phase="night"] .world::before { background: rgb(14 22 62 / 0.45); }
+
+/* 打开菜单时，世界压暗，像游戏里一样。 */
+.inner .world::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--dim);
+}
+
+/* ---------------------------------------------------------------- 基础 */
+
+* { box-sizing: border-box; }
+
+body {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  min-height: 100vh;
+  min-height: 100svh;
+  color: var(--ink);
+  font-family: "Ark Pixel", "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+  font-size: var(--fs);
+  line-height: var(--lh);
+  -webkit-font-smoothing: none;
+  font-smooth: never;
+}
+
+a { color: inherit; }
+
+h1, h2, h3, p, ol, ul, dl, dd { margin: 0; }
+
+h1, h2, h3 { font: inherit; }
+
+img { display: block; }
+
+.pixel { image-rendering: pixelated; }
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.skip {
+  position: absolute;
+  left: calc(4 * var(--px));
+  top: -200px;
+  z-index: 9;
+  padding: var(--px) calc(4 * var(--px));
+  background: var(--menu);
+  border: var(--px) solid var(--focus);
+}
+
+.skip:focus { top: calc(4 * var(--px)); }
+
+/* 内容还没写的地方。 */
+.todo { color: var(--ink-soft); }
+
+/* ---------------------------------------------------------------- HUD：天色、日期、时间、季节 */
+
+.hud {
+  display: flex;
+  justify-content: flex-end;
+  padding: calc(4 * var(--px)) calc(4 * var(--px)) 0;
+}
+
+.hud-box {
+  display: flex;
+  align-items: center;
+  gap: calc(4 * var(--px));
+  padding: 0 calc(2 * var(--px)) 0 0;
+  border-style: solid;
+  border-width: calc(5 * var(--px));
+  border-image: url("../img/ui-tab.png") 5 fill / calc(5 * var(--px)) stretch;
+  image-rendering: pixelated;
+}
+
+/* 一小块天：颜色跟着钟点走，太阳或月亮沿弧线挪，底下一条当季的草。 */
+.hud-sky {
+  position: relative;
+  flex: none;
+  width: calc(34 * var(--px));
+  height: calc(20 * var(--px));
+  overflow: hidden;
+  border-style: solid;
+  border-width: calc(2 * var(--px));
+  border-image: url("../img/ui-slot.png") 2 / calc(2 * var(--px)) stretch;
+  background: linear-gradient(#6fbde0 0 35%, #92d0ea 35% 65%, #bfe4f1 65%) padding-box;
+}
+
+html[data-phase="dawn"] .hud-sky { background: linear-gradient(#8fb2dd 0 30%, #efb7a3 30% 60%, #ffd79b 60%) padding-box; }
+html[data-phase="dusk"] .hud-sky { background: linear-gradient(#6c6aa8 0 30%, #e08a7c 30% 60%, #f6b878 60%) padding-box; }
+html[data-phase="night"] .hud-sky { background: linear-gradient(#1b2244 0 45%, #2a3462 45%) padding-box; }
+
+.hud-sky::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: calc(4 * var(--px));
+  background: var(--grass);
+  box-shadow: inset 0 var(--px) 0 var(--grass-dark);
+}
+
+/* 夜里几颗星。 */
+.hud-sky::before {
+  content: "";
+  position: absolute;
+  left: calc(4 * var(--px));
+  top: calc(3 * var(--px));
+  width: var(--px);
+  height: var(--px);
+  background: #fff7d6;
+  box-shadow:
+    calc(9 * var(--px)) calc(4 * var(--px)) 0 #fff7d6,
+    calc(17 * var(--px)) calc(1 * var(--px)) 0 #fff7d6,
+    calc(23 * var(--px)) calc(6 * var(--px)) 0 #c9d6ff,
+    calc(4 * var(--px)) calc(8 * var(--px)) 0 #c9d6ff;
+  opacity: 0;
+}
+
+html[data-phase="night"] .hud-sky::before { opacity: 1; }
+
+.hud-sun {
+  position: absolute;
+  left: calc(var(--sx, 13) * var(--px));
+  top: calc(var(--sy, 3) * var(--px));
+  width: calc(7 * var(--px));
+  height: calc(7 * var(--px));
+  background: url("../img/sky-sun.png") 0 0 / 100% 100%;
+  image-rendering: pixelated;
+}
+
+html[data-phase="night"] .hud-sun { background-image: url("../img/sky-moon.png"); }
+
+.hud-lines p {
+  display: flex;
+  align-items: center;
+  gap: calc(4 * var(--px));
+  white-space: nowrap;
+}
+
+/* 换季：做成一个不起眼的季节小牌，点一下换到下一季，只在这次浏览里有效。 */
+.hud-season {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--px);
+  margin-left: auto;
+  padding: 0 var(--px);
+  border: 0;
+  background: none;
+  color: var(--ink-soft);
+  font: inherit;
+  cursor: pointer;
+}
+
+.hud-season:hover { background: var(--menu-deep); }
+
+.hud-season-icon {
+  width: calc(9 * var(--px));
+  height: calc(9 * var(--px));
+  background: url("../img/season-spring.png") 0 0 / 100% 100%;
+  image-rendering: pixelated;
+}
+
+.hud-season-name::before { content: "春"; }
+
+html[data-season="summer"] .hud-season-icon { background-image: url("../img/season-summer.png"); }
+html[data-season="autumn"] .hud-season-icon { background-image: url("../img/season-autumn.png"); }
+html[data-season="winter"] .hud-season-icon { background-image: url("../img/season-winter.png"); }
+html[data-season="summer"] .hud-season-name::before { content: "夏"; }
+html[data-season="autumn"] .hud-season-name::before { content: "秋"; }
+html[data-season="winter"] .hud-season-name::before { content: "冬"; }
+
+/* ---------------------------------------------------------------- 首页：对话框 */
+
+.stage {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: calc(6 * var(--px)) calc(6 * var(--px)) 0;
+}
+
+.dialogue {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: calc(6 * var(--px));
+  width: min(100%, calc(372 * var(--px)));
+  margin: 0 auto;
+}
+
+.dialogue-text {
+  padding: calc(4 * var(--px)) calc(6 * var(--px));
+  border-style: solid;
+  border-width: calc(8 * var(--px));
+  border-image: url("../img/ui-dialogue.png") 8 / calc(8 * var(--px)) stretch;
+  background: linear-gradient(#ffe6b4, #ffd391 55%, #f6b766) padding-box;
+  image-rendering: pixelated;
+  cursor: default;
+}
+
+.dialogue-line { min-height: calc(var(--fs) * var(--lh)); }
+
+.choices {
+  display: grid;
+  margin-top: calc(3 * var(--px));
+}
+
+.choices a {
+  display: flex;
+  align-items: center;
+  gap: calc(3 * var(--px));
+  padding: 0 calc(3 * var(--px));
+  text-decoration: none;
+}
+
+.choices a::before {
+  content: "";
+  flex: none;
+  width: calc(7 * var(--px));
+  height: calc(7 * var(--px));
+  background: url("../img/ui-pointer.png") 0 0 / 100% 100%;
+  image-rendering: pixelated;
+  visibility: hidden;
+}
+
+.choices a:hover,
+.choices a:focus-visible {
+  background: rgb(224 128 48 / 0.28);
+}
+
+.choices a:hover::before,
+.choices a:focus-visible::before { visibility: visible; }
+
+.choices small {
+  margin-left: auto;
+  font-size: inherit;
+  color: var(--ink-soft);
+}
+
+/* 打字时先不给选项，像游戏里一样。没有脚本时这个类不会出现。 */
+.is-typing .choices { visibility: hidden; }
+
+.dialogue-face {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: calc(2 * var(--px));
+  align-self: end;
+}
+
+/* ---------------------------------------------------------------- 肖像和名字卷轴 */
+
+.portrait-box {
+  padding: calc(2 * var(--px));
+  border-style: solid;
+  border-width: calc(8 * var(--px));
+  border-image: url("../img/ui-menu.png") 8 fill / calc(8 * var(--px)) stretch;
+  image-rendering: pixelated;
+}
+
+.portrait-box img {
+  width: calc(48 * var(--pp));
+  height: calc(48 * var(--pp));
+  background: linear-gradient(#9fd3ec 0 40%, #bfe3f2 40% 75%, #e3efe0 75%);
+  image-rendering: pixelated;
+}
+
+.nameplate {
+  height: calc(12 * var(--px));
+  padding: 0 calc(2 * var(--px));
+  border-style: solid;
+  border-width: 0 calc(4 * var(--px));
+  border-image: url("../img/ui-scroll.png") 0 4 fill / 0 calc(4 * var(--px)) stretch;
+  line-height: calc(12 * var(--px));
+  white-space: nowrap;
+  image-rendering: pixelated;
+}
+
+/* ---------------------------------------------------------------- 内页：菜单窗 */
+
+.menu-wrap {
+  position: relative;
+  width: min(100% - 12 * var(--px), calc(320 * var(--px)));
+  margin: calc(4 * var(--px)) auto 0;
+}
+
+.menu {
+  position: relative;
+  z-index: 1;
+  padding: calc(8 * var(--px));
+  border-style: solid;
+  border-width: calc(8 * var(--px));
+  border-image: url("../img/ui-menu.png") 8 fill / calc(8 * var(--px)) stretch;
+  image-rendering: pixelated;
+}
+
+/* 信纸：没有木框，纸边不规整，纸上有纤维。 */
+.letter {
+  position: relative;
+  z-index: 1;
+  padding: calc(8 * var(--px)) calc(12 * var(--px)) calc(10 * var(--px));
+  border-style: solid;
+  border-width: calc(6 * var(--px));
+  border-image: url("../img/ui-letter.png") 6 / calc(6 * var(--px)) repeat;
+  background: #ffefc9 url("../img/paper-grain.png") 0 0 / calc(16 * var(--px)) padding-box;
+  filter: drop-shadow(calc(2 * var(--px)) calc(2 * var(--px)) 0 rgb(20 10 5 / 0.45));
+  image-rendering: pixelated;
+}
+
+.letter .meta {
+  color: var(--ink-soft);
+}
+
+.letter .meta + .prose { margin-top: calc(6 * var(--px)); }
+
+.letter ul {
+  padding-left: 1.2em;
+}
+
+.letter li + li { margin-top: var(--px); }
+
+.letter .prose p + p,
+.letter .prose p + ul,
+.letter .prose ul + p { margin-top: calc(4 * var(--px)); }
+
+.letter .prose h2 { margin-top: calc(8 * var(--px)); }
+
+.sign {
+  margin-top: calc(8 * var(--px));
+  text-align: right;
+}
+
+.close {
+  position: absolute;
+  top: calc(-14 * var(--px));
+  right: calc(-14 * var(--px));
+  width: calc(13 * var(--px));
+  height: calc(13 * var(--px));
+  background: url("../img/ui-close.png") 0 0 / 100% 100%;
+  image-rendering: pixelated;
+}
+
+.close:hover { filter: brightness(1.15); }
+
+/* ---------------------------------------------------------------- 页签：方块，图标在上，字在下 */
+
+.tabs {
+  position: relative;
+  display: flex;
+  gap: var(--px);
+  padding-left: calc(8 * var(--px));
+  margin-bottom: calc(-6 * var(--px));
+}
+
+.tabs a {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--px);
+  min-width: calc(24 * var(--px));
+  padding: var(--px) var(--px) calc(4 * var(--px));
+  border-style: solid;
+  border-width: calc(5 * var(--px));
+  border-image: url("../img/ui-tab-dim.png") 5 fill / calc(5 * var(--px)) stretch;
+  font-size: 12px;
+  line-height: 1;
+  text-decoration: none;
+  image-rendering: pixelated;
+}
+
+.tabs a:hover,
+.tabs a:focus-visible { border-image-source: url("../img/ui-tab.png"); }
+
+/* 聚焦的页签浮到菜单上面，焦点框才不会被压住。 */
+.tabs a:focus-visible {
+  position: relative;
+  z-index: 3;
+}
+
+.tabs img {
+  width: calc(11 * var(--px));
+  height: calc(11 * var(--px));
+}
+
+/* 当前页签压到菜单边框上，盖住它。 */
+.tabs a[aria-current="page"],
+.tabs a.is-section {
+  position: relative;
+  z-index: 2;
+  border-image-source: url("../img/ui-tab.png");
+  transform: translateY(calc(3 * var(--px)));
+}
+
+/* ---------------------------------------------------------------- 物品栏 */
+
+/* 一排格子。空格子也是物品栏的一部分，不放假东西进去。 */
+.bag + .empty { margin-top: calc(2 * var(--px)); }
+
+.bag {
+  display: grid;
+  grid-template-columns: repeat(12, calc(18 * var(--px)));
+  gap: var(--px);
+  justify-content: center;
+  padding: 0;
+  list-style: none;
+}
+
+.slot {
+  position: relative;
+  aspect-ratio: 1;
+  border-style: solid;
+  border-width: calc(2 * var(--px));
+  border-image: url("../img/ui-slot.png") 2 / calc(2 * var(--px)) stretch;
+  background: var(--slot) padding-box;
+  image-rendering: pixelated;
+}
+
+.bag-note {
+  margin-top: calc(2 * var(--px));
+  font-size: 12px;
+  text-align: center;
+}
+
+/* 横穿菜单的木条，两头压进木框里。 */
+.divider {
+  height: calc(6 * var(--px));
+  margin: calc(6 * var(--px)) calc(-11 * var(--px));
+  border-style: solid;
+  border-width: 0 calc(2 * var(--px));
+  border-image: url("../img/ui-divider.png") 0 2 fill / 0 calc(2 * var(--px)) stretch;
+  image-rendering: pixelated;
+}
+
+/* ---------------------------------------------------------------- 内容 */
+
+.panel h1 {
+  margin-bottom: calc(3 * var(--px));
+  font-size: var(--fs-big);
+  line-height: 1.5;
+}
+
+.page-head h1 { margin: 0; }
+
+.panel h2 {
+  margin: 0 0 calc(2 * var(--px));
+  padding-bottom: var(--px);
+  border-bottom: var(--px) solid var(--line);
+}
+
+.panel p + p { margin-top: calc(3 * var(--px)); }
+
+.panel section + section { margin-top: calc(8 * var(--px)); }
+
+/* 标题一行：左标题，右边浅色的日期之类。 */
+.page-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0 calc(6 * var(--px));
+  margin-bottom: calc(4 * var(--px));
+}
+
+.stamp {
+  color: var(--ink-soft);
+  white-space: nowrap;
+}
+
+.back {
+  display: inline-block;
+  margin-bottom: calc(2 * var(--px));
+  color: var(--ink-soft);
+  text-decoration: none;
+}
+
+.back:hover { text-decoration: underline; }
+
+/* 空状态：一个凹格，字居中。 */
+.empty {
+  padding: calc(4 * var(--px));
+  border-style: solid;
+  border-width: calc(2 * var(--px));
+  border-image: url("../img/ui-slot.png") 2 / calc(2 * var(--px)) stretch;
+  background: var(--slot) padding-box;
+  color: var(--ink-soft);
+  text-align: center;
+  image-rendering: pixelated;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: calc(4 * var(--px));
+  margin-top: calc(5 * var(--px));
+}
+
+/* 小木牌按钮。 */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  padding: 0 calc(3 * var(--px));
+  border-style: solid;
+  border-width: calc(4 * var(--px));
+  border-image: url("../img/ui-button.png") 4 fill / calc(4 * var(--px)) stretch;
+  background: none;
+  color: var(--ink);
+  font: inherit;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+  image-rendering: pixelated;
+}
+
+.btn:hover { filter: brightness(1.06); }
+
+.btn:active {
+  border-image-source: url("../img/ui-button-down.png");
+  transform: translateY(var(--px));
+}
+
+.btn:disabled {
+  border-image-source: url("../img/ui-button-off.png");
+  color: var(--ink-soft);
+  filter: none;
+  transform: none;
+  cursor: not-allowed;
+}
+
+.hint {
+  margin-top: calc(2 * var(--px));
+  color: var(--ink-soft);
+}
+
+/* 联系页：地址和抄下按钮一行。 */
+.copy-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: calc(2 * var(--px)) calc(6 * var(--px));
+}
+
+/* 关于页：左边人像，右边名牌一样的几行。 */
+.character {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: calc(10 * var(--px));
+  align-items: start;
+}
+
+.profile-face {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: calc(2 * var(--px));
+}
+
+.greet {
+  margin-bottom: calc(4 * var(--px));
+  padding: calc(2 * var(--px)) calc(4 * var(--px));
+  border-style: solid;
+  border-width: calc(2 * var(--px));
+  border-image: url("../img/ui-slot.png") 2 / calc(2 * var(--px)) stretch;
+  background: var(--slot) padding-box;
+  image-rendering: pixelated;
+}
+
+/* 一行一条：履历、关于页的几行、流水、笔记目录都用它。 */
+.rows {
+  display: grid;
+  gap: calc(2 * var(--px));
+  padding: 0;
+  list-style: none;
+}
+
+.row {
+  display: flex;
+  gap: calc(6 * var(--px));
+  padding: var(--px) calc(4 * var(--px));
+  border-style: solid;
+  border-width: calc(2 * var(--px));
+  border-image: url("../img/ui-slot.png") 2 / calc(2 * var(--px)) stretch;
+  background: var(--slot) padding-box;
+  image-rendering: pixelated;
+}
+
+.row-key {
+  flex: none;
+  min-width: 5em;
+  color: var(--ink-soft);
+}
+
+/* 整行是链接的时候（笔记目录）。 */
+a.row {
+  text-decoration: none;
+}
+
+a.row:hover { background-color: var(--menu-deep); }
+
+.row-note {
+  color: var(--ink-soft);
+}
+
+/* 状态标签：一定写字，颜色只是辅助。 */
+.tag {
+  flex: none;
+  align-self: center;
+  padding: 0 calc(2 * var(--px));
+  border: var(--px) solid var(--focus);
+  background: #ffd34d;
+  color: var(--focus);
+  font-size: 12px;
+  line-height: 2;
+  white-space: nowrap;
+}
+
+.tag[data-status="stuck"] { background: #f09a84; }
+.tag[data-status="done"] { background: #9fd47a; }
+.tag[data-status="shelved"] { background: #d8ccb6; }
+
+.entry-link {
+  margin-left: auto;
+  white-space: nowrap;
+}
+
+/* 流水按月：当月展开，更早的折起来。 */
+.month + .month { margin-top: calc(6 * var(--px)); }
+
+.month summary {
+  padding: var(--px) calc(4 * var(--px));
+  border-style: solid;
+  border-width: calc(2 * var(--px));
+  border-image: url("../img/ui-slot.png") 2 / calc(2 * var(--px)) stretch;
+  background: var(--menu-deep) padding-box;
+  list-style: none;
+  cursor: pointer;
+  image-rendering: pixelated;
+}
+
+.month summary::-webkit-details-marker { display: none; }
+
+.month summary::before { content: "＋ "; }
+
+.month[open] summary::before { content: "－ "; }
+
+.month[open] summary { margin-bottom: calc(2 * var(--px)); }
+
+/* 作品：一个项目一条，左边一格放物件。 */
+.bundle {
+  display: grid;
+  grid-template-columns: calc(18 * var(--px)) 1fr;
+  gap: calc(6 * var(--px));
+  align-items: start;
+  scroll-margin-top: calc(10 * var(--px));
+}
+
+.bundle + .bundle { margin-top: calc(6 * var(--px)); }
+
+.bundle h2 {
+  border: 0;
+  padding: 0;
+}
+
+.bundle-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: calc(4 * var(--px));
+  margin-top: calc(2 * var(--px));
+}
+
+/* 格子里的物件和提示框。提示框是缩小的木框：名字、浅色类别、一句说明。 */
+.item {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+}
+
+.slot img {
+  width: calc(16 * var(--px));
+  height: calc(16 * var(--px));
+  image-rendering: pixelated;
+}
+
+.tip {
+  position: absolute;
+  left: 50%;
+  /* 往下弹：往上会被压在边框上的当前页签挡住。 */
+  top: calc(100% + 2 * var(--px));
+  z-index: 5;
+  display: none;
+  width: max-content;
+  max-width: calc(110 * var(--px));
+  padding: 0 calc(2 * var(--px));
+  border-style: solid;
+  border-width: calc(5 * var(--px));
+  border-image: url("../img/ui-tab.png") 5 fill / calc(5 * var(--px)) stretch;
+  transform: translateX(-50%);
+  text-align: left;
+  image-rendering: pixelated;
+}
+
+.tip b {
+  display: block;
+  font-weight: normal;
+}
+
+.tip small {
+  display: block;
+  color: var(--ink-soft);
+  font-size: inherit;
+}
+
+.slot:hover .tip,
+.slot:focus-within .tip { display: block; }
+
+/* 靠边的格子，提示框往里靠，不出框。 */
+.bag .slot:nth-child(12n + 1) .tip,
+.bag .slot:nth-child(12n + 2) .tip {
+  left: 0;
+  transform: none;
+}
+
+.bag .slot:nth-child(12n) .tip,
+.bag .slot:nth-child(12n + 11) .tip {
+  left: auto;
+  right: 0;
+  transform: none;
+}
+
+/* ---------------------------------------------------------------- 页脚 */
+
+.credit {
+  width: min(100% - 12 * var(--px), calc(372 * var(--px)));
+  margin: auto auto 0;
+  padding: calc(4 * var(--px)) 0 calc(6 * var(--px));
+  color: var(--cream);
+  font-size: 12px;
+  line-height: 2;
+  text-align: center;
+  text-shadow: 1px 1px 0 var(--shadow), 2px 2px 0 var(--shadow);
+}
+
+/* 首页没有压暗，声明垫一块暗底才读得清。 */
+.home .credit p {
+  display: table;
+  margin: 0 auto;
+  padding: 0 calc(2 * var(--px));
+  background: var(--dim);
+}
+
+.credit a {
+  display: inline-block;
+  padding: 0 0.5em;
+  white-space: nowrap;
+}
+
+/* ---------------------------------------------------------------- 焦点 */
+
+:focus-visible {
+  outline: var(--px) solid var(--focus);
+  outline-offset: var(--px);
+}
+
+.credit :focus-visible,
+.skip:focus-visible { outline-color: var(--cream); }
+
+:focus:not(:focus-visible) { outline: none; }
+
+/* ---------------------------------------------------------------- 换页：同源跨页过渡 */
+
+/* 世界、右上角面板留在原地；菜单在内页之间就地换内容，从农场进出时浮起或落下。
+   浏览器不支持时，照常换页。 */
+@view-transition {
+  navigation: auto;
+}
+
+.world { view-transition-name: world; }
+.hud { view-transition-name: hud; }
+.dialogue { view-transition-name: dialogue; }
+.menu-wrap { view-transition-name: menu; }
+.credit { view-transition-name: credit; }
+
+::view-transition-group(*),
+::view-transition-old(*),
+::view-transition-new(*) {
+  animation-duration: 260ms;
+  animation-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+::view-transition-new(menu):only-child,
+::view-transition-new(dialogue):only-child {
+  animation: panel-in 260ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+::view-transition-old(menu):only-child,
+::view-transition-old(dialogue):only-child {
+  animation: panel-out 180ms ease-in both;
+}
+
+@keyframes panel-in {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+}
+
+@keyframes panel-out {
+  to {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+}
+
+/* ---------------------------------------------------------------- 中屏 */
+
+@media (max-width: 960px) {
+  :root {
+    --px: 2px;
+    --pp: 2px;
+  }
+}
+
+/* ---------------------------------------------------------------- 窄屏 */
+
+@media (max-width: 640px) {
+  :root {
+    --fs: 16px;
+    --fs-big: 24px;
+  }
+
+  .dialogue { grid-template-columns: 1fr; }
+
+  .dialogue-face {
+    order: -1;
+    align-self: start;
+    margin-bottom: calc(-4 * var(--px));
+  }
+
+  .dialogue-face .portrait-box { display: none; }
+
+  .character { grid-template-columns: 1fr; justify-items: center; }
+
+  .character-info { justify-self: stretch; }
+
+  .bag { grid-template-columns: repeat(6, calc(18 * var(--px))); }
+
+  .bag .slot:nth-child(6n + 1) .tip {
+    left: 0;
+    right: auto;
+    transform: none;
+  }
+
+  .bag .slot:nth-child(6n) .tip {
+    left: auto;
+    right: 0;
+    transform: none;
+  }
+
+  .letter { padding: calc(6 * var(--px)) calc(6 * var(--px)) calc(8 * var(--px)); }
+
+  .row { flex-wrap: wrap; gap: 0 calc(4 * var(--px)); }
+
+  .tabs { padding-left: calc(3 * var(--px)); }
+
+  .tabs a { min-width: calc(21 * var(--px)); }
+
+  .close {
+    top: calc(-11 * var(--px));
+    right: calc(-6 * var(--px));
+  }
+}
+
+/* 2 倍屏上 18px 正好是每个字像素 3 个物理像素。 */
+@media (max-width: 640px) and (resolution: 2dppx) {
+  :root { --fs: 18px; }
+}
+
+/* ---------------------------------------------------------------- 减少动效 */
+
+@media (prefers-reduced-motion: reduce) {
+  @view-transition {
+    navigation: none;
+  }
+
+  *, *::before, *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}

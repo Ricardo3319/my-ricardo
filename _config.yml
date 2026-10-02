@@ -1,0 +1,5 @@
+# GitHub Pages 用 Jekyll 发布仓库根目录。下面这些只给本地用，不发布。
+exclude:
+  - AGENTS.md
+  - docs/
+  - tools/

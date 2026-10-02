@@ -1,96 +1,71 @@
 <!DOCTYPE html>
-<html lang="zh-CN" data-season="spring">
+<html lang="zh-CN" data-season="spring" data-phase="day">
 <head>
-  <script>
-    (function () {
-      var month = new Date().getMonth() + 1;
-      var season = month >= 3 && month <= 5 ? "spring" : month >= 6 && month <= 8 ? "summer" : month >= 9 && month <= 11 ? "autumn" : "winter";
-      var colors = { spring: "#84c669", summer: "#6eb058", autumn: "#a8b056", winter: "#cedad6" };
-      try {
-        var saved = localStorage.getItem("farm.season");
-        if (colors[saved]) season = saved;
-      } catch (e) {}
-      var root = document.documentElement;
-      root.setAttribute("data-season", season);
-      root.style.backgroundColor = colors[season];
-      var link = document.createElement("link");
-      link.rel = "preload";
-      link.as = "image";
-      link.href = "assets/ground-" + season + ".png";
-      document.head.appendChild(link);
-        var extra = document.createElement("link");
-        extra.rel = "preload";
-        extra.as = "image";
-        extra.href = "assets/scene-" + season + ".png";
-        document.head.appendChild(extra);
-    })();
-  </script>
-  <style>
-    html { color-scheme: light; background: #84c669; }
-    html[data-season="summer"] { background: #6eb058; }
-    html[data-season="autumn"] { background: #a8b056; }
-    html[data-season="winter"] { background: #cedad6; }
-    body { margin: 0; background: transparent; }
-    .site-header { background: #f4ead0; border-bottom: 4px solid #5a3018; }
-  </style>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>里卡多</title>
-  <meta name="description" content="里卡多的个人网站。">
-  <meta property="og:title" content="里卡多">
-  <meta property="og:description" content="里卡多的个人网站。">
+  <title>Ricardo</title>
+  <meta name="description" content="Ricardo 的个人网站。">
+  <meta property="og:title" content="Ricardo">
+  <meta property="og:description" content="Ricardo 的个人网站。">
   <meta property="og:type" content="website">
-  <link rel="stylesheet" href="css/site.css">
+  <script>
+    (function () {
+      var d = document.documentElement, now = new Date(), h = now.getHours();
+      var s = ["winter", "winter", "spring", "spring", "spring", "summer", "summer", "summer", "autumn", "autumn", "autumn", "winter"][now.getMonth()];
+      try {
+        var v = sessionStorage.getItem("farm.season");
+        if (/^(spring|summer|autumn|winter)$/.test(v)) s = v;
+      } catch (e) {}
+      d.setAttribute("data-season", s);
+      d.setAttribute("data-phase", h < 5 || h >= 19 ? "night" : h < 7 ? "dawn" : h < 17 ? "day" : "dusk");
+      var l = document.createElement("link");
+      l.rel = "preload";
+      l.as = "image";
+      l.href = "img/farm-" + s + ".png";
+      document.head.appendChild(l);
+    })();
+  </script>
+  <link rel="preload" href="fonts/ark-pixel-12px-proportional-zh_hans.otf.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="css/farm.css">
+  <link rel="icon" href="img/favicon.png">
 </head>
-<body>
-  <a class="skip" href="#content">跳到内容</a>
-  <header class="site-header">
-    <div class="header-inner">
-      <a class="site-title" href="./">里卡多</a>
-      <div class="header-tools">
-        <p class="today"><span data-season-label>春</span> · <time data-today>今天</time></p>
-        <div class="season-switch" role="group" aria-label="季节">
-          <button type="button" data-season-btn="spring">春</button>
-          <button type="button" data-season-btn="summer">夏</button>
-          <button type="button" data-season-btn="autumn">秋</button>
-          <button type="button" data-season-btn="winter">冬</button>
-        </div>
+<body class="home">
+  <a class="skip" href="#content">跳到对话</a>
+  <div class="world" aria-hidden="true"></div>
+
+  <header class="hud">
+    <div class="hud-box">
+      <div class="hud-sky" aria-hidden="true"><span class="hud-sun"></span></div>
+      <div class="hud-lines">
+        <p><time data-today>今天</time></p>
+        <p><time data-clock>现在</time><button class="hud-season" type="button" data-season-cycle aria-label="换季"><span class="hud-season-icon"></span><span class="hud-season-name"></span></button></p>
       </div>
-      <nav class="site-nav" aria-label="栏目">
-        <a href="about/">关于</a>
-        <a href="now/">近况</a>
-        <a href="work/">作品</a>
-        <a href="notes/">笔记</a>
-        <a href="contact/">联系</a>
-      </nav>
     </div>
   </header>
-  <div class="farm-hero" aria-hidden="true"></div>
-  <div class="wrap">
-    <main class="page" id="content">
-      <section class="hero">
-        <div class="portrait" aria-hidden="true">里</div>
-        <div>
-          <h1>里卡多</h1>
-          <p class="lede">一句话介绍待补。</p>
-          <p><a href="now/">现在在做什么：待补。</a></p>
-          <p><a class="btn" href="about/">关于我</a></p>
-        </div>
-      </section>
-    </main>
-    <footer class="site-foot">
-      <p>视觉受田园生活模拟游戏启发，非官方，与 ConcernedApe 无关。</p>
-      <p class="map">
-        <a href="./">首页</a>
-        <a href="about/">关于</a>
-        <a href="now/">近况</a>
-        <a href="log/">流水</a>
-        <a href="work/">作品</a>
-        <a href="notes/">笔记</a>
-        <a href="contact/">联系</a>
-      </p>
-    </footer>
-  </div>
-  <script src="js/site.js"></script>
+
+  <main class="stage" id="content">
+    <section class="dialogue" data-type-box aria-labelledby="speaker">
+      <div class="dialogue-text">
+        <p class="dialogue-line" data-type>你好，我是 Ricardo。<span class="todo">一句话介绍待补。</span></p>
+        <nav class="choices" aria-label="栏目">
+          <a href="about/">你是做什么的？<small>关于</small></a>
+          <a href="now/">最近在忙什么？<small>近况</small></a>
+          <a href="work/">做过些什么？<small>作品</small></a>
+          <a href="notes/">有写东西吗？<small>笔记</small></a>
+          <a href="contact/">怎么联系你？<small>联系</small></a>
+        </nav>
+      </div>
+      <div class="dialogue-face">
+        <div class="portrait-box"><img src="img/portrait.png" width="144" height="144" alt=""></div>
+        <h1 class="nameplate" id="speaker">Ricardo</h1>
+      </div>
+    </section>
+  </main>
+
+  <footer class="credit">
+    <p>视觉受田园生活模拟游戏启发，非官方，与 ConcernedApe 无关。</p>
+    <p><a href="about/">关于</a><a href="now/">近况</a><a href="log/">流水</a><a href="work/">作品</a><a href="notes/">笔记</a><a href="contact/">联系</a></p>
+  </footer>
+  <script src="js/farm.js"></script>
 </body>
 </html>

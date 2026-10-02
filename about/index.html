@@ -1,95 +1,103 @@
 <!DOCTYPE html>
-<html lang="zh-CN" data-season="spring">
+<html lang="zh-CN" data-season="spring" data-phase="day">
 <head>
-  <script>
-    (function () {
-      var month = new Date().getMonth() + 1;
-      var season = month >= 3 && month <= 5 ? "spring" : month >= 6 && month <= 8 ? "summer" : month >= 9 && month <= 11 ? "autumn" : "winter";
-      var colors = { spring: "#84c669", summer: "#6eb058", autumn: "#a8b056", winter: "#cedad6" };
-      try {
-        var saved = localStorage.getItem("farm.season");
-        if (colors[saved]) season = saved;
-      } catch (e) {}
-      var root = document.documentElement;
-      root.setAttribute("data-season", season);
-      root.style.backgroundColor = colors[season];
-      var link = document.createElement("link");
-      link.rel = "preload";
-      link.as = "image";
-      link.href = "../assets/ground-" + season + ".png";
-      document.head.appendChild(link);
-    })();
-  </script>
-  <style>
-    html { color-scheme: light; background: #84c669; }
-    html[data-season="summer"] { background: #6eb058; }
-    html[data-season="autumn"] { background: #a8b056; }
-    html[data-season="winter"] { background: #cedad6; }
-    body { margin: 0; background: transparent; }
-    .site-header { background: #f4ead0; border-bottom: 4px solid #5a3018; }
-  </style>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>关于 · 里卡多</title>
-  <meta name="description" content="里卡多是谁，现在做什么。">
-  <meta property="og:title" content="关于 · 里卡多">
-  <meta property="og:description" content="里卡多是谁，现在做什么。">
+  <title>关于 · Ricardo</title>
+  <meta name="description" content="Ricardo 是谁，现在做什么。">
+  <meta property="og:title" content="关于 · Ricardo">
+  <meta property="og:description" content="Ricardo 是谁，现在做什么。">
   <meta property="og:type" content="website">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="../css/site.css">
+  <script>
+    (function () {
+      var d = document.documentElement, now = new Date(), h = now.getHours();
+      var s = ["winter", "winter", "spring", "spring", "spring", "summer", "summer", "summer", "autumn", "autumn", "autumn", "winter"][now.getMonth()];
+      try {
+        var v = sessionStorage.getItem("farm.season");
+        if (/^(spring|summer|autumn|winter)$/.test(v)) s = v;
+      } catch (e) {}
+      d.setAttribute("data-season", s);
+      d.setAttribute("data-phase", h < 5 || h >= 19 ? "night" : h < 7 ? "dawn" : h < 17 ? "day" : "dusk");
+      var l = document.createElement("link");
+      l.rel = "preload";
+      l.as = "image";
+      l.href = "../img/farm-" + s + ".png";
+      document.head.appendChild(l);
+    })();
+  </script>
+  <link rel="preload" href="../fonts/ark-pixel-12px-proportional-zh_hans.otf.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="../css/farm.css">
+  <link rel="icon" href="../img/favicon.png">
 </head>
-<body>
+<body class="inner">
   <a class="skip" href="#content">跳到内容</a>
-  <header class="site-header">
-    <div class="header-inner">
-      <a class="site-title" href="../">里卡多</a>
-      <div class="header-tools">
-        <p class="today"><span data-season-label>春</span> · <time data-today>今天</time></p>
-        <div class="season-switch" role="group" aria-label="季节">
-          <button type="button" data-season-btn="spring">春</button>
-          <button type="button" data-season-btn="summer">夏</button>
-          <button type="button" data-season-btn="autumn">秋</button>
-          <button type="button" data-season-btn="winter">冬</button>
-        </div>
+  <div class="world" aria-hidden="true"></div>
+
+  <header class="hud">
+    <div class="hud-box">
+      <div class="hud-sky" aria-hidden="true"><span class="hud-sun"></span></div>
+      <div class="hud-lines">
+        <p><time data-today>今天</time></p>
+        <p><time data-clock>现在</time><button class="hud-season" type="button" data-season-cycle aria-label="换季"><span class="hud-season-icon"></span><span class="hud-season-name"></span></button></p>
       </div>
-      <nav class="site-nav" aria-label="栏目">
-        <a href="./" aria-current="page">关于</a>
-        <a href="../now/">近况</a>
-        <a href="../work/">作品</a>
-        <a href="../notes/">笔记</a>
-        <a href="../contact/">联系</a>
-      </nav>
     </div>
   </header>
-  <div class="wrap">
-    <main class="page" id="content">
-      <h1>关于</h1>
-      <div class="prose">
-        <h2>我是谁</h2>
-        <p>待补。</p>
-        <h2>现在做什么</h2>
-        <p>待补。</p>
-        <h2>履历</h2>
-        <ol class="timeline">
-          <li>年份待补 · 待补</li>
+
+  <div class="menu-wrap">
+    <nav class="tabs" aria-label="栏目">
+      <a href="./" aria-current="page"><img class="pixel" src="../img/icon-about.png" width="33" height="33" alt=""><span>关于</span></a>
+      <a href="../now/"><img class="pixel" src="../img/icon-now.png" width="30" height="33" alt=""><span>近况</span></a>
+      <a href="../work/"><img class="pixel" src="../img/icon-work.png" width="33" height="24" alt=""><span>作品</span></a>
+      <a href="../notes/"><img class="pixel" src="../img/icon-notes.png" width="30" height="33" alt=""><span>笔记</span></a>
+      <a href="../contact/"><img class="pixel" src="../img/icon-contact.png" width="33" height="24" alt=""><span>联系</span></a>
+    </nav>
+    <main class="panel menu" id="content">
+      <a class="close" href="../" aria-label="关上，回农场"></a>
+      <h1 class="sr-only">关于</h1>
+
+      <section aria-labelledby="bag-title">
+        <h2 class="sr-only" id="bag-title">随身物品</h2>
+        <ul class="bag">
+          <li class="slot"></li><li class="slot"></li><li class="slot"></li><li class="slot"></li>
+          <li class="slot"></li><li class="slot"></li><li class="slot"></li><li class="slot"></li>
+          <li class="slot"></li><li class="slot"></li><li class="slot"></li><li class="slot"></li>
+        </ul>
+        <p class="bag-note todo">随身物品待补</p>
+      </section>
+
+      <hr class="divider">
+
+      <section class="character" aria-labelledby="who">
+        <div class="profile-face">
+          <div class="portrait-box"><img src="../img/portrait.png" width="144" height="144" alt=""></div>
+          <p class="nameplate">Ricardo</p>
+        </div>
+        <div class="character-info">
+          <h2 class="sr-only" id="who">我是谁</h2>
+          <p class="greet">进来吧。椅子还有空。</p>
+          <dl class="rows">
+            <div class="row"><dt class="row-key">我是谁</dt><dd class="todo">待补</dd></div>
+            <div class="row"><dt class="row-key">现在做什么</dt><dd class="todo">待补</dd></div>
+            <div class="row"><dt class="row-key">不忙的时候</dt><dd class="todo">待补</dd></div>
+          </dl>
+        </div>
+      </section>
+
+      <hr class="divider">
+
+      <section aria-labelledby="cv">
+        <h2 id="cv">履历</h2>
+        <ol class="rows">
+          <li class="row"><span class="row-key todo">年份待补</span><span class="todo">待补</span></li>
         </ol>
-      </div>
+      </section>
     </main>
-    <footer class="site-foot">
-      <p>视觉受田园生活模拟游戏启发，非官方，与 ConcernedApe 无关。</p>
-      <p class="map">
-        <a href="../">首页</a>
-        <a href="./">关于</a>
-        <a href="../now/">近况</a>
-        <a href="../log/">流水</a>
-        <a href="../work/">作品</a>
-        <a href="../notes/">笔记</a>
-        <a href="../contact/">联系</a>
-      </p>
-    </footer>
   </div>
-  <script src="../js/site.js"></script>
+
+  <footer class="credit">
+    <p>视觉受田园生活模拟游戏启发，非官方，与 ConcernedApe 无关。</p>
+    <p><a href="../">农场</a><a href="./">关于</a><a href="../now/">近况</a><a href="../log/">流水</a><a href="../work/">作品</a><a href="../notes/">笔记</a><a href="../contact/">联系</a></p>
+  </footer>
+  <script src="../js/farm.js"></script>
 </body>
 </html>

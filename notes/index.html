@@ -1,86 +1,70 @@
 <!DOCTYPE html>
-<html lang="zh-CN" data-season="spring">
+<html lang="zh-CN" data-season="spring" data-phase="day">
 <head>
-  <script>
-    (function () {
-      var month = new Date().getMonth() + 1;
-      var season = month >= 3 && month <= 5 ? "spring" : month >= 6 && month <= 8 ? "summer" : month >= 9 && month <= 11 ? "autumn" : "winter";
-      var colors = { spring: "#84c669", summer: "#6eb058", autumn: "#a8b056", winter: "#cedad6" };
-      try {
-        var saved = localStorage.getItem("farm.season");
-        if (colors[saved]) season = saved;
-      } catch (e) {}
-      var root = document.documentElement;
-      root.setAttribute("data-season", season);
-      root.style.backgroundColor = colors[season];
-      var link = document.createElement("link");
-      link.rel = "preload";
-      link.as = "image";
-      link.href = "../assets/ground-" + season + ".png";
-      document.head.appendChild(link);
-    })();
-  </script>
-  <style>
-    html { color-scheme: light; background: #84c669; }
-    html[data-season="summer"] { background: #6eb058; }
-    html[data-season="autumn"] { background: #a8b056; }
-    html[data-season="winter"] { background: #cedad6; }
-    body { margin: 0; background: transparent; }
-    .site-header { background: #f4ead0; border-bottom: 4px solid #5a3018; }
-  </style>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>笔记 · 里卡多</title>
+  <title>笔记 · Ricardo</title>
   <meta name="description" content="值得留下的笔记。现在还空着。">
-  <meta property="og:title" content="笔记 · 里卡多">
+  <meta property="og:title" content="笔记 · Ricardo">
   <meta property="og:description" content="值得留下的笔记。现在还空着。">
   <meta property="og:type" content="website">
-  <link rel="stylesheet" href="../css/site.css">
+  <script>
+    (function () {
+      var d = document.documentElement, now = new Date(), h = now.getHours();
+      var s = ["winter", "winter", "spring", "spring", "spring", "summer", "summer", "summer", "autumn", "autumn", "autumn", "winter"][now.getMonth()];
+      try {
+        var v = sessionStorage.getItem("farm.season");
+        if (/^(spring|summer|autumn|winter)$/.test(v)) s = v;
+      } catch (e) {}
+      d.setAttribute("data-season", s);
+      d.setAttribute("data-phase", h < 5 || h >= 19 ? "night" : h < 7 ? "dawn" : h < 17 ? "day" : "dusk");
+      var l = document.createElement("link");
+      l.rel = "preload";
+      l.as = "image";
+      l.href = "../img/farm-" + s + ".png";
+      document.head.appendChild(l);
+    })();
+  </script>
+  <link rel="preload" href="../fonts/ark-pixel-12px-proportional-zh_hans.otf.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="../css/farm.css">
+  <link rel="icon" href="../img/favicon.png">
 </head>
-<body>
+<body class="inner">
   <a class="skip" href="#content">跳到内容</a>
-  <header class="site-header">
-    <div class="header-inner">
-      <a class="site-title" href="../">里卡多</a>
-      <div class="header-tools">
-        <p class="today"><span data-season-label>春</span> · <time data-today>今天</time></p>
-        <div class="season-switch" role="group" aria-label="季节">
-          <button type="button" data-season-btn="spring">春</button>
-          <button type="button" data-season-btn="summer">夏</button>
-          <button type="button" data-season-btn="autumn">秋</button>
-          <button type="button" data-season-btn="winter">冬</button>
-        </div>
+  <div class="world" aria-hidden="true"></div>
+
+  <header class="hud">
+    <div class="hud-box">
+      <div class="hud-sky" aria-hidden="true"><span class="hud-sun"></span></div>
+      <div class="hud-lines">
+        <p><time data-today>今天</time></p>
+        <p><time data-clock>现在</time><button class="hud-season" type="button" data-season-cycle aria-label="换季"><span class="hud-season-icon"></span><span class="hud-season-name"></span></button></p>
       </div>
-      <nav class="site-nav" aria-label="栏目">
-        <a href="../about/">关于</a>
-        <a href="../now/">近况</a>
-        <a href="../work/">作品</a>
-        <a href="./" aria-current="page">笔记</a>
-        <a href="../contact/">联系</a>
-      </nav>
     </div>
   </header>
-  <div class="wrap">
-    <main class="page" id="content">
+
+  <div class="menu-wrap">
+    <nav class="tabs" aria-label="栏目">
+      <a href="../about/"><img class="pixel" src="../img/icon-about.png" width="33" height="33" alt=""><span>关于</span></a>
+      <a href="../now/"><img class="pixel" src="../img/icon-now.png" width="30" height="33" alt=""><span>近况</span></a>
+      <a href="../work/"><img class="pixel" src="../img/icon-work.png" width="33" height="24" alt=""><span>作品</span></a>
+      <a href="./" aria-current="page"><img class="pixel" src="../img/icon-notes.png" width="30" height="33" alt=""><span>笔记</span></a>
+      <a href="../contact/"><img class="pixel" src="../img/icon-contact.png" width="33" height="24" alt=""><span>联系</span></a>
+    </nav>
+    <main class="panel menu" id="content">
+      <a class="close" href="../" aria-label="关上，回农场"></a>
       <h1>笔记</h1>
       <div class="empty">
-        <p>还没有笔记。</p>
-        <p><a href="sample/">看版式</a></p>
+        <p>还没有值得钉上的笔记。</p>
       </div>
+      <p class="actions"><a class="btn" href="sample/">看版式 →</a></p>
     </main>
-    <footer class="site-foot">
-      <p>视觉受田园生活模拟游戏启发，非官方，与 ConcernedApe 无关。</p>
-      <p class="map">
-        <a href="../">首页</a>
-        <a href="../about/">关于</a>
-        <a href="../now/">近况</a>
-        <a href="../log/">流水</a>
-        <a href="../work/">作品</a>
-        <a href="./">笔记</a>
-        <a href="../contact/">联系</a>
-      </p>
-    </footer>
   </div>
-  <script src="../js/site.js"></script>
+
+  <footer class="credit">
+    <p>视觉受田园生活模拟游戏启发，非官方，与 ConcernedApe 无关。</p>
+    <p><a href="../">农场</a><a href="../about/">关于</a><a href="../now/">近况</a><a href="../log/">流水</a><a href="../work/">作品</a><a href="./">笔记</a><a href="../contact/">联系</a></p>
+  </footer>
+  <script src="../js/farm.js"></script>
 </body>
 </html>

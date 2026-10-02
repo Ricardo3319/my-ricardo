@@ -249,9 +249,14 @@ config = read("_config.yml")
 for item in ("AGENTS.md", "docs/", "tools/"):
     if f"- {item}" not in config:
         bad(f"_config.yml 没有排除 {item}")
-for item in ("fonts/ark-pixel-12px-proportional-zh_hans.otf.woff2", "fonts/OFL.txt", "CNAME"):
+for item in ("fonts/ark-pixel-12px-proportional-zh_hans.otf.woff2", "fonts/OFL.txt"):
     if not (ROOT / item).is_file():
         bad(f"缺少 {item}")
+# 站点在 github.io 的子路径 /my-ricardo/ 下，以 / 开头的路径会跑到别处去。
+if (ROOT / "CNAME").exists():
+    bad("现在用 github.io 访问，不该有 CNAME；要换回自定义域名，先改 SPEC 第 6 节")
+if re.search(r'url\("?/', css):
+    bad("farm.css 里有以 / 开头的路径，站点在子路径下会找不到")
 
 # 迁移期的旧文件已经删掉，不许回来。
 for old in ("css/site.css", "js/site.js", "assets", "fonts/ark-pixel-12px-proportional-latin.otf.woff2"):

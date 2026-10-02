@@ -393,7 +393,7 @@
 
 ## 6. 技术
 
-静态文件，无构建、无 npm、无数据库、无外部字体或脚本。GitHub Pages 发布仓库根目录。告示牌的数据不在本仓库：它从浏览器直接读写本人另一个私有仓库里的 `board.json`（4.9）。
+静态文件，无构建、无 npm、无数据库、无外部字体或脚本。GitHub Pages 发布 `main` 的根目录，网址是 `https://ricardo3319.github.io/my-ricardo/`。站点在子路径下，所以链接、图片、样式里的路径一律写相对的，不写以 `/` 开头的。暂不设自定义域名；以后要用 `www.my-ricardo.com`，先在域名商那里把 `www` 的 CNAME 记录指向 `ricardo3319.github.io`，再加回 `CNAME` 文件、改 `tools/check.py`。告示牌的数据不在本仓库：它从浏览器直接读写本人另一个私有仓库里的 `board.json`（4.9）。
 
 ```
 index.html                 /
@@ -411,7 +411,6 @@ js/board.js                告示牌：认日子、画便条和月历、本机�
 fonts/                     方舟像素 + OFL 全文
 img/                       tools/art.py 生成，不手改
 _config.yml                不发布 docs/、tools/、AGENTS.md
-CNAME
 docs/                      DESIGN、SPEC、CONTENT、progress
 tools/art.py               出图
 tools/serve.py             本地预览，和线上一样不公开 docs/、tools/

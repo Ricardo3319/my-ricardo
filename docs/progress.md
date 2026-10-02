@@ -6,17 +6,16 @@
 
 八页公开页都是新样式：首页是俯视农场加对话框，内页是浮在压暗农场上的物品栏式菜单，版式样张和联系用信纸。正文填了首页介绍、关于页三行、履历两条（南航读研、南航本科推免）；其余还是「待补」。
 
-改版和告示牌已经合进 `main` 推上去了。GitHub Pages 从 `main` 的根目录发布，之前线上一直是最早那版（`css/site.css`），所以本人看到的内页是旧样子、`/board` 打不开。现在 GitHub 那边是新的了，但 `www.my-ricardo.com` 还解析到 Squarespace，`ricardo3319.github.io/my-ricardo/` 也会跳到这个域名，所以线上地址还是看不到。
+改版和告示牌已经合进 `main` 推上去了。按本人的意思拿掉了自定义域名 `www.my-ricardo.com`（它还解析到 Squarespace，挂着它线上打不开），现在网址是 `https://ricardo3319.github.io/my-ricardo/`，告示牌在它后面加 `board/`。
 
 本人要了一块记截止日期的告示牌，做在 `/board`（`SPEC.md` 4.9）：木板上钉月历和便条，句子里写日子就能认出来，按逾期、今天、三天内、以后分组倒数。没连钥匙时存在本机；连上本人的私有 GitHub 仓库后，几台设备共用一份 `board.json`。同步只用假的 GitHub 接口测过，还没连过真仓库。
 
 ## 下一步
 
-本人定域名怎么办，线上才看得到：要么在域名商那里把 `www` 的 CNAME 记录改成 `ricardo3319.github.io`，等生效后在仓库 Settings → Pages 里打开 Enforce HTTPS；要么先拿掉自定义域名，用 `ricardo3319.github.io/my-ricardo/` 访问（要删 `CNAME`，`tools/check.py` 和 `SPEC.md` 第 6 节跟着改）。
+告示牌连真仓库：本人在 GitHub 建一个私有仓库（勾上 README），生成只开这个仓库 Contents 读写的 fine-grained token，在电脑和手机上各打开一次 `https://ricardo3319.github.io/my-ricardo/board/` 连上，两边各钉一张，看对方能不能看到。不通就把告示牌上「没同步上：」后面那句原话记下来。
 
 ## 待做
 
-- 告示牌连真仓库：本人在 GitHub 建一个私有仓库（勾上 README），生成只开这个仓库 Contents 读写的 fine-grained token，在电脑和手机上各连一次 `/board`，两边各钉一张，看对方能不能看到。不通就把告示牌上「没同步上：」后面那句原话记下来。
 - 等本人补正文：近况、随身物品、作品、邮箱、履历年份。补一栏，就按 `SPEC.md` 第 4 节对应的写法嵌进页面，去掉 `.todo`。
 
 ## 已完成
@@ -31,6 +30,7 @@
 - [x] 验过：六页 1280、390 宽截图；在临时副本里塞假条目，看过状态标签、按月折叠、作品格子提示框、条目、笔记目录行（假数据没进仓库）；用 Chromium 调试协议键盘 Tab 走完关于页，每个元素都有焦点框；依次点页签走完全站，七次换页都触发过渡，控制台无错误无警告；`tools/check.py` 8 页 0 问题
 - [x] 告示牌：`board/index.html`、`js/board.js`、`farm.css` 的「告示牌」一节；`tools/art.py` 新画木框、横木板、五色图钉、勾；`SPEC.md` 4.9、`DESIGN.md` 第 7、8 节、`tools/check.py` 一起改了
 - [x] 改版和告示牌从 `farm-menu-redesign` 快进合进 `main`，推到 GitHub（2026-10-02）
+- [x] 拿掉自定义域名，删了 `CNAME`；`tools/check.py` 改成不许有 `CNAME`、不许样式里写以 `/` 开头的路径
 - [x] 告示牌验过：认日子 31 种说法在 Node 里全对；Chromium 1440、390 宽截图，无横向滚动；在测试浏览器的 localStorage 里塞假便条，钉上、认日子、做完、放回、撕、改、翻月、点日子、提示框 24 项通过；对着假的 GitHub 接口测了连钥匙（公开仓库拒绝、仓库不对报错、本机便条搬进去）、别的设备刚推过、推的时候撞车、断网后重推、钥匙过期、便条里写 HTML、点两下断开，22 项通过；控制台无错误无警告；`tools/check.py` 9 页 0 问题
 
 ## 未决
@@ -38,7 +38,8 @@
 - 正文还缺：近况和更新日期、随身物品、作品、笔记、邮箱、履历年份。履历暂用「读研」「本科」当键，`SPEC.md` 4.2 已注明。
 - 肖像是原创人物，不代表本人长相。
 - 世界随钟点变暗是本轮加的，本人没明说要。不想要就删 `farm.css` 里「天色跟着钟点」那一段。
-- 域名 `www.my-ricardo.com` 还解析到 Squarespace（`ext-sq.squarespace.com`），GitHub Pages 的自定义域名却设成了它，所以线上打不开。见「下一步」。
+- 域名 `www.my-ricardo.com` 还解析到 Squarespace（`ext-sq.squarespace.com`），本人说先用 github.io。以后要换回来，照 `SPEC.md` 第 6 节做。
+- `ricardo3319.github.io` 下的所有 Pages 站点共用一个浏览器源，告示牌的钥匙也存在这个源里。现在本人只有这一个仓库开了 Pages；以后别的仓库也开 Pages 时，那些页面别引外部脚本，或者把告示牌换到别的域名。
 - 跨页过渡只在 Chromium 里验过。Firefox 照常换页，Safari 没测。
 - 告示牌是替本人定的几件事，本人可以改：同步用私有 GitHub 仓库加 fine-grained token（不另起数据库）；公开仓库不让连；页面不进页签、页脚，只靠书签进；`/board` 本身是公开网址，没钥匙的人打开只看到一块空板，看不到本人的便条。
 - 告示牌只在 Chromium 里测过。Safari 点按钮不给焦点，月历的提示框在 Safari 桌面上只靠悬停出。

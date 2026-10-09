@@ -747,6 +747,306 @@ def portrait():
     return sprite(["".join(r) for r in out], PORTRAIT_PAL)
 
 
+# ---------------------------------------------------------------- 小人
+
+# 16×16 的顶视小人。Ricardo 照肖像的配色：深棕上梳短发、深蓝外套、白 T。
+WALK_PAL = {
+    "o": "#2a1a1c",  # 轮廓、鞋
+    "h": "#3d2722",  # 头发
+    "H": "#5e3d31",  # 头发受光
+    "f": "#f2bf98",  # 皮肤
+    "c": "#d9987a",  # 皮肤阴影
+    "e": "#2c2224",  # 眼
+    "j": "#2f4a63",  # 外套
+    "J": "#4c6d8b",  # 外套受光
+    "d": "#1f3146",  # 外套暗部
+    "s": "#f4f1ea",  # T 恤
+    "p": "#4a3626",  # 裤子
+}
+
+# 每一帧 16×16。前两帧朝下，再三、四帧朝上，五、六帧朝右；朝左由朝右镜像。
+RICARDO_FRAMES = [
+    [
+        "....oooooooo....",
+        "...ohhhhhhhho...",
+        "...ohhHHHHhho...",
+        "...ohhhhhhhho...",
+        "...ohhffffhho...",
+        "...offffffffo...",
+        "...offeffeffo...",
+        "...offfccfffo...",
+        "..ojjjjjjjjjjo..",
+        "..ojjjssssjjjo..",
+        "..ojjjssssjjdo..",
+        "..ojjjssssjjdo..",
+        "...oppppppppo...",
+        "..opppo..oppppo..",
+        "...ooo....ooo...",
+        "................",
+    ],
+    [
+        "....oooooooo....",
+        "...ohhhhhhhho...",
+        "...ohhHHHHhho...",
+        "...ohhhhhhhho...",
+        "...ohhffffhho...",
+        "...offffffffo...",
+        "...offeffeffo...",
+        "...offfccfffo...",
+        "..ojjjjjjjjjjo..",
+        "..ojjjssssjjjo..",
+        "..ojjjssssjjdo..",
+        "..ojjjssssjjdo..",
+        "...oppppppppo...",
+        "....opppppo.....",
+        ".....oo..oo.....",
+        "................",
+    ],
+    [
+        "....oooooooo....",
+        "...ohhhhhhhho...",
+        "...ohhHHhhhho...",
+        "...ohhhhhhhho...",
+        "...ohhhhhhhho...",
+        "...ohhhhhhhho...",
+        "...ohhhHHhhho...",
+        ".....offffo.....",
+        "..ojjjjjjjjjjo..",
+        "..oJJjjjjjjjjo..",
+        "..ojjjjjjjjjdo..",
+        "..ojjjjjjjjjdo..",
+        "...oppppppppo...",
+        "..opppo..oppppo..",
+        "...ooo....ooo...",
+        "................",
+    ],
+    [
+        "....oooooooo....",
+        "...ohhhhhhhho...",
+        "...ohhHHhhhho...",
+        "...ohhhhhhhho...",
+        "...ohhhhhhhho...",
+        "...ohhhhhhhho...",
+        "...ohhhHHhhho...",
+        ".....offffo.....",
+        "..ojjjjjjjjjjo..",
+        "..oJJjjjjjjjjo..",
+        "..ojjjjjjjjjdo..",
+        "..ojjjjjjjjjdo..",
+        "...oppppppppo...",
+        "....opppppo.....",
+        ".....oo..oo.....",
+        "................",
+    ],
+    [
+        "....oooooooo....",
+        "...ohhhhhhhho...",
+        "...ohhhhhhhho...",
+        "...ohhhhhhhffo..",
+        "...ohhfffffffo..",
+        "...ohfffffefo...",
+        "...ohffffffffof.",
+        "...offffffcffo..",
+        "..ojjjjjjjjjjo..",
+        "..ojjjjjjjjsjo..",
+        "..ojjjjjjjjsjo..",
+        "..ojjjjjjjjjdo..",
+        "...oppppppppo...",
+        "...oppp..opppo..",
+        "....oo......oo..",
+        "................",
+    ],
+    [
+        "....oooooooo....",
+        "...ohhhhhhhho...",
+        "...ohhhhhhhho...",
+        "...ohhhhhhhffo..",
+        "...ohhfffffffo..",
+        "...ohfffffefo...",
+        "...ohffffffffof.",
+        "...offffffcffo..",
+        "..ojjjjjjjjjjo..",
+        "..ojjjjjjjjsjo..",
+        "..ojjjjjjjjsjo..",
+        "..ojjjjjjjjjdo..",
+        "...oppppppppo...",
+        ".....opppppo....",
+        "......oo..oo....",
+        "................",
+    ],
+]
+
+
+def hstrip(imgs):
+    out = Img(sum(i.w for i in imgs), max(i.h for i in imgs))
+    x = 0
+    for img in imgs:
+        out.blit(img, x, 0)
+        x += img.w
+    return out
+
+
+def ricardo_sheet():
+    frames = [sprite(rows, WALK_PAL) for rows in RICARDO_FRAMES]
+    frames += [frames[4].flip(), frames[5].flip()]
+    return hstrip(frames)
+
+
+# 五个村民共用脸、身子和腿，只换发型、配色和小特征。正面一站，不走。
+NPC_BASE = [
+    "...offffffffo...",
+    "...offeffeffo...",
+    "...offfccfffo...",
+    "..osssssssssso..",
+    "..osssssssssso..",
+    "..osssssssssso..",
+    "..oSSssssssSSo..",
+    "...oppppppppo...",
+    "....opppppo.....",
+    ".....oo..oo.....",
+    "................",
+]
+
+NPC_SHARED = {
+    "o": "#2a1a1c",
+    "f": "#f2bf98",
+    "c": "#d9987a",
+    "e": "#2c2224",
+    "p": "#3a2c20",
+}
+
+
+def villager(head, pal):
+    return sprite(head + NPC_BASE, {**NPC_SHARED, **pal})
+
+
+def npcs_sheet():
+    # 顺序就是 walk.js 里 NPC 表的顺序：陈伯、阿荞、老木、小满、阿涟。
+    folks = [
+        # 陈伯：秃顶、白边发、白胡子，棕褂子。
+        villager(
+            [
+                "................",
+                "...oooooooooo...",
+                "...offffffffo...",
+                "...ohffffffho...",
+                "...ohffffffho...",
+            ],
+            {"h": "#d8d4c8", "s": "#7a5a3a", "S": "#5e442c"},
+        ),
+        # 阿荞：草帽、绿衫。
+        villager(
+            [
+                "....otttttto....",
+                "..otttttttttto..",
+                "...oTTTTTTTTo...",
+                "...offffffffo...",
+                "...ohffffffho...",
+            ],
+            {"t": "#e3b04b", "T": "#b8822f", "h": "#3a2a1e", "s": "#5e9448", "S": "#47713a"},
+        ),
+        # 老木：棕发棕胡子，锈红衫。
+        villager(
+            [
+                "....oooooooo....",
+                "...ohhhhhhhho...",
+                "...ohhhhhhhho...",
+                "...ohhhhhhhho...",
+                "...ohhffffhho...",
+            ],
+            {"h": "#4a2c16", "s": "#b8622f", "S": "#96492a"},
+        ),
+        # 小满：两个发髻，橙衫。
+        villager(
+            [
+                "..oo........oo..",
+                "..ohhhhhhhhhho..",
+                "...ohhhhhhhho...",
+                "...ohhhhhhhho...",
+                "...ohhffffhho...",
+            ],
+            {"h": "#5a3a1e", "s": "#e0832f", "S": "#b8641f"},
+        ),
+        # 阿涟：蓝头巾，青衫。
+        villager(
+            [
+                "...okkkkkkkko...",
+                "...okkkkkkkko...",
+                "...okkkkkkkko...",
+                "...okffffffko...",
+                "...okffffffko...",
+            ],
+            {"k": "#4c8bc9", "s": "#3f8e8a", "S": "#2f6e6a"},
+        ),
+    ]
+    return hstrip(folks)
+
+
+# 信箱和告示牌：画进农场图的两件能交互的东西，四季一个样。
+def mailbox():
+    return sprite(
+        [
+            ".....oooo.......",
+            "....oWWWWo......",
+            "...oWWwwwwWo....",
+            "...oWwwwwwWo....",
+            "...owwwwwwwo....",
+            "...oWwrrrWwo....",
+            "...ooooooooo....",
+            "......oRro......",
+            "......orro......",
+            ".....oddddo.....",
+            "......oddo......",
+            "......oddo......",
+            "......oddo......",
+            ".....oddddo.....",
+            "................",
+            "................",
+        ],
+        {
+            "o": "#2a1a1c",
+            "W": "#ffe7b9",
+            "w": "#f2c88a",
+            "d": "#8a4a22",
+            "r": "#c9432f",
+            "R": "#f07a52",
+        },
+    )
+
+
+def board_sign():
+    return sprite(
+        [
+            "..oooooooooooo..",
+            "..oTTTTTTTTTTo..",
+            "..oTwwttTwwtTo..",
+            "..oTrwttTwrwTo..",
+            "..oTwwttTwwwTo..",
+            "..oTkktkTkkwTo..",
+            "..oTwwttTwwWTo..",
+            "..oTTTTTTTTTTo..",
+            "..oooooooooooo..",
+            "....od....do....",
+            "....od....do....",
+            "....od....do....",
+            "....od....do....",
+            "...odd....ddo...",
+            "................",
+            "................",
+        ],
+        {
+            "o": "#2a1a1c",
+            "T": "#ad5321",
+            "t": "#8a4a22",
+            "w": "#fff4dc",
+            "W": "#e8d9b8",
+            "r": "#c9432f",
+            "k": "#7c3611",
+            "d": "#6e3b1b",
+        },
+    )
+
+
 # ---------------------------------------------------------------- 农场
 
 T = 16
@@ -819,7 +1119,8 @@ class Sheet:
 
 
 class Farm:
-    """按季节拼一张俯视农场。物体按脚底 y 排序后再画，高的东西才会挡住后面的。"""
+    """按季节拼一张俯视农场。物体按脚底 y 排序后再画，高的东西才会挡住后面的。
+    busy 是不撒装饰的格；solid 是小人走不进去的格（busy 的子集：路和门前泥地能走）。"""
 
     def __init__(self, season):
         self.season = season
@@ -827,6 +1128,8 @@ class Farm:
         self.img = Img(COLS * T, ROWS * T)
         self.things = []
         self.busy = set()
+        self.solid = set()
+        self.canopy = set()
 
     def ground(self, tile, c, r):
         self.img.blit(tile, c * T, r * T, {**self.map["ground"], **self.map.get("dirt", {})})
@@ -839,6 +1142,12 @@ class Farm:
         for r in range(r0, r0 + h):
             for c in range(c0, c0 + w):
                 self.busy.add((c, r))
+                self.solid.add((c, r))
+
+    def mark(self, c0, r0, w, h):
+        for r in range(r0, r0 + h):
+            for c in range(c0, c0 + w):
+                self.busy.add((c, r))
 
     def free(self, c, r):
         return (c, r) not in self.busy
@@ -847,6 +1156,22 @@ class Farm:
         for _base, x, y, img, remap in sorted(self.things, key=lambda t: (t[0], t[1])):
             self.img.blit(img, x, y, remap)
         return self.img
+
+    def collision(self):
+        """56×32 的走不进位图，每行 56 bit 写成 14 个 hex。树冠的上一格也挡住，
+        免得小人叠在树冠上。"""
+        solid = set(self.solid)
+        for c, r in self.canopy:
+            if r > 0:
+                solid.add((c, r - 1))
+        rows = []
+        for r in range(ROWS):
+            bits = 0
+            for c in range(COLS):
+                if (c, r) in solid:
+                    bits |= 1 << c
+            rows.append(f"{bits:014x}")
+        return rows
 
 
 def pond(farm, x0, y0, w, h):
@@ -935,6 +1260,7 @@ def build(season):
                 farm.put(pine, x, y + 14, "pine")
             else:
                 farm.put(tall, x, y, "leaf2" if roll < 0.45 else "leaf")
+            farm.canopy.add((c, r))
 
     # 小屋：红瓦、木墙、门在山墙下面。
     hc, hr = 22, 8
@@ -948,18 +1274,18 @@ def build(season):
     farm.put(house, hc * T, hr * T)
     farm.take(hc, hr, 5, 3)
 
-    # 门前的小块泥地和一条石板路。
+    # 门前的小块泥地和一条石板路。能走，只是不往上撒装饰。
     for r in range(hr + 3, hr + 5):
         for c in range(hc + 1, hc + 4):
             edge = [[12, 13, 14], [36, 37, 38]][r - hr - 3][c - hc - 1]
             farm.ground(town.tile(edge), c, r)
-            farm.take(c, r, 1, 1)
+            farm.mark(c, r, 1, 1)
     for r in range(hr + 5, ROWS):
         farm.ground(town.tile(43), hc + 2, r)
-        farm.take(hc + 2, r, 1, 1)
+        farm.mark(hc + 2, r, 1, 1)
     for c in range(hc + 3, 34):
         farm.ground(town.tile(43), c, 17)
-        farm.take(c, 17, 1, 1)
+        farm.mark(c, 17, 1, 1)
 
     # 井、木桶、麻袋，挨着小屋。
     farm.put(town.block([[92], [104]]), (hc - 2) * T, (hr + 1) * T)
@@ -969,6 +1295,12 @@ def build(season):
     farm.take(hc + 5, hr + 2, 1, 1)
     farm.put(town.tile(83), (hc + 4) * T, (hr + 4) * T)  # 路牌，不写字
     farm.take(hc + 4, hr + 4, 1, 1)
+
+    # 信箱和告示牌：首页走动时能交互的两件东西。要在零散树木之前放，免得撞上。
+    farm.put(mailbox(), 23 * T, 21 * T)
+    farm.take(23, 21, 1, 1)
+    farm.put(board_sign(), 27 * T, 13 * T)
+    farm.take(27, 13, 1, 1)
 
     # 谷仓。
     bc, br = 31, 5
@@ -1105,7 +1437,7 @@ def build(season):
             x, y = rng.randrange(COLS * T), rng.randrange(ROWS * T)
             farm.img.set(x, y, flake)
 
-    return farm.render()
+    return farm
 
 
 # ---------------------------------------------------------------- 出图
@@ -1125,6 +1457,8 @@ def main(argv):
     for name, rows in HUD_ICONS.items():
         made[name] = sprite(rows, HUD_PAL)
     made["portrait"] = portrait()
+    made["walk-ricardo"] = ricardo_sheet()
+    made["walk-npcs"] = npcs_sheet()
     fav = Img(32, 32)
     fav.blit(made["icon-about"].scaled(2), 5, 5)
     made["favicon"] = fav
@@ -1132,8 +1466,25 @@ def main(argv):
     for name, i in (("carrot", 8), ("turnip", 20), ("corn", 32), ("tomato", 44), ("cabbage", 56),
                     ("wheat", 68), ("crate", 11), ("seeds", 9), ("hay", 96), ("bucket", 73)):
         made[f"item-{name}"] = FARM.tile(i)
+    world = {}
     for season in SEASONS:
-        made[f"farm-{season}"] = build(season)
+        farm = build(season)
+        made[f"farm-{season}"] = farm.render()
+        world[season] = farm.collision()
+
+    lines = [
+        "/* tools/art.py 生成，不手改。每季一份 56×32 碰撞位图：每行 56 bit，1 是走不进的格。",
+        "   写在 js/ 是因为 walk.js 要读；图仍然只进 img/。 */",
+        "window.FARM_WORLD = {",
+        "  cols: 56,",
+        "  rows: 32,",
+        "  solid: {",
+    ]
+    for season in SEASONS:
+        rows = ", ".join(f'"{h}"' for h in world[season])
+        lines.append(f"    {season}: [{rows}],")
+    lines += ["  },", "};", ""]
+    (ROOT / "js" / "world-data.js").write_text("\n".join(lines), encoding="utf-8")
 
     for name, img in made.items():
         write_png(OUT / f"{name}.png", img)

@@ -134,6 +134,8 @@ def check_page(rel, html):
         bad(f"{rel} 应在 farm.js 前依次引 js/nav.js、js/sound.js")
 
     if home:
+        if not re.search(r'<script src="[./]*js/world-data\.js"></script>\s*<script src="[./]*js/walk\.js"></script>\s*<script src="[./]*js/farm\.js"></script>', html):
+            bad("首页应在 farm.js 前依次引 js/world-data.js、js/walk.js")
         nav = block(html, r'<nav class="choices".*?</nav>')
         got = [(h, text(re.search(r"<small>(.*?)</small>", t).group(1)) if "<small>" in t else "") for h, t in links(nav)]
         if got != CHOICES:

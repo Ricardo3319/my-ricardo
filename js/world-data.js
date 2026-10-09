@@ -1,0 +1,12 @@
+/* tools/art.py 生成，不手改。每季一份 56×32 碰撞位图：每行 56 bit，1 是走不进的格。
+   写在 js/ 是因为 walk.js 要读；图仍然只进 img/。 */
+window.FARM_WORLD = {
+  cols: 56,
+  rows: 32,
+  solid: {
+    spring: ["ffffffffffffff", "ffffffffffffff", "ffffffffffffff", "ffffffffffffff", "ffffffffffffff", "ffe10bc21087ff", "ffc003800007ff", "ffc3fb800007ff", "ffc20b87c003ff", "ffe20ba7d00bff", "ffe20b8fd203ff", "ffc3b800000bff", "ffd00004000bff", "ffc7fc080007ff", "ffe7fc007fe7ff", "ffe7fc027fe3ff", "ffc7fc007fe3ff", "ffc7fc007fe3ff", "ffc000007fe3ff", "ffe800007fe3ff", "ffe802100007ff", "ffc00810a007ff", "ffc101000813ff", "ffc000000803ff", "ffe020000103ff", "ffe000000003ff", "ffeeeeeeeeefff", "ffffffffffffff", "ffffffffffffff", "ffffffffffffff", "ffffffffffffff", "ffffffffffffff"],
+    summer: ["ffffffffffffff", "ffffffffffffff", "ffffffffffffff", "ffffffffffffff", "ffffffffffffff", "ffe10bc21087ff", "ffc003800007ff", "ffc3fb800007ff", "ffc20b87c003ff", "ffe20ba7d00bff", "ffe20b8fd203ff", "ffc3b800000bff", "ffd00004000bff", "ffc7fc087fe7ff", "ffe7fc007fe7ff", "ffe7fc027fe3ff", "ffc7fc007fe3ff", "ffc7fc007fe3ff", "ffc000007fe3ff", "ffe800007fe3ff", "ffe802100007ff", "ffc00810a007ff", "ffc101000813ff", "ffc000000803ff", "ffe020000103ff", "ffe000000003ff", "ffeeeeeeeeefff", "ffffffffffffff", "ffffffffffffff", "ffffffffffffff", "ffffffffffffff", "ffffffffffffff"],
+    autumn: ["ffffffffffffff", "ffffffffffffff", "ffffffffffffff", "ffffffffffffff", "ffffffffffffff", "ffe10bc21087ff", "ffc003800007ff", "ffc3fb800007ff", "ffc20b87c003ff", "ffe20ba7d00bff", "ffe20b8fd203ff", "ffc3b800000bff", "ffd00004000bff", "ffc7fc080007ff", "ffe7fc007fe7ff", "ffe7fc027fe3ff", "ffc7fc007fe3ff", "ffc7fc007fe3ff", "ffc000007fe3ff", "ffe800007fe3ff", "ffe802100007ff", "ffc00810a007ff", "ffc101000813ff", "ffc000000803ff", "ffe020000103ff", "ffe000000003ff", "ffeeeeeeeeefff", "ffffffffffffff", "ffffffffffffff", "ffffffffffffff", "ffffffffffffff", "ffffffffffffff"],
+    winter: ["ffffffffffffff", "ffffffffffffff", "ffffffffffffff", "ffffffffffffff", "ffffffffffffff", "ffe10bc21087ff", "ffc003800007ff", "ffc3fb800007ff", "ffc20b87c003ff", "ffe20ba7d00bff", "ffe20b8fd203ff", "ffc3b800000bff", "ffd00004000bff", "ffc7fc080007ff", "ffe7fc007fe7ff", "ffe7fc027fe3ff", "ffc7fc007fe3ff", "ffc7fc007fe3ff", "ffc000007fe3ff", "ffe800007fe3ff", "ffe802100007ff", "ffc00810a007ff", "ffc101000813ff", "ffc000000803ff", "ffe020000103ff", "ffe000000003ff", "ffeeeeeeeeefff", "ffffffffffffff", "ffffffffffffff", "ffffffffffffff", "ffffffffffffff", "ffffffffffffff"],
+  },
+};

@@ -113,6 +113,7 @@ html[data-phase="night"] .world::before { background: rgb(14 22 62 / 0.45); }
   position: absolute;
   inset: 0;
   pointer-events: auto;
+  touch-action: none; /* 长按走路时别让浏览器把页面滚走或缩放 */
 }
 
 .actor {
@@ -125,19 +126,34 @@ html[data-phase="night"] .world::before { background: rgb(14 22 62 / 0.45); }
 .actor-ricardo { background: url("../img/walk-ricardo.png") 0 0 / calc(128 * var(--wpx)) calc(16 * var(--wpx)); }
 
 .actor-npc {
-  background: url("../img/walk-npcs.png") 0 0 / calc(80 * var(--wpx)) calc(16 * var(--wpx));
+  background: url("../img/walk-npcs-busy.png") 0 0 / calc(80 * var(--wpx)) calc(16 * var(--wpx));
   pointer-events: auto;
 }
 
-/* 走近了头顶出个叹号。 */
+/* 走近了头顶出个叹号，叹号下面是名字小标签；鼠标停在村民或告示牌上也出名字。 */
 .bubble {
+  position: absolute;
+  left: 50%;
+  bottom: calc(17 * var(--wpx) + var(--fs) + 2 * var(--px));
+  transform: translateX(-50%);
+  color: var(--cream);
+  text-shadow: var(--px) var(--px) 0 var(--shadow);
+}
+
+.nametag {
   position: absolute;
   left: 50%;
   bottom: calc(17 * var(--wpx));
   transform: translateX(-50%);
   color: var(--cream);
   text-shadow: var(--px) var(--px) 0 var(--shadow);
+  white-space: nowrap;
+  visibility: hidden;
 }
+
+.actor-npc, .actor-fixture { cursor: pointer; }
+
+.actor:hover .nametag, .actor.is-near .nametag { visibility: visible; }
 
 /* 天色也盖在角色层上，和 .world::before 一样，不然夜里小人还是亮的。 */
 .roam::after {
@@ -585,6 +601,9 @@ html[data-season="winter"] .hud-season-name::before { content: "冬"; }
 
 /* 和村民说话时对话框再出来。 */
 .is-walking.is-talking .stage .dialogue { visibility: visible; }
+
+/* 换页过场：小人跑回屋门这段路，地和村民都不吃点击。 */
+.is-leaving .roam-hit, .is-leaving .actor-npc, .is-leaving .actor-fixture { pointer-events: none; }
 
 .walk-peep {
   position: fixed;

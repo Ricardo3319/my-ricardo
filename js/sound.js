@@ -414,6 +414,41 @@
     o.stop(t + 0.25);
   }
 
+  // 走动音效：脚步和搭话的一声，走环境音那路，跟着环境音音量。js/walk.js 在迈步和开对话时叫。
+  function footstep() {
+    if (ctx.state !== "running") return;
+    var t = ctx.currentTime;
+    var src = ctx.createBufferSource();
+    var filter = ctx.createBiquadFilter();
+    var gain = ctx.createGain();
+    src.buffer = noise;
+    filter.type = "lowpass";
+    filter.frequency.value = 280 + Math.random() * 160;
+    gain.gain.setValueAtTime(0.08, t);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.07);
+    src.connect(filter);
+    filter.connect(gain);
+    gain.connect(ambienceBus);
+    src.start(t, Math.random());
+    src.stop(t + 0.09);
+  }
+
+  function chatter() {
+    if (ctx.state !== "running") return;
+    var t = ctx.currentTime;
+    tone("triangle", 620, t, 0.08, 0.07, ambienceBus, [0.005, 0.04, 0.5, 0.03]);
+    tone("triangle", 830, t + 0.07, 0.11, 0.06, ambienceBus, [0.005, 0.05, 0.5, 0.04]);
+  }
+
+  window.FARM_SOUND = {
+    step: function () {
+      if (settings.on && ctx) footstep();
+    },
+    talk: function () {
+      if (settings.on && ctx) chatter();
+    },
+  };
+
   function stopAmbience() {
     weather.forEach(function (w) {
       if (w.node) {

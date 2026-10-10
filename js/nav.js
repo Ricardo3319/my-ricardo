@@ -98,6 +98,15 @@
     document.dispatchEvent(new CustomEvent("farm:page"));
   }
 
+  // 首页走动时换页，先让小人跑回屋门跨进去（js/walk.js 的过场），走完再换。
+  // 没有走动脚本、不在首页、或减少动效时，leave 会立刻回调，换页和以前一样快。
+  function leaveHome(url) {
+    grab(url.href); // 过场这段路正好把下一页取回来
+    var walk = window.FARM_WALK;
+    if (walk && walk.leave) walk.leave(function () { go(url, true, 0); });
+    else go(url, true, 0);
+  }
+
   function go(url, push, y) {
     var token = (latest = {});
     grab(url.href)
@@ -145,7 +154,7 @@
     }
     event.preventDefault();
     remember();
-    go(url, true, 0);
+    leaveHome(url);
   });
 
   window.addEventListener("popstate", function (event) {

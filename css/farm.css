@@ -153,6 +153,16 @@ html[data-phase="night"] .world::before { background: rgb(14 22 62 / 0.45); }
 
 .actor-npc, .actor-fixture { cursor: pointer; }
 
+/* 手机上一格小人只有三十来像素，手指点不准：可点范围往外扩一圈。 */
+.actor-npc::after, .actor-fixture::after {
+  content: "";
+  position: absolute;
+  left: calc(-5 * var(--wpx));
+  right: calc(-5 * var(--wpx));
+  top: calc(-7 * var(--wpx));
+  bottom: calc(-3 * var(--wpx));
+}
+
 .actor:hover .nametag, .actor.is-near .nametag { visibility: visible; }
 
 /* 天色也盖在角色层上，和 .world::before 一样，不然夜里小人还是亮的。 */
@@ -1790,6 +1800,52 @@ a.row:hover { background-color: var(--menu-deep); }
     top: calc(-11 * var(--px));
     right: calc(-6 * var(--px));
   }
+}
+
+/* ---------------------------------------------------------------- 手机横过来 */
+
+/* 竖着拿手机时劝一句：这张农场是横的。点一下收起，记在这次浏览里。 */
+.rotate-hint {
+  display: none;
+  position: fixed;
+  top: calc(4 * var(--px));
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 6;
+}
+
+@media (max-width: 640px) and (orientation: portrait) {
+  .rotate-hint { display: inline-flex; }
+
+  body.hint-off .rotate-hint { display: none; }
+}
+
+/* 横过来的手机、或者很矮的窗口：选项排两栏、边距收一点，一屏放得下不用滚。 */
+@media (max-height: 540px) {
+  .stage { padding: calc(3 * var(--px)) calc(4 * var(--px)) 0; }
+
+  /* 矮屏上天色面板浮在农场上空，不占正文的竖向空间。 */
+  .hud {
+    position: fixed;
+    top: 0;
+    right: 0;
+    left: 0;
+    z-index: 2;
+  }
+
+  .choices {
+    grid-template-columns: 1fr 1fr;
+    column-gap: calc(8 * var(--px));
+  }
+
+  /* 矮屏上把行高压一点：字号不动，一屏才放得下整段对话加页脚。 */
+  .dialogue-text { padding: calc(2 * var(--px)) calc(4 * var(--px)); }
+
+  .dialogue-line, .choices a, .choices button, .walk-hint { line-height: 1.25; }
+
+  .walk-hint { margin-top: var(--px); }
+
+  .credit { padding: var(--px) 0 calc(2 * var(--px)); }
 }
 
 /* ---------------------------------------------------------------- 减少动效 */

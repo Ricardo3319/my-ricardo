@@ -1633,8 +1633,8 @@ def build(season):
     farm.take(27, 13, 1, 1)
 
     # 村民的家伙什：各人干各人的活，手边的东西说明在干吗。也在零散树木之前放。
-    farm.put(deck_chair(), 26 * T, 14 * T - 2)  # 陈伯的躺椅，猫在上头
-    farm.take(26, 14, 1, 1)
+    farm.put(deck_chair(), 27 * T, 15 * T - 2)  # 陈伯的躺椅，猫在上头
+    farm.take(27, 15, 1, 1)
     farm.put(sawhorse(), 33 * T, 12 * T - 2)  # 老木的木马架，搁着刨子
     farm.take(33, 12, 1, 1)
     farm.put(shavings(), 32 * T, 13 * T)  # 老木脚边的刨花

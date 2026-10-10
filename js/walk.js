@@ -14,8 +14,8 @@
 
   // 顺序就是 walk-npcs.png 里脸的顺序。台词只说村民自己和引导语，不虚构 Ricardo 的事。
   var NPCS = [
-    { name: "陈伯", col: 25, row: 13, face: 0, tab: "关于", page: "about/", line: "我在这农场边上住了几十年啦。你是做什么的？——哦，是你问 Ricardo。" },
-    { name: "阿荞", col: 23, row: 17, face: 1, tab: "近况", page: "now/", line: "节气不等人，苗一天一个样。最近在忙什么？" },
+    { name: "陈伯", col: 26, row: 15, face: 0, tab: "关于", page: "about/", line: "我在这农场边上住了几十年啦。你是做什么的？——哦，是你问 Ricardo。" },
+    { name: "阿荞", col: 23, row: 16, face: 1, tab: "近况", page: "now/", line: "节气不等人，苗一天一个样。最近在忙什么？" },
     { name: "老木", col: 32, row: 12, face: 2, tab: "作品", page: "work/", line: "好木头要慢慢刨。做过些什么？" },
     { name: "小满", col: 22, row: 21, face: 3, tab: "笔记", page: "notes/", line: "信我都收得好好的。有写东西吗？" },
     { name: "阿涟", col: 33, row: 15, face: 4, tab: "联系", page: "contact/", line: "鱼不上钩的时候，最适合想事情。怎么联系你？" },
@@ -25,9 +25,9 @@
   // 场景点：画进世界图的东西，走近按空格搭一句；信箱多一个去笔记的链接。
   var SCENES = [
     { name: "信箱", col: 23, row: 21, face: -1, icon: "img/icon-contact.png", tab: "笔记", page: "notes/", line: "信送到这儿，写出来的东西也收在这儿。" },
-    { name: "井", col: 20, row: 9, face: -1, icon: "img/item-bucket.png", line: "井水凉，打上来要慢一点。" },
-    { name: "池塘", col: 37, row: 17, face: -1, icon: "img/icon-pond.png", line: "水面平的时候，能照见天。" },
-    { name: "牲口", col: 38, row: 9, face: -1, icon: "img/item-hay.png", line: "牲口吃饱了就不理人，下雪天躲进棚里。" },
+    { name: "井", col: 20, row: 9, w: 1, h: 2, face: -1, icon: "img/item-bucket.png", line: "井水凉，打上来要慢一点。" },
+    { name: "池塘", col: 34, row: 13, w: 9, h: 5, face: -1, icon: "img/icon-pond.png", line: "水面平的时候，能照见天。" },
+    { name: "牲口", col: 36, row: 8, w: 5, h: 3, face: -1, icon: "img/item-hay.png", line: "牲口吃饱了就不理人，下雪天躲进棚里。" },
   ];
 
   var root = document.documentElement;
@@ -39,11 +39,13 @@
     }
   })();
   var still = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var COARSE = !!(window.matchMedia && window.matchMedia("(pointer: coarse)").matches);
 
   var layer = null;
   var map = null;
   var me = null;
   var peep = null;
+  var rotate = null;
   var actors = []; // {data, el, bubble, fx, fy}
   var keys = Object.create(null);
   var pos = { x: START.x, y: START.y, dir: 0, step: 0 };
@@ -130,6 +132,7 @@
       }),
       name: box.querySelector(".nameplate").textContent,
       portrait: box.querySelector(".portrait-box img").getAttribute("src"),
+      hint: box.querySelector(".walk-hint").textContent,
     };
   }
 
@@ -160,7 +163,9 @@
       img.setAttribute("src", d.icon);
     }
     box.querySelector("[data-type]").textContent = d.line;
-    box.querySelector(".walk-hint").hidden = true;
+    var hint = box.querySelector(".walk-hint");
+    hint.textContent = COARSE ? "点下面的选项继续。" : "W/S 挑一句，回车确认；Esc 接着逛。";
+    hint.hidden = false;
     var choices = box.querySelector(".choices");
     var options = [];
     if (d.page) {
@@ -190,6 +195,16 @@
     if (active && active.closest && active.closest(".dialogue")) active.blur();
   }
 
+  function stepChoice(d) {
+    var box = document.querySelector(".dialogue");
+    if (!box) return;
+    var list = Array.prototype.slice.call(box.querySelectorAll(".choices a, .choices button"));
+    if (!list.length) return;
+    var at = list.indexOf(document.activeElement);
+    var next = at < 0 ? (d > 0 ? 0 : list.length - 1) : (at + d + list.length) % list.length;
+    list[next].focus({ preventScroll: true });
+  }
+
   function greet() {
     closeTalk();
     setWalking(false);
@@ -208,7 +223,9 @@
         return node.cloneNode(true);
       })
     );
-    box.querySelector(".walk-hint").hidden = false;
+    var hint = box.querySelector(".walk-hint");
+    hint.textContent = greeting.hint;
+    hint.hidden = false;
   }
 
   function save() {
@@ -243,20 +260,39 @@
     return { x: (event.clientX - rect.left) / k, y: (event.clientY - rect.top) / k };
   }
 
-  function walkTo(actor) {
-    // 站到对方跟前：优先下面一格，撞了就往旁边试。
-    var spots = [
-      { x: actor.fx, y: actor.fy + TILE },
-      { x: actor.fx - TILE, y: actor.fy },
-      { x: actor.fx + TILE, y: actor.fy },
-      { x: actor.fx, y: actor.fy - TILE },
-    ];
-    for (var i = 0; i < spots.length; i++) {
-      if (freeAt(spots[i].x, spots[i].y)) {
-        target = { x: spots[i].x, y: spots[i].y, talk: actor };
-        return;
+  // 离对方最近的可站立点：沿它占的那圈外环挑空格，先比离对方、再比离自己。
+  function standSpot(actor) {
+    var d = actor.data;
+    var c0 = d.col;
+    var r0 = d.row;
+    var w = d.w || 1;
+    var h = d.h || 1;
+    var best = null;
+    var bestKey = 0;
+    for (var c = c0 - 1; c <= c0 + w; c++) {
+      for (var r = r0 - 1; r <= r0 + h; r++) {
+        if (c !== c0 - 1 && c !== c0 + w && r !== r0 - 1 && r !== r0 + h) continue;
+        var x = c * TILE + 8;
+        var y = (r + 1) * TILE - 2;
+        if (!freeAt(x, y)) continue;
+        var key = Math.hypot(x - actor.fx, y - actor.fy) * 1000 + Math.hypot(x - pos.x, y - pos.y);
+        if (!best || key < bestKey) {
+          bestKey = key;
+          best = { x: x, y: y };
+        }
       }
     }
+    return best;
+  }
+
+  function walkTo(actor) {
+    // 已经够得着就直接开话；不然走到离他最近的可站立点，到了自动搭话。
+    if (Math.hypot(actor.fx - pos.x, actor.fy - pos.y) < REACH) {
+      openTalk(actor);
+      return;
+    }
+    var spot = standSpot(actor);
+    if (spot) target = { x: spot.x, y: spot.y, talk: actor };
   }
 
   // 脚下格子和格子中心的换算，用脚底那个 8×4 盒子的中间。
@@ -322,11 +358,17 @@
   }
 
   /* 换页过场。nav.js 在换页前叫 window.FARM_WALK.leave(done)：小人跑回屋门口，
-     跨进门槛淡出，再回调 done() 换页。没在走动、不在首页、或减少动效时立刻回调，
-     换页和以前一样快。路是碰撞格上 BFS 找出来的，绕得开告示牌和栅栏；
+     跨进门槛淡出，再回调 done() 换页。没在走动、不在首页、减少动效、或对话还开着时
+     立刻回调，换页和以前一样快。路是碰撞格上 BFS 找出来的，绕得开告示牌和栅栏；
      实在没有路（人卡在圈里）或跑得比 LEAVE_CAP 久，就地淡出换页。 */
   function leave(done) {
     if (!layer || !walking() || still) {
+      done();
+      return;
+    }
+    if (talking) {
+      // 对话里点链接是在选去处，不是逛完了回家：关掉对话立刻换页，不跑过场。
+      closeTalk();
       done();
       return;
     }
@@ -437,6 +479,10 @@
           var bd = Math.hypot(bx, by) || 1;
           pos.x += bx / bd;
           pos.y += by / bd;
+        } else if (target && target.talk && Math.hypot(target.talk.fx - pos.x, target.talk.fy - pos.y) < REACH) {
+          // 跟前那格被占也别傻站着：够得着就直接开话。
+          openTalk(target.talk);
+          target = null;
         } else if (Math.abs(dx) >= Math.abs(dy)) pos.x -= stepX > 0 ? 1 : -1;
         else pos.y -= stepY > 0 ? 1 : -1;
       }
@@ -513,6 +559,16 @@
       if (event.key === "Escape") {
         event.preventDefault();
         closeTalk();
+      } else if (event.key === "w" || event.key === "W" || event.key === "ArrowUp") {
+        // 对话里 W/S（和上下方向键）在选项间挪焦点，Enter/空格确认当前那条。
+        event.preventDefault();
+        stepChoice(-1);
+      } else if (event.key === "s" || event.key === "S" || event.key === "ArrowDown") {
+        event.preventDefault();
+        stepChoice(1);
+      } else if (event.key === " " && onControl) {
+        event.preventDefault();
+        event.target.click();
       }
       return;
     }
@@ -523,7 +579,7 @@
       if (!walking()) setWalking(true);
       return;
     }
-    if ((event.key === " " || event.key === "e" || event.key === "E" || event.key === "Enter") && !onControl) {
+    if ((event.key === " " || event.key === "e" || event.key === "E" || event.key === "Enter" || event.key === "f" || event.key === "F") && !onControl) {
       var near = nearest();
       if (near) {
         event.preventDefault();
@@ -583,6 +639,11 @@
       window.setTimeout(mount, 50);
       return;
     }
+    if (COARSE) {
+      // 触屏没有 W/S 和回车可说，提示换成点法的。
+      var h0 = document.querySelector(".walk-hint");
+      if (h0) h0.textContent = "点地面走走，走近了点一下搭话。";
+    }
     rememberGreeting();
 
     layer = document.createElement("div");
@@ -601,6 +662,8 @@
       el.setAttribute("data-actor", String(i));
       el.style.left = "calc(" + d.col * TILE + " * var(--wpx))";
       el.style.top = "calc(" + (d.row * TILE - 1) + " * var(--wpx))";
+      el.style.width = "calc(" + 16 * (d.w || 1) + " * var(--wpx))";
+      el.style.height = "calc(" + 16 * (d.h || 1) + " * var(--wpx))";
       el.style.zIndex = d.row * TILE + 15;
       if (d.face >= 0) el.style.backgroundPosition = "calc(" + -16 * d.face + " * var(--wpx)) 0";
       else el.style.pointerEvents = "auto"; // 告示牌没有图，留个能点的热区
@@ -635,6 +698,24 @@
       peep.hidden = true;
       peep.addEventListener("click", greet);
     }
+    rotate = document.querySelector(".rotate-hint");
+    if (rotate) {
+      rotate.hidden = false; // 没有脚本时不出现这块牌
+      if (session && session.getItem("farm.hint") === "off") document.body.classList.add("hint-off");
+      rotate.addEventListener("click", function () {
+        document.body.classList.add("hint-off");
+        if (session) session.setItem("farm.hint", "off");
+      });
+    }
+    rotate = document.querySelector(".rotate-hint");
+    if (rotate) {
+      rotate.hidden = false;
+      if (session && session.getItem("farm.hint") === "off") document.body.classList.add("hint-off");
+      rotate.addEventListener("click", function () {
+        document.body.classList.add("hint-off");
+        if (session) session.setItem("farm.hint", "off");
+      });
+    }
 
     restore();
     cam.set = false;
@@ -650,6 +731,7 @@
     map = null;
     me = null;
     peep = null;
+    rotate = null;
     actors = [];
     keys = Object.create(null);
     target = null;

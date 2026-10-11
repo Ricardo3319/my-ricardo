@@ -62,7 +62,7 @@
 - [x] 重画走动小人（2026-10-11）：Ricardo 八帧换成带轮廓、胳膊和步幅的小人（头发受光、下颌、白 T，走路换手、腿分开并拢交替，侧面带鼻尖和摆臂）；五个村民共用新身板（轮廓胳膊垂到腰际带手、下颌线、两只脚），干活姿不再往站姿上叠家伙什，改成每人一整帧、胳膊照拿的东西摆（端茶、挎篮、掐料头、抱信、右手竖握钓竿），`tools/art.py` 里 `NPC_HEADS`/`NPC_BASE`/`NPC_BUSY` 顶掉旧的 `NPC_HELD` 叠法；对话肖像框仍用干净站姿。验过：`--preview` 放大逐帧对照、无头 CDP 1440 走路和开告示牌对话、390 竖屏走路，场上五人和家伙什都清楚，`tools/check.py` 9 页 0 问题
 - [x] 字体分片（2026-10-11）：先量了首访——慢 4G 下全字集 539KB 取 3.7 秒、load 3.9 秒，算慢，按未决里定的方向做 unicode-range 分片：新工具 `tools/font-shards.py`（带 fonttools 的 venv python 跑）扫九个页面和 js 文案用到的 517 字切出 `shard-common.woff2`（15KB，预加载、block），剩下两万多码位按 1024 一块切 25 个 ext 片（swap，告示牌打生僻字按需取）；`css/fonts.css` 生成、九页改预加载和引它、`farm.css` 里的 `@font-face` 挪走；`check.py` 查每页引分片和预加载、页上的字落进 ext 就报「重跑生成」。验过：无头 CDP 落地只取 common 一片、站内换页零字体请求、告示牌输入取对应 ext 片且像素字渲染出来、1440 和 390 截图照旧；慢 4G 字体 414ms、load 1.8 秒（原 3.9 秒），快 4G load 0.6 秒（原 1.6 秒）
 - [x] 自定义域名（2026-10-11）：`www.my-ricardo.com` CNAME 到 `ricardo3319.github.io`，根域名四条 A 记录指向 GitHub Pages；仓库加回 `CNAME`，`tools/check.py`、`SPEC.md` 第 6 节跟着改
-- [x] 重画小人（2026-10-11）：16×16 方块头改成 16×32，头在上半腿在下半，正面不画鼻子、细胳膊，靠发型外轮廓认人；`walk-ricardo.png` 128×32、村民两张 80×32；脚底仍对齐原来的格子。`DESIGN.md` 4/8、`css/farm.css`、`js/walk.js` 跟着改。验过：`--preview` 放大对照、`tools/check.py` 9 页 0 问题
+- [x] 走动小人改回最初一板（2026-10-11）：`tools/art.py` 的小人段恢复到 `147ef65`（重画之前），`walk-ricardo` / `walk-npcs` / `walk-npcs-busy` 重生成。验过：`--preview` 对照最初图、`tools/check.py` 9 页 0 问题
 
 ## 未决
 
@@ -85,7 +85,7 @@
 
 ## 交接
 
-角色层类名是 `.roam`，别用 `.field`（和声音面板下拉框、告示牌输入框撞名，曾把农场整个盖住）。碰撞格在 `js/world-data.js`，是 `tools/art.py` 生成的，不手改；改图只改 `tools/art.py`，跑 `python3 tools/art.py`，`--preview 目录` 出放大图对照。小人是 16×32。行带：头 14 行（发/脸/颈）、身子加腿 18 行；改村民只动 `NPC_HEADS`（14 行）、`NPC_PALS`、`NPC_BUSY`（18 行），`NPC_BASE` 是共用站姿；阿涟的钓竿在 `npcs_busy_sheet()` 里往右侧第 14 列插 `m`，别挪。脚底对齐格子：Ricardo 的 transform 是 `pos.y - 32`，村民 `top` 是 `row * 16 - 17`。
+角色层类名是 `.roam`，别用 `.field`（和声音面板下拉框、告示牌输入框撞名，曾把农场整个盖住）。碰撞格在 `js/world-data.js`，是 `tools/art.py` 生成的，不手改；改图只改 `tools/art.py`，跑 `python3 tools/art.py`，`--preview 目录` 出放大图对照。小人是 16×16。村民共用 `NPC_BASE`，每人五行头；干活姿是 `NPC_HELD` 叠在站姿上，`npcs_busy_sheet()` 按 16 像素一格 blit。脚底对齐格子：Ricardo 的 transform 是 `pos.y - 16`，村民 `top` 是 `row * 16 - 1`。
 站内换页时 `nav.js` 先换 `body.className` 再发 `farm:page`，收起态这类状态要自己记一份（看 `js/walk.js` 的 `walkOn`）；新页面要挂东西，照 `js/farm.js` 的 `page()` 或 `js/board.js` 的 `mount()` 写。换页过场是 `nav.js` 换页前调 `window.FARM_WALK.leave(回调)`，路在 `js/walk.js` 的 `pathToDoor()`（碰撞格 BFS），别在 `nav.js` 里写死延时。点地面寻路也走同一条 BFS（`routeTo`，拐点当路标、每轴饱和到 ±1 地走），长按持续走不找路、仍直线；改碰撞格时留意凸角：斜着顶死靠 `js/walk.js` 里退一像素那段兜着。点角色或场景点是 `standSpot()` 按占的格子（`NPCS`、`SCENES` 里的 `w`/`h`）算一圈可站立点，挑离它和玩家都近的那个，站定就 `openTalk()`；加新的大块头记得写 `w`/`h`，不然只按一格算。改曲子：`js/sound.js` 的 `SONGS` 一季一首，音色在 `LEADS`；告示牌认日子的说法在 `js/board.js` 的 `DATES` 和 `TIME`。
 手机那两块：横屏木牌是 `index.html` 里的 `.rotate-hint`，`js/walk.js` 挂载时揭开（没脚本不出现），点掉记在 `sessionStorage` 的 `farm.hint`；矮屏和横屏的紧凑样式在 `css/farm.css` 的 `max-height: 540px` 那段，右上角面板在那里改成浮动。
 走动层每帧只写变得了的样式：镜头变量 `--cam-x/--cam-y` 写在 `.world` 和 `.roam-map` 两个元素上（别挪回 `<html>`，根上一改整页样式重算），地图位移和小人位置都走 transform（`.actor-ricardo` 的 left/top 定在 0），`--wpx` 读一次记在 `cachedWpx`、resize 才重读；窗口 blur 和页面隐藏时 `release()` 把按住的键和手指当松开。改 `tools/art.py` 的 `write_png` 前先看函数头那两行注释：逐行滤波量过，None 最好。

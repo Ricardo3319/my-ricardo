@@ -767,18 +767,7 @@ def portrait():
 
 # ---------------------------------------------------------------- 小人
 
-# 16×32：头在上半、腿在下半，正面不画鼻子，扎扎细。Ricardo 照肖像的配色：深棕上梳短发、深蓝外套、白 T。
-
-
-def _rows(label, rows):
-    if len(rows) != 32:
-        raise SystemExit(f"{label}: {len(rows)} 行，要 32")
-    for i, r in enumerate(rows):
-        if len(r) != 16:
-            raise SystemExit(f"{label}[{i}] 长 {len(r)}: {r!r}")
-    return rows
-
-
+# 16×16 的顶视小人。Ricardo 照肖像的配色：深棕上梳短发、深蓝外套、白 T。
 WALK_PAL = {
     "o": "#2a1a1c",  # 轮廓、鞋
     "h": "#3d2722",  # 头发
@@ -793,217 +782,116 @@ WALK_PAL = {
     "p": "#4a3626",  # 裤子
 }
 
-# 每一帧 16×32。前两帧朝下，再三、四帧朝上，五、六帧朝右；朝左由朝右镜像。
-# 行带：0-13 发/脸/颈，14-21 身子，22-31 腿脚。正面不画鼻子。
+# 每一帧 16×16。前两帧朝下，再三、四帧朝上，五、六帧朝右；朝左由朝右镜像。
 RICARDO_FRAMES = [
-    # 朝下，迈左脚。
-    _rows("down0", [
-        "................",
-        "................",
-        "................",
-        ".....oooooo.....",
-        "....ohHHHHHo....",
-        "...ohhhhhhhho...",
-        "...ohhhhhhhho...",
-        "...ohhhhhhhho...",
-        "...ohhffffhho...",
-        "...ohffffffho...",
-        "...offeffeffo...",
-        "...offffffffo...",
-        "...offffffcfo...",
-        "....offffffo....",
-        ".....offffo.....",
-        ".....offffo.....",
-        "....oJssssJo....",
-        "...oJjjssjjJo...",
-        "..ojjjjssjjjjo..",
-        "..offjjssjjjjo..",
-        "..ojjjjssjjjjo..",
-        "..ojjjjssjjjjo..",
-        "...ojjjssjjjo...",
-        "...ojjjjjjjjo...",
-        "...oppo..oppo...",
-        "...oppo..oppo...",
-        "...oppo..oppo...",
-        "...oppo..oppo...",
-        "...oppo..oppo...",
-        "...oppo..oppo...",
-        "...oooo..oooo...",
-        "...oooo..oooo...",
-    ]),
-    # 朝下，并腿，右手在前。
-    _rows("down1", [
-        "................",
-        "................",
-        "................",
-        ".....oooooo.....",
-        "....ohHHHHHo....",
-        "...ohhhhhhhho...",
-        "...ohhhhhhhho...",
-        "...ohhhhhhhho...",
-        "...ohhffffhho...",
-        "...ohffffffho...",
-        "...offeffeffo...",
-        "...offffffffo...",
-        "...offffffcfo...",
-        "....offffffo....",
-        ".....offffo.....",
-        ".....offffo.....",
-        "....oJssssJo....",
-        "...oJjjssjjJo...",
-        "..ojjjjssjjjjo..",
-        "..ojjjjssjjffo..",
-        "..ojjjjssjjjjo..",
-        "..ojjjjssjjjjo..",
-        "...ojjjssjjjo...",
-        "...ojjjjjjjjo...",
-        "....oppoppo.....",
-        "....oppoppo.....",
-        "....oppoppo.....",
-        "....oppoppo.....",
-        "....oppoppo.....",
-        "....oppoppo.....",
-        "....oooooo......",
-        "....oooooo......",
-    ]),
-    # 朝上：后脑勺，背心压暗。
-    _rows("up0", [
-        "................",
-        "................",
-        "................",
-        ".....oooooo.....",
-        "....ohHHHHHo....",
-        "...ohhhhhhhho...",
-        "...ohhhhhhhho...",
-        "...ohhhhhhhho...",
-        "...ohhhhhhhho...",
+    [
+        "....oooooooo....",
         "...ohhhhhhhho...",
         "...ohhHHHHhho...",
         "...ohhhhhhhho...",
-        "...ohhhhhhhho...",
-        "....ohhhhho.....",
-        ".....offfo......",
-        ".....offfo......",
-        "....oJddddJo....",
-        "...oJjjddjjJo...",
-        "..ojjjjddjjjjo..",
-        "..offjjddjjjjo..",
-        "..ojjjjddjjjjo..",
-        "..ojjjjddjjjjo..",
-        "...ojjjddjjjo...",
-        "...ojjjjjjjjo...",
-        "...oppo..oppo...",
-        "...oppo..oppo...",
-        "...oppo..oppo...",
-        "...oppo..oppo...",
-        "...oppo..oppo...",
-        "...oppo..oppo...",
-        "...oooo..oooo...",
-        "...oooo..oooo...",
-    ]),
-    _rows("up1", [
+        "...ohhffffhho...",
+        "...offffffffo...",
+        "...offeffeffo...",
+        "...offfccfffo...",
+        "..ojjjjjjjjjjo..",
+        "..ojjjssssjjjo..",
+        "..ojjjssssjjdo..",
+        "..ojjjssssjjdo..",
+        "...oppppppppo...",
+        "..opppo..oppppo..",
+        "...ooo....ooo...",
         "................",
-        "................",
-        "................",
-        ".....oooooo.....",
-        "....ohHHHHHo....",
-        "...ohhhhhhhho...",
-        "...ohhhhhhhho...",
-        "...ohhhhhhhho...",
-        "...ohhhhhhhho...",
+    ],
+    [
+        "....oooooooo....",
         "...ohhhhhhhho...",
         "...ohhHHHHhho...",
         "...ohhhhhhhho...",
+        "...ohhffffhho...",
+        "...offffffffo...",
+        "...offeffeffo...",
+        "...offfccfffo...",
+        "..ojjjjjjjjjjo..",
+        "..ojjjssssjjjo..",
+        "..ojjjssssjjdo..",
+        "..ojjjssssjjdo..",
+        "...oppppppppo...",
+        "....opppppo.....",
+        ".....oo..oo.....",
+        "................",
+    ],
+    [
+        "....oooooooo....",
         "...ohhhhhhhho...",
-        "....ohhhhho.....",
-        ".....offfo......",
-        ".....offfo......",
-        "....oJddddJo....",
-        "...oJjjddjjJo...",
-        "..ojjjjddjjjjo..",
-        "..ojjjjddjjffo..",
-        "..ojjjjddjjjjo..",
-        "..ojjjjddjjjjo..",
-        "...ojjjddjjjo...",
-        "...ojjjjjjjjo...",
-        "....oppoppo.....",
-        "....oppoppo.....",
-        "....oppoppo.....",
-        "....oppoppo.....",
-        "....oppoppo.....",
-        "....oppoppo.....",
-        "....oooooo......",
-        "....oooooo......",
-    ]),
-    # 朝右：侧脸一颗眼，没有伸出去的鼻子。
-    _rows("right0", [
+        "...ohhHHhhhho...",
+        "...ohhhhhhhho...",
+        "...ohhhhhhhho...",
+        "...ohhhhhhhho...",
+        "...ohhhHHhhho...",
+        ".....offffo.....",
+        "..ojjjjjjjjjjo..",
+        "..oJJjjjjjjjjo..",
+        "..ojjjjjjjjjdo..",
+        "..ojjjjjjjjjdo..",
+        "...oppppppppo...",
+        "..opppo..oppppo..",
+        "...ooo....ooo...",
         "................",
+    ],
+    [
+        "....oooooooo....",
+        "...ohhhhhhhho...",
+        "...ohhHHhhhho...",
+        "...ohhhhhhhho...",
+        "...ohhhhhhhho...",
+        "...ohhhhhhhho...",
+        "...ohhhHHhhho...",
+        ".....offffo.....",
+        "..ojjjjjjjjjjo..",
+        "..oJJjjjjjjjjo..",
+        "..ojjjjjjjjjdo..",
+        "..ojjjjjjjjjdo..",
+        "...oppppppppo...",
+        "....opppppo.....",
+        ".....oo..oo.....",
         "................",
+    ],
+    [
+        "....oooooooo....",
+        "...ohhhhhhhho...",
+        "...ohhhhhhhho...",
+        "...ohhhhhhhffo..",
+        "...ohhfffffffo..",
+        "...ohfffffefo...",
+        "...ohffffffffof.",
+        "...offffffcffo..",
+        "..ojjjjjjjjjjo..",
+        "..ojjjjjjjjsjo..",
+        "..ojjjjjjjjsjo..",
+        "..ojjjjjjjjjdo..",
+        "...oppppppppo...",
+        "...oppp..opppo..",
+        "....oo......oo..",
         "................",
-        "....oooooo......",
-        "...ohHHHHHo.....",
-        "...ohhhhhhho....",
-        "...ohhhhhhho....",
-        "...ohhhhhhho....",
-        "...ohhhfffho....",
-        "...ohhfffffo....",
-        "...ohfffeffo....",
-        "...ohffffffo....",
-        "...ohffffcfo....",
-        "....offfffo.....",
-        ".....offfo......",
-        ".....offfo......",
-        "....oJsssJo.....",
-        "...oJjjssjJo....",
-        "...ojjjssjjo....",
-        "...offjssjjo....",
-        "...ojjjssjjo....",
-        "...ojjjssjjo....",
-        "...ojjjssjo.....",
-        "....ojjjjo......",
-        "....oppo.oppo...",
-        "....oppo.oppo...",
-        "....oppo.oppo...",
-        "....oppo.oppo...",
-        "....oppo.oppo...",
-        "....oppo.oppo...",
-        "....oooo.oooo...",
-        "....oooo.oooo...",
-    ]),
-    _rows("right1", [
+    ],
+    [
+        "....oooooooo....",
+        "...ohhhhhhhho...",
+        "...ohhhhhhhho...",
+        "...ohhhhhhhffo..",
+        "...ohhfffffffo..",
+        "...ohfffffefo...",
+        "...ohffffffffof.",
+        "...offffffcffo..",
+        "..ojjjjjjjjjjo..",
+        "..ojjjjjjjjsjo..",
+        "..ojjjjjjjjsjo..",
+        "..ojjjjjjjjjdo..",
+        "...oppppppppo...",
+        ".....opppppo....",
+        "......oo..oo....",
         "................",
-        "................",
-        "................",
-        "....oooooo......",
-        "...ohHHHHHo.....",
-        "...ohhhhhhho....",
-        "...ohhhhhhho....",
-        "...ohhhhhhho....",
-        "...ohhhfffho....",
-        "...ohhfffffo....",
-        "...ohfffeffo....",
-        "...ohffffffo....",
-        "...ohffffcfo....",
-        "....offfffo.....",
-        ".....offfo......",
-        ".....offfo......",
-        "....oJsssJo.....",
-        "...oJjjssjJo....",
-        "...ojjjssjjo....",
-        "...ojjjssjjo....",
-        "...ojjjssjjo....",
-        "...odjjssjjo....",
-        "...ojjjssjo.....",
-        "....ojjjjo......",
-        "....oppoppo.....",
-        "....oppoppo.....",
-        "....oppoppo.....",
-        "....oppoppo.....",
-        "....oppoppo.....",
-        "....oppoppo.....",
-        "....oooooo......",
-        "....oooooo......",
-    ]),
+    ],
 ]
 
 
@@ -1022,27 +910,19 @@ def ricardo_sheet():
     return hstrip(frames)
 
 
-# 五个村民共用身子和腿，只换发型、配色和小特征。正面一站，不走。
-# 行带和 Ricardo 对齐：头 14 行（发/脸/颈），身子加腿 18 行。
+# 五个村民共用脸、身子和腿，只换发型、配色和小特征。正面一站，不走。
 NPC_BASE = [
-    "....oSssssSo....",
-    "...oSssssssSo...",
+    "...offffffffo...",
+    "...offeffeffo...",
+    "...offfccfffo...",
     "..osssssssssso..",
     "..osssssssssso..",
     "..osssssssssso..",
-    "..osssssssssso..",
-    "..osssssssssso..",
-    "..osssssssssso..",
-    "...osssssssso...",
-    "...ossssssso....",
-    "...oppo..oppo...",
-    "...oppo..oppo...",
-    "...oppo..oppo...",
-    "...oppo..oppo...",
-    "...oppo..oppo...",
-    "...oppo..oppo...",
-    "...oooo..oooo...",
-    "...oooo..oooo...",
+    "..oSSssssssSSo..",
+    "...oppppppppo...",
+    "....opppppo.....",
+    ".....oo..oo.....",
+    "................",
 ]
 
 NPC_SHARED = {
@@ -1053,226 +933,79 @@ NPC_SHARED = {
     "p": "#3a2c20",
 }
 
-# 顺序就是 walk.js 里 NPC 表的顺序：陈伯、阿荞、老木、小满、阿涟。
-# 各 14 行，眼睛对齐在第 8 行，靠头发和帽子的外轮廓认人。
-NPC_HEADS = [
-    # 陈伯：秃顶、白边发。
-    [
-        "................",
-        "....oooooooo....",
-        "...offffffffo...",
-        "...offffffffo...",
-        "...ohffffffho...",
-        "...ohffffffho...",
-        "...ohffffffho...",
-        "...offeffeffo...",
-        "...offffffffo...",
-        "...offffffcfo...",
-        "....offffffo....",
-        ".....offffo.....",
-        ".....offffo.....",
-        "....osssssso....",
-    ],
-    # 阿荞：宽檐草帽。
-    [
-        "....otttttto....",
-        "..otttttttttto..",
-        ".otttttttttttto.",
-        "...oTTTTTTTTo...",
-        "...ohhhhhhhho...",
-        "...ohhffffhho...",
-        "...ohffffffho...",
-        "...offeffeffo...",
-        "...offffffffo...",
-        "...offffffcfo...",
-        "....offffffo....",
-        ".....offffo.....",
-        ".....offffo.....",
-        "....osssssso....",
-    ],
-    # 老木：厚棕发，略蓬。
-    [
-        "....oooooooo....",
-        "...ohhhhhhhho...",
-        "..ohhhhhhhhhho..",
-        "...ohhhhhhhho...",
-        "...ohhhhhhhho...",
-        "...ohhffffhho...",
-        "...ohffffffho...",
-        "...offeffeffo...",
-        "...offffffffo...",
-        "...offffffcfo...",
-        "....offffffo....",
-        ".....offffo.....",
-        ".....offffo.....",
-        "....osssssso....",
-    ],
-    # 小满：两个发髻。
-    [
-        "..oo........oo..",
-        "..oho......oho..",
-        "..ohhhhhhhhhho..",
-        "...ohhhhhhhho...",
-        "...ohhhhhhhho...",
-        "...ohhffffhho...",
-        "...ohffffffho...",
-        "...offeffeffo...",
-        "...offffffffo...",
-        "...offffffcfo...",
-        "....offffffo....",
-        ".....offffo.....",
-        ".....offffo.....",
-        "....osssssso....",
-    ],
-    # 阿涟：蓝头巾，一侧留个小尾。
-    [
-        "...okkkkkkkko...",
-        "...okkkkkkkko...",
-        "...okkkkkkkkko..",
-        "...okkkkkkkko...",
-        "...okffffffko...",
-        "...okffffffko...",
-        "...okffffffko...",
-        "...okeffeffko...",
-        "...okffffffko...",
-        "...okffffcfko...",
-        "....offffffo....",
-        ".....offffo.....",
-        ".....offffo.....",
-        "....osssssso....",
-    ],
-]
-
-NPC_PALS = [
-    {"h": "#d8d4c8", "s": "#7a5a3a", "S": "#96774f", "d": "#5e442c"},
-    {"t": "#e3b04b", "T": "#b8822f", "h": "#3a2a1e", "s": "#5e9448", "S": "#7ab264", "d": "#47713a"},
-    {"h": "#4a2c16", "s": "#b8622f", "S": "#d47f47", "d": "#96492a"},
-    {"h": "#5a3a1e", "s": "#e0832f", "S": "#f09c4b", "d": "#b8641f"},
-    {"k": "#4c8bc9", "s": "#3f8e8a", "S": "#5aaba6", "d": "#2f6e6a"},
-]
-
 
 def villager(head, pal):
-    return sprite(_rows("npc", head + NPC_BASE), {**NPC_SHARED, **pal})
+    return sprite(head + NPC_BASE, {**NPC_SHARED, **pal})
 
 
 def npcs_sheet():
-    return hstrip([villager(h, p) for h, p in zip(NPC_HEADS, NPC_PALS)])
+    # 顺序就是 walk.js 里 NPC 表的顺序：陈伯、阿荞、老木、小满、阿涟。
+    folks = [
+        # 陈伯：秃顶、白边发、白胡子，棕褂子。
+        villager(
+            [
+                "................",
+                "...oooooooooo...",
+                "...offffffffo...",
+                "...ohffffffho...",
+                "...ohffffffho...",
+            ],
+            {"h": "#d8d4c8", "s": "#7a5a3a", "S": "#5e442c"},
+        ),
+        # 阿荞：草帽、绿衫。
+        villager(
+            [
+                "....otttttto....",
+                "..otttttttttto..",
+                "...oTTTTTTTTo...",
+                "...offffffffo...",
+                "...ohffffffho...",
+            ],
+            {"t": "#e3b04b", "T": "#b8822f", "h": "#3a2a1e", "s": "#5e9448", "S": "#47713a"},
+        ),
+        # 老木：棕发棕胡子，锈红衫。
+        villager(
+            [
+                "....oooooooo....",
+                "...ohhhhhhhho...",
+                "...ohhhhhhhho...",
+                "...ohhhhhhhho...",
+                "...ohhffffhho...",
+            ],
+            {"h": "#4a2c16", "s": "#b8622f", "S": "#96492a"},
+        ),
+        # 小满：两个发髻，橙衫。
+        villager(
+            [
+                "..oo........oo..",
+                "..ohhhhhhhhhho..",
+                "...ohhhhhhhho...",
+                "...ohhhhhhhho...",
+                "...ohhffffhho...",
+            ],
+            {"h": "#5a3a1e", "s": "#e0832f", "S": "#b8641f"},
+        ),
+        # 阿涟：蓝头巾，青衫。
+        villager(
+            [
+                "...okkkkkkkko...",
+                "...okkkkkkkko...",
+                "...okkkkkkkko...",
+                "...okffffffko...",
+                "...okffffffko...",
+            ],
+            {"k": "#4c8bc9", "s": "#3f8e8a", "S": "#2f6e6a"},
+        ),
+    ]
+    return hstrip(folks)
 
 
-# 干活姿：换身子加腿那十八行，胳膊照手里拿的东西摆。顺序同 NPC 表。
-NPC_BUSY = [
-    # 陈伯：右手端一杯茶。
-    [
-        "....oSssssSo....",
-        "...oSssssssSo...",
-        "..osssssssssso..",
-        "..osssssssWooo..",
-        "..ossssssfoWoo..",
-        "..ossssssssooo..",
-        "...osssssssso...",
-        "....ossssso.....",
-        "...oppo..oppo...",
-        "...oppo..oppo...",
-        "...oppo..oppo...",
-        "...oppo..oppo...",
-        "...oppo..oppo...",
-        "...oppo..oppo...",
-        "...oppo..oppo...",
-        "...oooo..oooo...",
-        "...oooo..oooo...",
-        "...oooo..oooo...",
-    ],
-    # 阿荞：右臂挎一只菜篮。
-    [
-        "....oSssssSo....",
-        "...oSssssssSo...",
-        "..osssssssssso..",
-        "..ossssssogrgo..",
-        "..ossssssfobbo..",
-        "..osssssssobbo..",
-        "...ossssssooo...",
-        "....ossssso.....",
-        "...oppo..oppo...",
-        "...oppo..oppo...",
-        "...oppo..oppo...",
-        "...oppo..oppo...",
-        "...oppo..oppo...",
-        "...oppo..oppo...",
-        "...oppo..oppo...",
-        "...oooo..oooo...",
-        "...oooo..oooo...",
-        "...oooo..oooo...",
-    ],
-    # 老木：横抱一块木料。
-    [
-        "....oSssssSo....",
-        "...oSssssssSo...",
-        "..osssssssssso..",
-        "..oMMMMMMMMMmo..",
-        "..offmmmmmmffo..",
-        "..oooooooooooo..",
-        "...osssssssso...",
-        "....ossssso.....",
-        "...oppo..oppo...",
-        "...oppo..oppo...",
-        "...oppo..oppo...",
-        "...oppo..oppo...",
-        "...oppo..oppo...",
-        "...oppo..oppo...",
-        "...oppo..oppo...",
-        "...oooo..oooo...",
-        "...oooo..oooo...",
-        "...oooo..oooo...",
-    ],
-    # 小满：怀里抱一摞信。
-    [
-        "....oSssssSo....",
-        "...oSssssssSo...",
-        "..osssssssssso..",
-        "..ossoWrWosso...",
-        "..ossowwwosso...",
-        "..offoWWWoffo...",
-        "...oooooooo.....",
-        "....ossssso.....",
-        "...oppo..oppo...",
-        "...oppo..oppo...",
-        "...oppo..oppo...",
-        "...oppo..oppo...",
-        "...oppo..oppo...",
-        "...oppo..oppo...",
-        "...oppo..oppo...",
-        "...oooo..oooo...",
-        "...oooo..oooo...",
-        "...oooo..oooo...",
-    ],
-    # 阿涟：右手握钓竿（竿身在 npcs_busy_sheet 里从头顶竖下来）。
-    [
-        "....oSssssSo....",
-        "...oSssssssSo...",
-        "..osssssssssso..",
-        "..osssssssssso..",
-        "..osssssssssso..",
-        "..ossssssssffo..",
-        "...osssssssso...",
-        "....ossssso.....",
-        "...oppo..oppo...",
-        "...oppo..oppo...",
-        "...oppo..oppo...",
-        "...oppo..oppo...",
-        "...oppo..oppo...",
-        "...oppo..oppo...",
-        "...oppo..oppo...",
-        "...oooo..oooo...",
-        "...oooo..oooo...",
-        "...oooo..oooo...",
-    ],
-]
-
-# 手里物件的配色：木料、瓷杯、信纸、菜叶、萝卜红、篮篾。
-BUSY_PAL = {
-    "M": "#c99a5e",
-    "m": "#6b4a2a",
+# 村民手里拿的东西，叠在站姿上就是「正在干活」：陈伯端茶、阿荞挎菜篮、
+# 老木抱木料、小满抱信、阿涟举钓竿。顺序同 NPC 表。
+HELD_PAL = {
+    **NPC_SHARED,
+    "d": "#6b4a2a",
+    "D": "#c99a5e",
     "W": "#fff4dc",
     "w": "#e0c795",
     "g": "#6fae4e",
@@ -1280,15 +1013,110 @@ BUSY_PAL = {
     "b": "#b8822f",
 }
 
+NPC_HELD = [
+    # 陈伯：右手端一杯茶。
+    [
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        ".............oo.",
+        ".............oWo",
+        "............foWo",
+        ".............oo.",
+        "................",
+        "................",
+        "................",
+        "................",
+    ],
+    # 阿荞：左臂挎一只菜篮，篮里露出菜叶和萝卜。
+    [
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "..........ogro..",
+        "..........fobbo.",
+        "...........obbo.",
+        "...........oooo.",
+        "................",
+        "................",
+        "................",
+    ],
+    # 老木：横抱一块木料，两手掐着料头。
+    [
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "....oDDDDDDo....",
+        "....fddddddf....",
+        "....oooooooo....",
+        "................",
+        "................",
+        "................",
+        "................",
+    ],
+    # 小满：怀里抱一摞信，最上面一封贴着红戳。
+    [
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "........oWo.....",
+        ".......oWrWo....",
+        ".......owwwo....",
+        "......foWWWof...",
+        ".......owwwo....",
+        ".......ooooo....",
+        "................",
+        "................",
+        "................",
+    ],
+    # 阿涟：两手斜举钓竿，竿梢朝右上，线从那儿垂进池塘。
+    [
+        "................",
+        "................",
+        "................",
+        "..............d.",
+        ".............d..",
+        "............d...",
+        "...........d....",
+        "..........d.....",
+        ".........d......",
+        "........df......",
+        ".......df.......",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+    ],
+]
+
 
 def npcs_busy_sheet():
-    folks = []
-    for i, (head, pal) in enumerate(zip(NPC_HEADS, NPC_PALS)):
-        rows = list(head + NPC_BUSY[i])
-        if i == 4:  # 钓竿从头顶竖到手里，竿身在脸右侧那一列
-            rows = [r[:14] + "m" + r[15:] if 1 <= y <= 20 else r for y, r in enumerate(rows)]
-        folks.append(sprite(_rows(f"busy{i}", rows), {**NPC_SHARED, **pal, **BUSY_PAL}))
-    return hstrip(folks)
+    out = npcs_sheet()
+    for i, rows in enumerate(NPC_HELD):
+        out.blit(sprite(rows, HELD_PAL), i * 16, 0)
+    return out
 
 
 # 信箱和告示牌：画进农场图的两件能交互的东西，四季一个样。

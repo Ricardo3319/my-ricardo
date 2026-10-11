@@ -557,7 +557,7 @@
     // 小人挪位置用 transform，不动 left/top：位置一变就重排版式，走一路排一路。
     var sprite = pos.dir * 2 + (moving && Math.floor(pos.step / 0.18) % 2 === 0 ? 0 : 1);
     var sx = Math.round(pos.x - 8);
-    var sy = Math.round(pos.y - 16);
+    var sy = Math.round(pos.y - 32);
     if (sx !== frame.sx || sy !== frame.sy) {
       frame.sx = sx;
       frame.sy = sy;
@@ -696,9 +696,9 @@
       el.className = d.face >= 0 ? "actor actor-npc" : "actor actor-fixture";
       el.setAttribute("data-actor", String(i));
       el.style.left = "calc(" + d.col * TILE + " * var(--wpx))";
-      el.style.top = "calc(" + (d.row * TILE - 1) + " * var(--wpx))";
+      el.style.top = "calc(" + ((d.face >= 0 ? d.row * TILE - 17 : d.row * TILE - 1)) + " * var(--wpx))";
       el.style.width = "calc(" + 16 * (d.w || 1) + " * var(--wpx))";
-      el.style.height = "calc(" + 16 * (d.h || 1) + " * var(--wpx))";
+      el.style.height = "calc(" + (d.face >= 0 ? 32 : 16 * (d.h || 1)) + " * var(--wpx))";
       el.style.zIndex = d.row * TILE + 15;
       if (d.face >= 0) el.style.backgroundPosition = "calc(" + -16 * d.face + " * var(--wpx)) 0";
       else el.style.pointerEvents = "auto"; // 告示牌没有图，留个能点的热区

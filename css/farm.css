@@ -121,11 +121,13 @@ html[data-phase="night"] .world::before { background: rgb(14 22 62 / 0.45); }
 .actor-ricardo {
   left: 0;
   top: 0;
-  background: url("../img/walk-ricardo.png") 0 0 / calc(128 * var(--wpx)) calc(16 * var(--wpx));
+  height: calc(32 * var(--wpx));
+  background: url("../img/walk-ricardo.png") 0 0 / calc(128 * var(--wpx)) calc(32 * var(--wpx));
 }
 
 .actor-npc {
-  background: url("../img/walk-npcs-busy.png") 0 0 / calc(80 * var(--wpx)) calc(16 * var(--wpx));
+  height: calc(32 * var(--wpx));
+  background: url("../img/walk-npcs-busy.png") 0 0 / calc(80 * var(--wpx)) calc(32 * var(--wpx));
   pointer-events: auto;
 }
 
@@ -139,6 +141,10 @@ html[data-phase="night"] .world::before { background: rgb(14 22 62 / 0.45); }
   text-shadow: var(--px) var(--px) 0 var(--shadow);
 }
 
+.actor-npc .bubble {
+  bottom: calc(33 * var(--wpx) + var(--fs) + 2 * var(--px));
+}
+
 .nametag {
   position: absolute;
   left: 50%;
@@ -148,6 +154,10 @@ html[data-phase="night"] .world::before { background: rgb(14 22 62 / 0.45); }
   text-shadow: var(--px) var(--px) 0 var(--shadow);
   white-space: nowrap;
   visibility: hidden;
+}
+
+.actor-npc .nametag, .actor-ricardo .nametag {
+  bottom: calc(33 * var(--wpx));
 }
 
 .actor-npc, .actor-fixture { cursor: pointer; }
@@ -632,7 +642,7 @@ html[data-season="winter"] .hud-season-name::before { content: "冬"; }
 .portrait-npc {
   width: calc(48 * var(--px));
   height: calc(48 * var(--px));
-  background: url("../img/walk-npcs.png") 0 0 / calc(240 * var(--px)) calc(48 * var(--px));
+  background: url("../img/walk-npcs.png") 0 0 / calc(240 * var(--px)) calc(96 * var(--px));
   image-rendering: pixelated;
 }
 

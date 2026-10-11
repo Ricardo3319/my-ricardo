@@ -47,7 +47,8 @@
 <meta property="og:description" content="同 description">
 <meta property="og:type" content="website">
 <script>/* 天色季节小脚本：设 data-season、data-phase，预加载当季农场图 */</script>
-<link rel="preload" href="…/fonts/ark-pixel-12px-proportional-zh_hans.otf.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="…/fonts/shard-common.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="…/css/fonts.css">
 <link rel="stylesheet" href="…/css/farm.css">
 <link rel="icon" href="…/img/favicon.png">
 ```
@@ -452,7 +453,8 @@ notes/index.html           /notes
 notes/sample/index.html    /notes/sample
 contact/index.html         /contact
 board/index.html           /board，本人自用
-css/farm.css               全部样式
+css/fonts.css              字体 unicode-range 分片的 @font-face，tools/font-shards.py 生成，不手改
+css/farm.css               全部样式（字体不在这里）
 js/farm.js                 季节、日期、钟点和天色、首页打字、邮箱复制，只这五件
 js/nav.js                  站内换页、提前取页
 js/sound.js                声音：合成四首小曲和环境音、声音面板、自己加的音乐
@@ -460,18 +462,19 @@ js/walk.js                 首页走动：Ricardo 小人、五个村民、镜头
 js/world-data.js           四季碰撞格（window.FARM_WORLD），tools/art.py 生成，不手改
 js/board.js                告示牌：认日子、画便条和月历、本机存储、和私有仓库同步。只在 /board 引
 audio/tracks.json          站里另放的曲子清单，现在是空的 []
-fonts/                     方舟像素 + OFL 全文
+fonts/                     方舟像素全字集（只当生成源，页面不引）+ OFL 全文 + shard-*.woff2 分片（生成）
 img/                       tools/art.py 生成，不手改
 _config.yml                不发布 docs/、tools/、AGENTS.md
 docs/                      DESIGN、SPEC、CONTENT、progress
 tools/art.py               出图
+tools/font-shards.py       字体分片（要带 fonttools 的 venv python 跑，见脚本头）
 tools/serve.py             本地预览，和线上一样不公开 docs/、tools/
 tools/check.py             机器能查的验收
 tools/third-party/         Kenney 原图和许可
 ```
 
 - 没有模板引擎，每页重复 HUD、页签、页脚。改它们要所有页一起改。不用脚本注入导航。
-- `farm.css` 的顺序：字体、令牌、世界、基础、HUD、对话框、肖像、菜单、页签、物品栏、内容、告示牌、页脚、焦点、换页、中屏、窄屏、减少动效。
+- `farm.css` 的顺序：令牌、世界、基础、HUD、对话框、肖像、菜单、页签、物品栏、内容、告示牌、页脚、焦点、换页、中屏、窄屏、减少动效。字体在 `css/fonts.css`（分片，生成）。
 - 图片写 `width`、`height`。
 - 脚本都放在 `</body>` 前，顺序是 `nav.js`、`sound.js`、（首页的 `world-data.js`、`walk.js`，告示牌的 `board.js`）、`farm.js`。
 - 往站里放曲子：文件放进 `audio/`，在 `audio/tracks.json` 里加一条 `{"file": "文件名.mp3", "name": "面板上显示的名字", "credit": "作者 · 许可"}`。只放本人有权公开的，不放游戏原声；自己买的原声只用面板里的「加一首」在本机听。

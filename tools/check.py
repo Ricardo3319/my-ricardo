@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """机器能查的验收，对照 docs/SPEC.md。不代替打开页面看。"""
 
+import html as htmlmod
 import json
 import posixpath
 import re
@@ -223,6 +224,10 @@ for rel in PAGES:
         continue
     if "css/farm.css" not in html:
         bad(f"{rel} 没有用 css/farm.css")
+    if "css/fonts.css" not in html:
+        bad(f"{rel} 没有用 css/fonts.css")
+    if not re.search(r'<link rel="preload" href="[^"]*shard-common\.woff2" as="font" type="font/woff2" crossorigin>', html):
+        bad(f"{rel} 没有预加载字体 common 分片")
     check_page(rel, html)
     check_content(rel, html)
 
@@ -240,8 +245,57 @@ if re.search(r":focus\s*\{[^}]*outline:\s*none", css):
     bad("去掉了 :focus 的轮廓")
 if "@view-transition" not in css or "navigation: none" not in css:
     bad("farm.css 应开跨页过渡，并在减少动效时关掉")
-if "font-display: block" not in css:
-    bad("像素字应 font-display: block，免得换页时先闪系统字")
+
+# 字体分片（css/fonts.css 是 tools/font-shards.py 的生成文件）：common 装静态页用到的字，
+# 其余码位切 ext 块按需取。页面上的字落进 ext 就说明改过正文没重跑生成。
+fonts_css = read("css/fonts.css")
+if not fonts_css.startswith("/* 生成文件，不手改"):
+    bad("css/fonts.css 应是 tools/font-shards.py 的生成文件，不手改")
+if "font-display: block" not in fonts_css:
+    bad("common 分片应 font-display: block，免得换页时先闪系统字")
+if re.search(r'url\("?/', fonts_css):
+    bad("fonts.css 里有以 / 开头的路径，站点在子路径下会找不到")
+for url in re.findall(r'url\("\.\./([^"]+)"\)', fonts_css):
+    if not (ROOT / url).is_file():
+        bad(f"fonts.css 引了不存在的 {url}")
+
+
+def parse_ranges(spec):
+    out = set()
+    for part in spec.split(","):
+        m = re.fullmatch(r"\s*U\+([0-9A-F]+)(?:-([0-9A-F]+))?\s*", part)
+        if not m:
+            bad(f"fonts.css 里有认不得的 unicode-range 片断 {part!r}")
+            continue
+        a = int(m.group(1), 16)
+        out.update(range(a, int(m.group(2) or m.group(1), 16) + 1))
+    return out
+
+
+face_ranges = re.findall(r"unicode-range: ([^;]+);", fonts_css)
+if not face_ranges:
+    bad("fonts.css 里一个 unicode-range 都没有")
+else:
+    common_set = parse_ranges(face_ranges[0])
+    ext_set = set()
+    for spec in face_ranges[1:]:
+        ext_set |= parse_ranges(spec)
+
+    def scan_chars():
+        out = set()
+        for rel in PAGES:
+            src = read(rel)
+            src = re.sub(r"<script.*?</script>|<style.*?</style>", "", src, flags=re.S)
+            out |= set(htmlmod.unescape(re.sub(r"<[^>]+>", "", src)))
+        for path in sorted((ROOT / "js").glob("*.js")):
+            src = path.read_text(encoding="utf-8")
+            for lit in re.findall(r'"([^"\\\n]*(?:\\.[^"\\\n]*)*)"|\'([^\'\\\n]*(?:\\.[^\'\\\n]*)*)\'', src):
+                out |= set(htmlmod.unescape(lit[0] or lit[1]))
+        return out
+
+    stale = sorted(ch for ch in scan_chars() if ord(ch) in ext_set)
+    if stale:
+        bad("这些字落进了 ext 分片（首访要多取块）：「" + "".join(stale[:24]) + "」，重跑 tools/font-shards.py")
 
 js = read("js/farm.js")
 if "farm.season" not in js or "sessionStorage" not in js:

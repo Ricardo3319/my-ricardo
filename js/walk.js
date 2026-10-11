@@ -44,6 +44,8 @@
   var layer = null;
   var map = null;
   var me = null;
+  var bg = null; // 农场背景那层。镜头变量写在它和地图上，不写在 <html> 上：根上一改，整页样式都要重算
+  var hitArea = null;
   var peep = null;
   var rotate = null;
   var actors = []; // {data, el, bubble, fx, fy}
@@ -71,8 +73,13 @@
     return walkOn;
   }
 
+  // --wpx 只跟着视口宽度变（CSS 里的媒体查询），读一次记住，窗口尺寸一变再读。
+  // 每帧去 getComputedStyle 会逼着浏览器把样式算一遍，白花钱。
+  var cachedWpx = 0;
+
   function wpx() {
-    return parseFloat(getComputedStyle(root).getPropertyValue("--wpx")) || 3;
+    if (!cachedWpx) cachedWpx = parseFloat(getComputedStyle(root).getPropertyValue("--wpx")) || 3;
+    return cachedWpx;
   }
 
   // 碰撞：当前季节的位图，格子是 1 就走不进。
@@ -409,18 +416,18 @@
     var dy = 0;
     if (leaving) {
       if (enter < 0) {
-        var wp = leaveRoute[0];
-        if (!wp) {
+        var lwp = leaveRoute[0];
+        if (!lwp) {
           enter = 0; // 到门口了，转身跨进门
           pos.dir = 1;
         } else {
-          var wx = wp.x - pos.x;
-          var wy = wp.y - pos.y;
-          var wd = Math.hypot(wx, wy);
-          if (wd < 3) leaveRoute.shift();
+          var lwx = lwp.x - pos.x;
+          var lwy = lwp.y - pos.y;
+          var lwd = Math.hypot(lwx, lwy);
+          if (lwd < 3) leaveRoute.shift();
           else {
-            dx = wx / wd;
-            dy = wy / wd;
+            dx = lwx / lwd;
+            dy = lwy / lwd;
           }
         }
       }
@@ -461,8 +468,8 @@
 
     var moving = !!(dx || dy);
     if (moving) {
-      var px = pos.x;
-      var py = pos.y;
+      var ox = pos.x;
+      var oy = pos.y;
       var len = Math.hypot(dx, dy) || 1;
       var speed = leaving ? LEAVE_SPEED : 84; // 美术像素/秒，走路一格半上下
       var stepX = (dx / len) * speed * dt;
@@ -492,7 +499,7 @@
       // 撞墙停下；长按时留着目的地，等手指挪或抬手。
       if (target && !target.talk && !held && !(target.route && target.route.length) && !freeAt(pos.x + stepX * 4, pos.y + stepY * 4)) target = null;
       var parity = Math.floor(pos.step / 0.18) % 2;
-      if (parity !== frame.parity && Math.abs(pos.x - px) + Math.abs(pos.y - py) > 0.001 && window.FARM_SOUND) window.FARM_SOUND.step();
+      if (parity !== frame.parity && Math.abs(pos.x - ox) + Math.abs(pos.y - oy) > 0.001 && window.FARM_SOUND) window.FARM_SOUND.step();
       frame.parity = parity;
     }
 
@@ -515,17 +522,6 @@
     }
 
     var k = wpx();
-    var sprite = pos.dir * 2 + (moving && Math.floor(pos.step / 0.18) % 2 === 0 ? 0 : 1);
-    me.style.left = "calc(" + Math.round(pos.x - 8) + " * var(--wpx))";
-    me.style.top = "calc(" + Math.round(pos.y - 16) + " * var(--wpx))";
-    me.style.zIndex = Math.round(pos.y);
-    me.style.backgroundPosition = "calc(" + -16 * sprite + " * var(--wpx)) 0";
-
-    var near = leaving || talking || moving ? null : nearest();
-    actors.forEach(function (a) {
-      a.bubble.hidden = a !== near;
-      a.el.classList.toggle("is-near", a === near);
-    });
 
     // 镜头：人放在视口 (50%, 44%)，地图边不外露；减少动效时直接到位。
     var mapW = 896 * k;
@@ -545,8 +541,47 @@
       cam.x += (tx - cam.x) * ease;
       cam.y += (ty - cam.y) * ease;
     }
-    root.style.setProperty("--cam-x", Math.round(cam.x) + "px");
-    root.style.setProperty("--cam-y", Math.round(cam.y) + "px");
+
+    // 读完了再写。值和上一帧一样就不碰样式：站着不动时这一帧几乎不花钱。
+    var cx = Math.round(cam.x);
+    var cy = Math.round(cam.y);
+    if (cx !== frame.cx || cy !== frame.cy) {
+      frame.cx = cx;
+      frame.cy = cy;
+      bg.style.setProperty("--cam-x", cx + "px");
+      bg.style.setProperty("--cam-y", cy + "px");
+      map.style.setProperty("--cam-x", cx + "px");
+      map.style.setProperty("--cam-y", cy + "px");
+    }
+
+    // 小人挪位置用 transform，不动 left/top：位置一变就重排版式，走一路排一路。
+    var sprite = pos.dir * 2 + (moving && Math.floor(pos.step / 0.18) % 2 === 0 ? 0 : 1);
+    var sx = Math.round(pos.x - 8);
+    var sy = Math.round(pos.y - 16);
+    if (sx !== frame.sx || sy !== frame.sy) {
+      frame.sx = sx;
+      frame.sy = sy;
+      me.style.transform = "translate3d(calc(" + sx + " * var(--wpx)), calc(" + sy + " * var(--wpx)), 0)";
+    }
+    var sz = Math.round(pos.y);
+    if (sz !== frame.sz) {
+      frame.sz = sz;
+      me.style.zIndex = sz;
+    }
+    var sp = -16 * sprite;
+    if (sp !== frame.sp) {
+      frame.sp = sp;
+      me.style.backgroundPosition = "calc(" + sp + " * var(--wpx)) 0";
+    }
+
+    var near = leaving || talking || moving ? null : nearest();
+    if (near !== frame.near) {
+      frame.near = near;
+      actors.forEach(function (a) {
+        a.bubble.hidden = a !== near;
+        a.el.classList.toggle("is-near", a === near);
+      });
+    }
   }
 
   var ARROWS = { ArrowLeft: "left", ArrowRight: "right", ArrowUp: "up", ArrowDown: "down", a: "left", d: "right", w: "up", s: "down" };
@@ -629,8 +664,6 @@
     held = null;
   }
 
-  var hitArea = null;
-
   function mount() {
     if (!document.body.classList.contains("home")) return;
     if (layer) return;
@@ -639,6 +672,8 @@
       window.setTimeout(mount, 50);
       return;
     }
+    bg = document.querySelector(".world");
+    if (!bg) return; // 没有农场背景，镜头变量没处写
     if (COARSE) {
       // 触屏没有 W/S 和回车可说，提示换成点法的。
       var h0 = document.querySelector(".walk-hint");
@@ -707,19 +742,12 @@
         if (session) session.setItem("farm.hint", "off");
       });
     }
-    rotate = document.querySelector(".rotate-hint");
-    if (rotate) {
-      rotate.hidden = false;
-      if (session && session.getItem("farm.hint") === "off") document.body.classList.add("hint-off");
-      rotate.addEventListener("click", function () {
-        document.body.classList.add("hint-off");
-        if (session) session.setItem("farm.hint", "off");
-      });
-    }
 
     restore();
     cam.set = false;
     frame.last = 0;
+    // 上一帧写过的值：换页重建过元素，得从头写一遍。
+    frame.cx = frame.cy = frame.sx = frame.sy = frame.sz = frame.sp = frame.near = null;
     raf = window.requestAnimationFrame(frame);
   }
   function unmount() {
@@ -730,8 +758,10 @@
     layer = null;
     map = null;
     me = null;
+    bg = null;
     peep = null;
     rotate = null;
+    hitArea = null;
     actors = [];
     keys = Object.create(null);
     target = null;
@@ -752,8 +782,22 @@
 
   window.FARM_WALK = { leave: leave };
 
+  // 窗口切走（换标签、切应用）时收不到 keyup：一律当松手，别回来发现小人自己走个不停。
+  function release() {
+    keys = Object.create(null);
+    held = null;
+  }
+
   document.addEventListener("keydown", onKeyDown);
   document.addEventListener("keyup", onKeyUp);
   document.addEventListener("farm:page", page);
+  window.addEventListener("blur", release);
+  document.addEventListener("visibilitychange", function () {
+    if (document.hidden) release();
+  });
+  // 视口一变，--wpx 可能就换档了，读过的那个作废。
+  window.addEventListener("resize", function () {
+    cachedWpx = 0;
+  });
   page();
 })();

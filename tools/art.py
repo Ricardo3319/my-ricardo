@@ -76,6 +76,8 @@ def read_png(path):
 
 
 def write_png(path, img):
+    # 行滤波一律用 0（None）：这些图大半是透明像素，整行整行的零，zlib 压零比压差分狠得多。
+    # 试过逐行挑 Sub/Up/Paeth，反而把零的长串拆散，农场图从 50KB 涨到 60KB。
     raw = bytearray()
     for y in range(img.h):
         raw.append(0)
@@ -782,112 +784,117 @@ WALK_PAL = {
 
 # 每一帧 16×16。前两帧朝下，再三、四帧朝上，五、六帧朝右；朝左由朝右镜像。
 RICARDO_FRAMES = [
+    # 朝下，迈左脚：手一前一后，腿分开。
     [
         "....oooooooo....",
         "...ohhhhhhhho...",
-        "...ohhHHHHhho...",
+        "...ohHHHHhhho...",
         "...ohhhhhhhho...",
-        "...ohhffffhho...",
-        "...offffffffo...",
+        "...ohffffffho...",
         "...offeffeffo...",
         "...offfccfffo...",
-        "..ojjjjjjjjjjo..",
-        "..ojjjssssjjjo..",
-        "..ojjjssssjjdo..",
-        "..ojjjssssjjdo..",
-        "...oppppppppo...",
-        "..opppo..oppppo..",
-        "...ooo....ooo...",
+        "....occcccco....",
+        ".oJJjjjjjjjjJJo.",
+        ".ojjdjssssjdjjo.",
+        ".ojjdjssssjdffo.",
+        ".offdjssssjdjjo.",
+        "..ojjjjjjjjjo...",
+        "...oppo..oppo...",
+        "...oooo..oooo...",
         "................",
     ],
+    # 朝下，并腿：两手换位，身子看着弹一下。
     [
         "....oooooooo....",
         "...ohhhhhhhho...",
-        "...ohhHHHHhho...",
+        "...ohHHHHhhho...",
         "...ohhhhhhhho...",
-        "...ohhffffhho...",
-        "...offffffffo...",
+        "...ohffffffho...",
         "...offeffeffo...",
         "...offfccfffo...",
-        "..ojjjjjjjjjjo..",
-        "..ojjjssssjjjo..",
-        "..ojjjssssjjdo..",
-        "..ojjjssssjjdo..",
-        "...oppppppppo...",
-        "....opppppo.....",
-        ".....oo..oo.....",
+        "....occcccco....",
+        ".oJJjjjjjjjjJJo.",
+        ".ojjdjssssjdjjo.",
+        ".ojjdjssssjdjjo.",
+        ".offdjssssjdffo.",
+        "..ojjjjjjjjjo...",
+        ".....oppoppo....",
+        ".....oooooo.....",
         "................",
     ],
+    # 朝上：后脑勺加后颈，背心压暗当衣缝。
     [
         "....oooooooo....",
         "...ohhhhhhhho...",
-        "...ohhHHhhhho...",
+        "...ohHHHHhhho...",
         "...ohhhhhhhho...",
         "...ohhhhhhhho...",
         "...ohhhhhhhho...",
-        "...ohhhHHhhho...",
+        "...ohhHHHHhho...",
         ".....offffo.....",
-        "..ojjjjjjjjjjo..",
-        "..oJJjjjjjjjjo..",
-        "..ojjjjjjjjjdo..",
-        "..ojjjjjjjjjdo..",
-        "...oppppppppo...",
-        "..opppo..oppppo..",
-        "...ooo....ooo...",
+        ".oJJjjjjjjjjJJo.",
+        ".ojjdjddddjdjjo.",
+        ".ojjdjddddjdffo.",
+        ".offdjddddjdjjo.",
+        "..ojjjjjjjjjo...",
+        "...oppo..oppo...",
+        "...oooo..oooo...",
         "................",
     ],
     [
         "....oooooooo....",
         "...ohhhhhhhho...",
-        "...ohhHHhhhho...",
+        "...ohHHHHhhho...",
         "...ohhhhhhhho...",
         "...ohhhhhhhho...",
         "...ohhhhhhhho...",
-        "...ohhhHHhhho...",
+        "...ohhHHHHhho...",
         ".....offffo.....",
-        "..ojjjjjjjjjjo..",
-        "..oJJjjjjjjjjo..",
-        "..ojjjjjjjjjdo..",
-        "..ojjjjjjjjjdo..",
-        "...oppppppppo...",
-        "....opppppo.....",
-        ".....oo..oo.....",
+        ".oJJjjjjjjjjJJo.",
+        ".ojjdjddddjdjjo.",
+        ".ojjdjddddjdjjo.",
+        ".offdjddddjdffo.",
+        "..ojjjjjjjjjo...",
+        ".....oppoppo....",
+        ".....oooooo.....",
         "................",
     ],
+    # 朝右，手摆到前头：侧脸带鼻尖，腿一前一后。
     [
         "....oooooooo....",
         "...ohhhhhhhho...",
+        "...ohHHhhhhho...",
         "...ohhhhhhhho...",
-        "...ohhhhhhhffo..",
-        "...ohhfffffffo..",
-        "...ohfffffefo...",
-        "...ohffffffffof.",
-        "...offffffcffo..",
-        "..ojjjjjjjjjjo..",
-        "..ojjjjjjjjsjo..",
-        "..ojjjjjjjjsjo..",
-        "..ojjjjjjjjjdo..",
-        "...oppppppppo...",
-        "...oppp..opppo..",
-        "....oo......oo..",
+        "...ohhhfffffo...",
+        "...ohhfffeffo...",
+        "...ohhfffffcfo..",
+        "....ohfffffo....",
+        ".oJJjjjjjjJJo...",
+        ".ojjdjjjjjjo....",
+        ".ojjdjjjjjjo....",
+        ".ojjdjjjffjo....",
+        "..ojjjjjjjjo....",
+        "...oppo.oppo....",
+        "...oooo.oooo....",
         "................",
     ],
+    # 朝右，手摆到后头：并腿。
     [
         "....oooooooo....",
         "...ohhhhhhhho...",
+        "...ohHHhhhhho...",
         "...ohhhhhhhho...",
-        "...ohhhhhhhffo..",
-        "...ohhfffffffo..",
-        "...ohfffffefo...",
-        "...ohffffffffof.",
-        "...offffffcffo..",
-        "..ojjjjjjjjjjo..",
-        "..ojjjjjjjjsjo..",
-        "..ojjjjjjjjsjo..",
-        "..ojjjjjjjjjdo..",
-        "...oppppppppo...",
-        ".....opppppo....",
-        "......oo..oo....",
+        "...ohhhfffffo...",
+        "...ohhfffeffo...",
+        "...ohhfffffcfo..",
+        "....ohfffffo....",
+        ".oJJjjjjjjJJo...",
+        ".ojjjjjjjjjo....",
+        ".odjjjjjjjjo....",
+        ".offjjjjjjjo....",
+        "..ojjjjjjjjo....",
+        ".....oppo.......",
+        ".....oooo.......",
         "................",
     ],
 ]
@@ -909,17 +916,18 @@ def ricardo_sheet():
 
 
 # 五个村民共用脸、身子和腿，只换发型、配色和小特征。正面一站，不走。
+# 行带和 Ricardo 对齐：0-3 发/帽，4-7 脸，8-12 身子带胳膊和手，13-14 腿脚。
 NPC_BASE = [
-    "...offffffffo...",
     "...offeffeffo...",
     "...offfccfffo...",
+    "....occcccco....",
+    ".oSSssssssssSSo.",
+    ".ossdssssssdsso.",
+    ".ossdssssssdsso.",
+    ".offdssssssdffo.",
     "..osssssssssso..",
-    "..osssssssssso..",
-    "..osssssssssso..",
-    "..oSSssssssSSo..",
-    "...oppppppppo...",
-    "....opppppo.....",
-    ".....oo..oo.....",
+    "...oppo..oppo...",
+    "...oooo..oooo...",
     "................",
 ]
 
@@ -931,79 +939,125 @@ NPC_SHARED = {
     "p": "#3a2c20",
 }
 
+# 顺序就是 walk.js 里 NPC 表的顺序：陈伯、阿荞、老木、小满、阿涟。
+NPC_HEADS = [
+    # 陈伯：秃顶、白边发。
+    [
+        "................",
+        "...oooooooooo...",
+        "...offffffffo...",
+        "...ohffffffho...",
+        "...ohffffffho...",
+    ],
+    # 阿荞：草帽。
+    [
+        "....otttttto....",
+        "..otttttttttto..",
+        "...oTTTTTTTTo...",
+        "...offffffffo...",
+        "...ohffffffho...",
+    ],
+    # 老木：厚棕发。
+    [
+        "....oooooooo....",
+        "...ohhhhhhhho...",
+        "...ohhhhhhhho...",
+        "...ohhhhhhhho...",
+        "...ohhffffhho...",
+    ],
+    # 小满：两个发髻。
+    [
+        "..oo........oo..",
+        "..ohhhhhhhhhho..",
+        "...ohhhhhhhho...",
+        "...ohhhhhhhho...",
+        "...ohhffffhho...",
+    ],
+    # 阿涟：蓝头巾。
+    [
+        "...okkkkkkkko...",
+        "...okkkkkkkko...",
+        "...okkkkkkkko...",
+        "...okffffffko...",
+        "...okffffffko...",
+    ],
+]
+
+NPC_PALS = [
+    {"h": "#d8d4c8", "s": "#7a5a3a", "S": "#96774f", "d": "#5e442c"},
+    {"t": "#e3b04b", "T": "#b8822f", "h": "#3a2a1e", "s": "#5e9448", "S": "#7ab264", "d": "#47713a"},
+    {"h": "#4a2c16", "s": "#b8622f", "S": "#d47f47", "d": "#96492a"},
+    {"h": "#5a3a1e", "s": "#e0832f", "S": "#f09c4b", "d": "#b8641f"},
+    {"k": "#4c8bc9", "s": "#3f8e8a", "S": "#5aaba6", "d": "#2f6e6a"},
+]
+
 
 def villager(head, pal):
     return sprite(head + NPC_BASE, {**NPC_SHARED, **pal})
 
 
 def npcs_sheet():
-    # 顺序就是 walk.js 里 NPC 表的顺序：陈伯、阿荞、老木、小满、阿涟。
-    folks = [
-        # 陈伯：秃顶、白边发、白胡子，棕褂子。
-        villager(
-            [
-                "................",
-                "...oooooooooo...",
-                "...offffffffo...",
-                "...ohffffffho...",
-                "...ohffffffho...",
-            ],
-            {"h": "#d8d4c8", "s": "#7a5a3a", "S": "#5e442c"},
-        ),
-        # 阿荞：草帽、绿衫。
-        villager(
-            [
-                "....otttttto....",
-                "..otttttttttto..",
-                "...oTTTTTTTTo...",
-                "...offffffffo...",
-                "...ohffffffho...",
-            ],
-            {"t": "#e3b04b", "T": "#b8822f", "h": "#3a2a1e", "s": "#5e9448", "S": "#47713a"},
-        ),
-        # 老木：棕发棕胡子，锈红衫。
-        villager(
-            [
-                "....oooooooo....",
-                "...ohhhhhhhho...",
-                "...ohhhhhhhho...",
-                "...ohhhhhhhho...",
-                "...ohhffffhho...",
-            ],
-            {"h": "#4a2c16", "s": "#b8622f", "S": "#96492a"},
-        ),
-        # 小满：两个发髻，橙衫。
-        villager(
-            [
-                "..oo........oo..",
-                "..ohhhhhhhhhho..",
-                "...ohhhhhhhho...",
-                "...ohhhhhhhho...",
-                "...ohhffffhho...",
-            ],
-            {"h": "#5a3a1e", "s": "#e0832f", "S": "#b8641f"},
-        ),
-        # 阿涟：蓝头巾，青衫。
-        villager(
-            [
-                "...okkkkkkkko...",
-                "...okkkkkkkko...",
-                "...okkkkkkkko...",
-                "...okffffffko...",
-                "...okffffffko...",
-            ],
-            {"k": "#4c8bc9", "s": "#3f8e8a", "S": "#2f6e6a"},
-        ),
-    ]
-    return hstrip(folks)
+    return hstrip([villager(h, p) for h, p in zip(NPC_HEADS, NPC_PALS)])
 
 
-# 村民手里拿的东西，叠在站姿上就是「正在干活」：陈伯端茶、阿荞挎菜篮、
-# 老木抱木料、小满抱信、阿涟举钓竿。顺序同 NPC 表。
-HELD_PAL = {
-    **NPC_SHARED,
-    "d": "#6b4a2a",
-    "D": "#c99a5e",
+# 干活姿：只换身子那七行，胳膊照手里拿的东西摆。顺序同 NPC 表。
+NPC_BUSY = [
+    # 陈伯：右手端一杯茶。
+    [
+        ".oSSssssssssSSo.",
+        ".ossdssssssdsoWo",
+        ".ossdssssssdfoWo",
+        ".offdssssssdsooo",
+        "..osssssssssso..",
+        "...oppo..oppo...",
+        "...oooo..oooo...",
+    ],
+    # 阿荞：右臂挎一只菜篮，篮里露出菜叶和萝卜。
+    [
+        ".oSSssssssssSSo.",
+        ".ossdssssssogrgo",
+        ".ossdsssssfobbo.",
+        ".offdssssssobbo.",
+        "..osssssssssooo.",
+        "...oppo..oppo...",
+        "...oooo..oooo...",
+    ],
+    # 老木：横抱一块木料，两手掐着料头。
+    [
+        ".oSSssssssssSSo.",
+        ".osoMMMMMMMMoso.",
+        ".offmmmmmmmmffo.",
+        ".oooooooooooooo.",
+        "..osssssssssso..",
+        "...oppo..oppo...",
+        "...oooo..oooo...",
+    ],
+    # 小满：怀里抱一摞信，最上面一封贴着红戳。
+    [
+        ".oSSssssssssSSo.",
+        ".oSssoWrWossSso.",
+        ".osssowwwosssso.",
+        ".offoWWWoffsso..",
+        "..oooooooooo....",
+        "...oppo..oppo...",
+        "...oooo..oooo...",
+    ],
+    # 阿涟：右手握钓竿，竿身竖在身子右侧，竿梢伸到头顶上。
+    [
+        ".oSSssssssssSSo.",
+        ".ossdssssssdsso.",
+        ".ossdssssssdsso.",
+        ".offdssssssdffo.",
+        "..osssssssssso.d",
+        "...oppo..oppo..d",
+        "...oooo..oooo...",
+    ],
+]
+
+# 手里物件的配色：木料、瓷杯、信纸、菜叶、萝卜红、篮篾。
+BUSY_PAL = {
+    "M": "#c99a5e",
+    "m": "#6b4a2a",
     "W": "#fff4dc",
     "w": "#e0c795",
     "g": "#6fae4e",
@@ -1011,110 +1065,16 @@ HELD_PAL = {
     "b": "#b8822f",
 }
 
-NPC_HELD = [
-    # 陈伯：右手端一杯茶。
-    [
-        "................",
-        "................",
-        "................",
-        "................",
-        "................",
-        "................",
-        "................",
-        "................",
-        ".............oo.",
-        ".............oWo",
-        "............foWo",
-        ".............oo.",
-        "................",
-        "................",
-        "................",
-        "................",
-    ],
-    # 阿荞：左臂挎一只菜篮，篮里露出菜叶和萝卜。
-    [
-        "................",
-        "................",
-        "................",
-        "................",
-        "................",
-        "................",
-        "................",
-        "................",
-        "................",
-        "..........ogro..",
-        "..........fobbo.",
-        "...........obbo.",
-        "...........oooo.",
-        "................",
-        "................",
-        "................",
-    ],
-    # 老木：横抱一块木料，两手掐着料头。
-    [
-        "................",
-        "................",
-        "................",
-        "................",
-        "................",
-        "................",
-        "................",
-        "................",
-        "................",
-        "....oDDDDDDo....",
-        "....fddddddf....",
-        "....oooooooo....",
-        "................",
-        "................",
-        "................",
-        "................",
-    ],
-    # 小满：怀里抱一摞信，最上面一封贴着红戳。
-    [
-        "................",
-        "................",
-        "................",
-        "................",
-        "................",
-        "................",
-        "................",
-        "........oWo.....",
-        ".......oWrWo....",
-        ".......owwwo....",
-        "......foWWWof...",
-        ".......owwwo....",
-        ".......ooooo....",
-        "................",
-        "................",
-        "................",
-    ],
-    # 阿涟：两手斜举钓竿，竿梢朝右上，线从那儿垂进池塘。
-    [
-        "................",
-        "................",
-        "................",
-        "..............d.",
-        ".............d..",
-        "............d...",
-        "...........d....",
-        "..........d.....",
-        ".........d......",
-        "........df......",
-        ".......df.......",
-        "................",
-        "................",
-        "................",
-        "................",
-        "................",
-    ],
-]
-
 
 def npcs_busy_sheet():
-    out = npcs_sheet()
-    for i, rows in enumerate(NPC_HELD):
-        out.blit(sprite(rows, HELD_PAL), i * 16, 0)
-    return out
+    folks = []
+    for i, (head, pal) in enumerate(zip(NPC_HEADS, NPC_PALS)):
+        rows = head + NPC_BASE[:3]
+        if i == 4:  # 钓竿从头顶一直竖到手里，竿身压在脸右侧那一列
+            rows = [r[:14] + "d" + r[15:] for r in rows]
+        body = rows + NPC_BUSY[i] + ["................"]
+        folks.append(sprite(body, {**NPC_SHARED, **pal, **BUSY_PAL}))
+    return hstrip(folks)
 
 
 # 信箱和告示牌：画进农场图的两件能交互的东西，四季一个样。

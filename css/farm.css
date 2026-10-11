@@ -1,14 +1,6 @@
 /* 田园像素个人站。外观依据 docs/DESIGN.md，类名依据 docs/SPEC.md。
-   顺序：字体、令牌、世界、基础、HUD、对话框、肖像、菜单、页签、物品栏、内容、告示牌、页脚、焦点、换页、中屏、窄屏、减少动效。 */
-
-/* ---------------------------------------------------------------- 字体 */
-
-@font-face {
-  font-family: "Ark Pixel";
-  src: url("../fonts/ark-pixel-12px-proportional-zh_hans.otf.woff2") format("woff2");
-  /* 字已经预加载。宁可晚一点出字，也不要先闪一下系统字体。 */
-  font-display: block;
-}
+   顺序：令牌、世界、基础、HUD、对话框、肖像、菜单、页签、物品栏、内容、告示牌、页脚、焦点、换页、中屏、窄屏、减少动效。
+   字体不在这里：css/fonts.css（tools/font-shards.py 生成的 unicode-range 分片），每页先于本文件引入。 */
 
 /* ---------------------------------------------------------------- 令牌 */
 
@@ -99,14 +91,16 @@ html[data-phase="night"] .world::before { background: rgb(14 22 62 / 0.45); }
 
 .inner .roam { display: none; }
 
-/* 和 .world 的背景同一个锚点：图的 50% 38% 对齐视口的 50% 38%，镜头变量两边一起动。 */
+/* 和 .world 的背景同一个锚点：图的 50% 38% 对齐视口的 50% 38%。
+   镜头变量由 js/walk.js 每帧写在 .world 和这一层上（不写在 <html> 上，根上一改整页样式都要重算），
+   位移走 transform，不碰 left/top，省得走一路重排一路。 */
 .roam-map {
   position: absolute;
-  left: calc(50% + var(--cam-x, 0px));
-  top: calc(38% + var(--cam-y, 0px));
+  left: 50%;
+  top: 38%;
   width: calc(896 * var(--wpx));
   height: calc(512 * var(--wpx));
-  transform: translate(-50%, -38%);
+  transform: translate(-50%, -38%) translate(var(--cam-x, 0px), var(--cam-y, 0px));
 }
 
 .roam-hit {
@@ -123,7 +117,12 @@ html[data-phase="night"] .world::before { background: rgb(14 22 62 / 0.45); }
   image-rendering: pixelated;
 }
 
-.actor-ricardo { background: url("../img/walk-ricardo.png") 0 0 / calc(128 * var(--wpx)) calc(16 * var(--wpx)); }
+/* 小人每帧挪位置靠 js/walk.js 写 transform，left/top 定在原点不动。 */
+.actor-ricardo {
+  left: 0;
+  top: 0;
+  background: url("../img/walk-ricardo.png") 0 0 / calc(128 * var(--wpx)) calc(16 * var(--wpx));
+}
 
 .actor-npc {
   background: url("../img/walk-npcs-busy.png") 0 0 / calc(80 * var(--wpx)) calc(16 * var(--wpx));

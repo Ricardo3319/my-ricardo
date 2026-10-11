@@ -441,7 +441,7 @@
 
 ## 6. 技术
 
-静态文件，无构建、无 npm、无数据库、无外部字体或脚本。GitHub Pages 发布 `main` 的根目录，网址是 `https://ricardo3319.github.io/my-ricardo/`。站点在子路径下，所以链接、图片、样式里的路径一律写相对的，不写以 `/` 开头的。暂不设自定义域名；以后要用 `www.my-ricardo.com`，先在域名商那里把 `www` 的 CNAME 记录指向 `ricardo3319.github.io`，再加回 `CNAME` 文件、改 `tools/check.py`。告示牌的数据不在本仓库：它从浏览器直接读写本人另一个私有仓库里的 `board.json`（4.9）。
+静态文件，无构建、无 npm、无数据库、无外部字体或脚本。GitHub Pages 发布 `main` 的根目录，网址是 `https://www.my-ricardo.com/`。旧地址 `https://ricardo3319.github.io/my-ricardo/` 转到自定义域名。链接、图片、样式里的路径一律写相对的，不写以 `/` 开头的——自定义域名的根路径和 github.io 的子路径都能用。仓库根目录的 `CNAME` 文件内容是 `www.my-ricardo.com`。告示牌的数据不在本仓库：它从浏览器直接读写本人另一个私有仓库里的 `board.json`（4.9）。
 
 ```
 index.html                 /
@@ -464,6 +464,7 @@ js/board.js                告示牌：认日子、画便条和月历、本机�
 audio/tracks.json          站里另放的曲子清单，现在是空的 []
 fonts/                     方舟像素全字集（只当生成源，页面不引）+ OFL 全文 + shard-*.woff2 分片（生成）
 img/                       tools/art.py 生成，不手改
+CNAME                      www.my-ricardo.com
 _config.yml                不发布 docs/、tools/、AGENTS.md
 docs/                      DESIGN、SPEC、CONTENT、progress
 tools/art.py               出图
@@ -520,4 +521,4 @@ tools/third-party/         Kenney 原图和许可
 - 有稳定邮箱后启用复制。
 - 流水条目多了以后改成 Markdown 生成，字段不变：`date`、`status`、`title`、可选 `link`。
 - 工具清单、在读、评论，都不进页签，除非先改这份文档。
-- 部署方式本人说以后再定，几种选法记在 `progress.md` 的「未决」。告示牌要是改成静态页加云函数、用密码登录，先改 4.9 和第 6 节。
+- 现在用 GitHub Pages 加 `www.my-ricardo.com`。要换 Cloudflare / 自建服务器等，先改第 6 节。告示牌要是改成静态页加云函数、用密码登录，先改 4.9 和第 6 节。

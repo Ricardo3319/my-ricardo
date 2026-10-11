@@ -334,9 +334,12 @@ for item in ("AGENTS.md", "docs/", "tools/"):
 for item in ("fonts/ark-pixel-12px-proportional-zh_hans.otf.woff2", "fonts/OFL.txt"):
     if not (ROOT / item).is_file():
         bad(f"缺少 {item}")
-# 站点在 github.io 的子路径 /my-ricardo/ 下，以 / 开头的路径会跑到别处去。
-if (ROOT / "CNAME").exists():
-    bad("现在用 github.io 访问，不该有 CNAME；要换回自定义域名，先改 SPEC 第 6 节")
+# 自定义域名在根路径，github.io 仍在 /my-ricardo/ 子路径，路径一律相对。
+cname = ROOT / "CNAME"
+if not cname.is_file():
+    bad("缺少 CNAME（自定义域名 www.my-ricardo.com）")
+elif cname.read_text().strip() != "www.my-ricardo.com":
+    bad("CNAME 应是 www.my-ricardo.com")
 if re.search(r'url\("?/', css):
     bad("farm.css 里有以 / 开头的路径，站点在子路径下会找不到")
 

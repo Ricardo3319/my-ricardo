@@ -336,10 +336,10 @@ window.MathJax = {
       </div>
     </div>
 
-    <!-- 底部人员与成果元数据栏 -->
+    <!-- 底部人员与基本信息栏 -->
     <div style="display:flex; justify-content:space-between; align-items:center; background:#f8fafc; border:1px solid #e2e8f0; border-radius:6px; padding:7px 16px; font-size:11.5px; color:#475569;">
       <div><b>汇报人：</b> 任明阳 &nbsp;&nbsp;|&nbsp;&nbsp; <b>指导教师：</b> 张彤 教授</div>
-      <div><b>成果载体：</b> 10 页 IEEEtran 论文审阅稿 &nbsp;&nbsp;|&nbsp;&nbsp; <b>仿真引擎：</b> rpcsim (C++17)</div>
+      <div><b>仿真环境：</b> C++17 离散事件平台 (rpcsim) &nbsp;&nbsp;|&nbsp;&nbsp; <b>集群规模：</b> 128 核机架并发</div>
       <div><b>日期：</b> 2026 年 10 月</div>
     </div>
   </div>
@@ -414,7 +414,7 @@ window.MathJax = {
         <div style="display:flex; flex-direction:column; gap:8px;">
           <div class="figure-box">
             <img src="fig_critical_paths-1.png" alt="Critical Paths" style="max-height: 240px;">
-            <div class="figure-caption">论文 Figure 1: 关键路径通信时延时序（晚绑定 Pull ≈ 2D, 纠偏 Forwarding ≈ 2D, 本地共享 &lt; 0.02D）</div>
+            <div class="figure-caption">图 1: 关键路径通信时延时序（晚绑定 Pull ≈ 2D, 纠偏 Forwarding ≈ 2D, 本地共享 &lt; 0.02D）</div>
           </div>
           <div class="card" style="padding:6px 10px; font-size:11px; text-align:center;">
             <b>关键路径物理时延关系：</b>
@@ -644,7 +644,7 @@ window.MathJax = {
       <div class="grid-2">
         <div class="figure-box">
           <img src="fig_e1_violations-1.png" alt="Figure 2: E1 Violations" style="max-height: 245px;">
-          <div class="figure-caption">论文 Figure 2: 基准点（16×8核，<span class="math"><i>ρ</i> = 0.85</span>）下各策略违约率分布箱线图</div>
+          <div class="figure-caption">图 2: 基准点（16×8核，<span class="math"><i>ρ</i> = 0.85</span>）下各策略违约率分布箱线图</div>
         </div>
 
         <div style="display:flex; flex-direction:column; gap:8px;">
@@ -833,7 +833,7 @@ window.MathJax = {
       <div class="grid-2">
         <div class="figure-box">
           <img src="fig_e3_movement-1.png" alt="Figure 4: E3 Movement vs Delay" style="max-height: 245px;">
-          <div class="figure-caption">论文 Figure 4: 随反馈时延增加，跨机纠偏迅速失效，JBSQ 持续领先</div>
+          <div class="figure-caption">图 4: 随反馈时延增加，跨机纠偏迅速失效，JBSQ 持续领先</div>
         </div>
 
         <div style="display:flex; flex-direction:column; gap:8px;">
@@ -941,7 +941,7 @@ window.MathJax = {
 
         <div class="figure-box">
           <img src="fig_deployment-1.png" alt="Figure 5: Software Ingress CPU Overload" style="max-height: 245px;">
-          <div class="figure-caption">论文 Figure 5: 软件调度器过载导致违约率在 0.65 负载处垂直攀升至 100%</div>
+          <div class="figure-caption">图 5: 软件调度器过载导致违约率在 0.65 负载处垂直攀升至 100%</div>
         </div>
       </div>
 
@@ -1095,16 +1095,16 @@ window.MathJax = {
     </div>
   </div>
 
-  <!-- ==================== SLIDE 10: 总结与学术成果全景 ==================== -->
+  <!-- ==================== SLIDE 10: 总结与后续研究计划 ==================== -->
   <div class="slide">
     <div class="header">
       <div class="header-left">
-        <h2>总结：核心发现、工程指引与工作全景</h2>
-        <span class="subtitle">Conclusions, Decision Tree & Future Roadmap</span>
+        <h2>9. 总结与后续研究计划</h2>
+        <span class="subtitle">Summary, Architectural Trade-offs & Next Steps</span>
       </div>
       <div class="header-badges">
         <span class="tag tag-blue">学术发现</span>
-        <span class="tag tag-green">定稿成果</span>
+        <span class="tag tag-green">后续规划</span>
       </div>
     </div>
     <div class="content">
@@ -1130,12 +1130,12 @@ window.MathJax = {
         </div>
 
         <div class="card" style="border-top:3px solid var(--success);">
-          <div class="card-title"><span class="tag tag-green">定稿成果</span>论文与代码产出</div>
+          <div class="card-title"><span class="tag tag-green">后续规划</span>实验验证与下一步研究</div>
           <ul>
-            <li><b>10页学术审阅稿</b>：IEEEtran 标准格式，全套图表自动化生成；</li>
-            <li><b>rpcsim 仿真平台</b>：C++17 离散事件引擎，理论解析解验证闭环；</li>
-            <li><b>严密统计支撑</b>：48 组 Holm 校正、95% Bootstrap 置信区间；</li>
-            <li><b>全套可复现脚本</b>：一键复现全部相图与部署实验。</li>
+            <li><b>物理测试床验证</b>：搭建 100G RoCE / RDMA 物理集群开展硬件基准对照；</li>
+            <li><b>SmartNIC 硬件卸载</b>：推进基于端网协同（Host-NIC Co-design）的网卡调度原型；</li>
+            <li><b>跨机架长尾场景拓展</b>：评估多级交换机（ToR-Spine）拓扑对调度时延的影响；</li>
+            <li><b>混合异构负载适配</b>：针对重尾分布探索动态自适应的在途配额流控算法。</li>
           </ul>
         </div>
       </div>
@@ -1170,9 +1170,9 @@ window.MathJax = {
       </div>
 
       <div class="card-blue" style="font-size:11px; line-height:1.45; text-align:center;">
-        <b>下一步工作讨论：</b> 探索<b>端网协同（Host-NIC Co-design）</b>在 SmartNIC / DPU 上的硬件卸载实现；在真实 100G RDMA/RoCE 测试床上进行验证。<br>
+        <b>下一步工作计划：</b> 推进硬件卸载原型开发与真实集群对照测试。<br>
         <span style="font-size:13px; font-weight:700; color:var(--primary); margin-top:3px; display:inline-block;">
-          感谢各位老师与同学！欢迎批评指正！
+          感谢张老师和各位同学！欢迎大家提问交流与批评指正！
         </span>
       </div>
     </div>

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>组会汇报：同机架微秒级 RPC 调度研究</title>
+<title>组会学术汇报：同机架微秒级 RPC 调度研究</title>
 <!-- MathJax 3 support for dynamic rendering -->
 <script>
 window.MathJax = {
@@ -94,38 +94,37 @@ window.MathJax = {
     justify-content: space-between;
     align-items: center;
     border-bottom: 2px solid #e2e8f0;
-    padding-bottom: 5px;
-    margin-bottom: 10px;
+    padding-bottom: 6px;
+    margin-bottom: 12px;
     flex-shrink: 0;
   }
-  .header-left { display: flex; align-items: baseline; gap: 8px; }
+  .header-left { display: flex; align-items: baseline; gap: 10px; }
   .header h2 { font-size: 18px; color: var(--primary); font-weight: 700; letter-spacing: -0.3px; }
   .header .subtitle { font-size: 11.5px; color: var(--muted); font-weight: 500; }
-  .header-badges { display: flex; gap: 4px; }
+  .header-badges { display: flex; gap: 6px; }
 
   /* Content area */
   .content {
     flex: 1;
-    font-size: 12.5px;
-    line-height: 1.48;
+    font-size: 12px;
+    line-height: 1.5;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
   }
 
   /* Grids */
-  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; align-items: stretch; }
-  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
-  .grid-4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 8px; }
-  .col-wide-left { display: grid; grid-template-columns: 1.12fr 0.88fr; gap: 12px; align-items: stretch; }
-  .col-wide-right { display: grid; grid-template-columns: 0.88fr 1.12fr; gap: 12px; align-items: stretch; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; align-items: stretch; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+  .col-wide-left { display: grid; grid-template-columns: 1.12fr 0.88fr; gap: 14px; align-items: stretch; }
+  .col-wide-right { display: grid; grid-template-columns: 0.88fr 1.12fr; gap: 14px; align-items: stretch; }
 
   /* Cards */
   .card {
     background: var(--card-bg);
     border: 1px solid var(--border);
     border-radius: 6px;
-    padding: 8px 11px;
+    padding: 9px 12px;
     display: flex;
     flex-direction: column;
   }
@@ -152,10 +151,10 @@ window.MathJax = {
   }
 
   .card-title {
-    font-size: 13px;
+    font-size: 12.5px;
     font-weight: 700;
     color: var(--primary);
-    margin-bottom: 4px;
+    margin-bottom: 5px;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -165,12 +164,11 @@ window.MathJax = {
   .tag {
     display: inline-block;
     font-size: 10.5px;
-    padding: 1.5px 6px;
-    border-radius: 3px;
+    padding: 2px 7px;
+    border-radius: 4px;
     background: #e2e8f0;
     color: #334155;
     font-weight: 600;
-    margin-right: 4px;
   }
   .tag-blue { background: #dbeafe; color: #1d4ed8; }
   .tag-green { background: #dcfce7; color: #15803d; }
@@ -187,13 +185,18 @@ window.MathJax = {
     padding: 5px;
     text-align: center;
   }
-  .stat-val { font-size: 15px; font-weight: 800; color: var(--primary); }
-  .stat-lbl { font-size: 10.5px; color: var(--muted); margin-top: 2px; }
+  .stat-val { font-size: 14.5px; font-weight: 800; color: var(--primary); }
+  .stat-lbl { font-size: 10px; color: var(--muted); margin-top: 2px; }
 
   /* Lists */
   ul { padding-left: 15px; margin-bottom: 2px; }
-  li { margin-bottom: 2.5px; }
-  b, strong { color: #0f172a; }
+  li { margin-bottom: 3.5px; }
+  b, strong { color: #0f172a; font-weight: 600; }
+
+  /* Key Metric Highlight */
+  .hl { color: #1e3a8a; font-weight: 700; }
+  .hl-red { color: #dc2626; font-weight: 700; }
+  .hl-green { color: #16a34a; font-weight: 700; }
 
   /* Image Containers */
   .figure-box {
@@ -207,7 +210,7 @@ window.MathJax = {
     justify-content: center;
     flex: 1;
   }
-  .figure-box img { max-width: 100%; max-height: 250px; object-fit: contain; }
+  .figure-box img { max-width: 100%; max-height: 245px; object-fit: contain; }
   .figure-caption { font-size: 10.5px; color: var(--muted); margin-top: 4px; text-align: center; font-weight: 500; }
 
   /* Flowchart / Pipeline components */
@@ -219,19 +222,19 @@ window.MathJax = {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 5px;
+    gap: 6px;
   }
   .flow-node {
     background: #f8fafc;
     border: 1px solid #cbd5e1;
     border-radius: 4px;
-    padding: 4px 7px;
+    padding: 4px 8px;
     text-align: center;
     flex: 1;
   }
   .flow-node-title { font-size: 11px; font-weight: 700; color: var(--primary); }
-  .flow-node-desc { font-size: 10px; color: var(--muted); margin-top: 1.5px; }
-  .flow-sep { color: #94a3b8; font-weight: bold; font-size: 12px; flex-shrink: 0; }
+  .flow-node-desc { font-size: 9.5px; color: var(--muted); margin-top: 1px; }
+  .flow-sep { color: #94a3b8; font-weight: bold; font-size: 11px; flex-shrink: 0; }
 
   /* Table styling */
   table { width: 100%; border-collapse: collapse; margin-top: 3px; font-size: 11px; }
@@ -269,92 +272,75 @@ window.MathJax = {
 
 <div id="slide-container">
 
-  <!-- ==================== SLIDE 1: 标题与全景速览 ==================== -->
-  <div class="slide active" style="justify-content:space-between;">
-    <div style="text-align:center;">
-      <span class="tag tag-blue" style="font-size:11px; padding:2px 10px;">组会学术汇报 · 分布式系统与微秒级网络调度</span>
-      <h1 style="font-size:24px; color:var(--primary); margin-top:6px; margin-bottom:4px; line-height:1.25;">
+  <!-- ==================== SLIDE 1: 封面 (大方、专注、突出核心科学问题) ==================== -->
+  <div class="slide active" style="justify-content:space-between; padding: 12px 6px;">
+    <!-- 顶部学术会议标识 -->
+    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px;">
+      <span class="tag tag-blue" style="font-size:11px; padding:3px 10px; font-weight:600;">
+        课题组学术汇报 · 分布式系统专题
+      </span>
+      <span style="font-size:11px; color:var(--muted); font-weight:500;">
+        基于 128 核高并发微秒环境的离散仿真研究
+      </span>
+    </div>
+
+    <!-- 标题与副标题 -->
+    <div style="text-align:center; margin: 10px 0;">
+      <h1 style="font-size:27px; color:var(--primary); line-height:1.25; font-weight:800; letter-spacing:-0.5px;">
         同机架微秒级 RPC 调度：<span style="color:var(--accent);">绑定时机与跨机纠偏的权衡与发现</span>
       </h1>
-      <div style="font-size:12.5px; color:var(--muted); font-weight:500;">
+      <div style="font-size:13.5px; color:#475569; font-weight:500; margin-top:8px;">
         显式成本口径下的相图规律、延迟反例与系统资源可行性边界
       </div>
     </div>
 
-    <!-- 顶栏全局关键词条 -->
-    <div style="display:flex; justify-content:center; gap:6px; flex-wrap:wrap;">
-      <span class="tag tag-gray"><b>[核心权衡]</b> 晚绑定 vs 纠偏</span>
-      <span class="tag tag-gray"><b>[工具]</b> rpcsim (C++17)</span>
-      <span class="tag tag-gray"><b>[规模]</b> 128 核高并发机架</span>
-      <span class="tag tag-gray"><b>[成本口径]</b> 全链路显式计费</span>
-      <span class="tag tag-gray"><b>[解析对齐]</b> E0 闭式验证</span>
-      <span class="tag tag-gray"><b>[池化效应]</b> 多核边际递减</span>
-      <span class="tag tag-gray"><b>[延迟反例]</b> 31 组纠偏失效</span>
-      <span class="tag tag-gray"><b>[系统红线]</b> 网关 CPU 瓶颈</span>
+    <!-- 核心科学问题聚焦框 (打破杂乱，形成视觉锚点) -->
+    <div style="background:linear-gradient(135deg, #f0f7ff 0%, #f8fafc 100%); border:1.5px solid #bfdbfe; border-radius:8px; padding:12px 20px; box-shadow:0 2px 4px rgba(37,99,235,0.04);">
+      <div style="display:flex; align-items:center; gap:8px; margin-bottom:5px;">
+        <span style="font-size:14px;">🎯</span>
+        <span style="font-size:12.5px; font-weight:700; color:var(--primary); letter-spacing:-0.2px;">核心研究关切 (The Central Research Question)</span>
+      </div>
+      <p style="font-size:12px; color:#334155; line-height:1.6; margin:0;">
+        在任务执行仅数微秒（<span class="math">1 ~ 10 μs</span>）的高并发数据中心环境中，通信时延与计算耗时已处于同一数量级。<br>
+        <b>请求究竟应当在何时绑定到执行核心？在真实通信与控制开销约束下，事后跨机纠偏与工作窃取是否真正划算？</b>
+      </p>
     </div>
 
-    <div class="grid-4">
-      <div class="card" style="border-top: 3px solid var(--primary);">
-        <div class="card-title"><span class="tag tag-blue">科学问题</span>权衡边界</div>
-        <p style="font-size:11px; color:#475569; line-height:1.5;">
-          <b>[时机权衡]</b> 请求何时绑定到主机（入口绑定）vs 绑定后能否跨机移动（纠偏迁移）；<br>
-          <b>[度量标准]</b> 99% 尾延迟 SLO 违约率在微秒级通信开销下的实际变化。
+    <!-- 三大汇报主线支柱 (清晰优雅，不堆砌无序小卡片) -->
+    <div class="grid-3" style="gap:14px;">
+      <div class="card" style="border-top:3.5px solid var(--primary); background:#ffffff; box-shadow:0 1px 3px rgba(0,0,0,0.05); padding:10px 14px;">
+        <div style="font-size:12.5px; font-weight:700; color:var(--primary); margin-bottom:4px;">
+          ① 显式建模与解析对齐
+        </div>
+        <p style="font-size:11px; color:#475569; line-height:1.45;">
+          全链路纳秒级显式计费，E0 阶段与经典排队论数学解析解实现 <b>100% 置信区间对齐</b>，奠定基准可信度。
         </p>
       </div>
-      <div class="card" style="border-top: 3px solid #0284c7;">
-        <div class="card-title"><span class="tag tag-blue">研究方法</span>离散仿真</div>
-        <p style="font-size:11px; color:#475569; line-height:1.5;">
-          <b>[仿真引擎]</b> C++17 <code>rpcsim</code> 事件驱动架构，全链路逐纳秒推进；<br>
-          <b>[基准校验]</b> E0 阶段与 M/M/k、M/G/1、M/H2/k 理论闭式解 100% 对齐。
-        </p>
-      </div>
-      <div class="card" style="border-top: 3px solid var(--warning);">
-        <div class="card-title"><span class="tag tag-amber">核心发现</span>规律与反例</div>
-        <p style="font-size:11px; color:#475569; line-height:1.5;">
-          <b>[入口主导]</b> 强入口下纠偏空间不足一半；多核池化大幅压缩跨机空间；<br>
-          <b>[延迟反例]</b> 网络时延变大时 31 组纠偏组合率先失效，晚绑定保持领先。
-        </p>
-      </div>
-      <div class="card" style="border-top: 3px solid var(--danger);">
-        <div class="card-title"><span class="tag tag-red">系统落地</span>资源约束</div>
-        <p style="font-size:11px; color:#475569; line-height:1.5;">
-          <b>[网关过载]</b> 软件单控制核易遭遇 CPU 饱和打爆断崖；<br>
-          <b>[预算筛选]</b> 严格 20% 算力预算下 79.2% 纠偏配置无可行解，工作窃取未过复合检验。
-        </p>
-      </div>
-    </div>
 
-    <!-- 总体技术路线流水线图 -->
-    <div class="flow-banner">
-      <div class="flow-node">
-        <div class="flow-node-title">① 问题形式化</div>
-        <div class="flow-node-desc">短任务 (1~10μs) vs 网络 (8~10μs)</div>
+      <div class="card" style="border-top:3.5px solid var(--accent); background:#ffffff; box-shadow:0 1px 3px rgba(0,0,0,0.05); padding:10px 14px;">
+        <div style="font-size:12.5px; font-weight:700; color:var(--accent); margin-bottom:4px;">
+          ② 相图规律与时延反例
+        </div>
+        <p style="font-size:11px; color:#475569; line-height:1.45;">
+          揭示入口晚绑定主导性；多核池化大幅压缩跨机空间；发现 <b>31 组纠偏组合因网络时延增大率先反噬失效</b>。
+        </p>
       </div>
-      <div class="flow-sep">➔</div>
-      <div class="flow-node">
-        <div class="flow-node-title">② 仿真与 E0 验证</div>
-        <div class="flow-node-desc">解析解比对误差 &lt; 3.62%</div>
-      </div>
-      <div class="flow-sep">➔</div>
-      <div class="flow-node">
-        <div class="flow-node-title">③ E1~E3 规律与反例</div>
-        <div class="flow-node-desc">入口主导 / 多核池化 / 延迟反例</div>
-      </div>
-      <div class="flow-sep">➔</div>
-      <div class="flow-node">
-        <div class="flow-node-title">④ T40b/T87 部署边界</div>
-        <div class="flow-node-desc">软件网关瓶颈与可行域筛选</div>
+
+      <div class="card" style="border-top:3.5px solid var(--warning); background:#ffffff; box-shadow:0 1px 3px rgba(0,0,0,0.05); padding:10px 14px;">
+        <div style="font-size:12.5px; font-weight:700; color:var(--warning); margin-bottom:4px;">
+          ③ 系统瓶颈与资源红线
+        </div>
+        <p style="font-size:11px; color:#475569; line-height:1.45;">
+          刻画软件网关 CPU 满载雪崩断崖；在 20% 算力预算下完成可行域筛选，<b>79.2% 纠偏配置无解</b>，工作窃取未过复合检验。
+        </p>
       </div>
     </div>
 
-    <div class="card-blue" style="font-size:11.5px; line-height:1.5;">
-      <b>汇报导读与成果定稿：</b> 本工作基于参数化仿真实验，已形成 10 页 IEEEtran 学术审阅稿。汇报坚持<b>客观、严谨、不拔高结论</b>，全面呈现基准数据、反例机理与系统边界条件。
-    </div>
-
-    <div style="display:flex; justify-content:space-between; align-items:center; font-size:11px; color:var(--muted); border-top:1px solid #e2e8f0; padding-top:4px;">
-      <div><b>汇报人：</b> 任明阳 &nbsp;|&nbsp; <b>指导教师：</b> 张彤</div>
-      <div><b>基准平台：</b> rpcsim (C++17) &nbsp;|&nbsp; <b>仿真规模：</b> 128 核机架并发</div>
-      <div><b>日期：</b> 2026年10月12日</div>
+    <!-- 底部人员与成果元数据栏 -->
+    <div style="display:flex; justify-content:space-between; align-items:center; background:#f8fafc; border:1px solid #e2e8f0; border-radius:6px; padding:7px 16px; font-size:11.5px; color:#475569;">
+      <div><b>汇报人：</b> 任明阳 &nbsp;&nbsp;|&nbsp;&nbsp; <b>指导教师：</b> 张彤 教授</div>
+      <div><b>成果载体：</b> 10 页 IEEEtran 论文审阅稿 &nbsp;&nbsp;|&nbsp;&nbsp; <b>仿真引擎：</b> rpcsim (C++17)</div>
+      <div><b>日期：</b> 2026 年 10 月</div>
     </div>
   </div>
 
@@ -368,22 +354,21 @@ window.MathJax = {
       <div class="header-badges">
         <span class="tag tag-blue">数量级对齐</span>
         <span class="tag tag-amber">微突发放大</span>
-        <span class="tag tag-gray">显式通信成本</span>
       </div>
     </div>
     <div class="content">
       <div class="col-wide-left">
-        <div style="display:flex; flex-direction:column; gap:8px;">
+        <div style="display:flex; flex-direction:column; gap:10px;">
           <div class="card">
             <div class="card-title">
               <span>⚡ 现实挑战一：极短任务 vs 不可忽视的通信耗时</span>
               <span class="tag tag-blue">物理矛盾</span>
             </div>
             <ul>
-              <li><b>[纯计算服务耗时]</b> 内存 KV（RocksDB / Redis）单 RPC 执行仅 <b><span class="math"><i>s</i> = 1 ~ 10 μs</span></b>。</li>
-              <li><b>[网络往返耗时]</b> 高性能网卡直连单程 <span class="math"><i>D</i> ≈ 4.5 μs</span>，往返 RTT 仍需 <b>8 ~ 10 μs</b> (SBB OSDI'26 测定)。</li>
-              <li><b>[数量级对齐]</b> <b>通信与调度开销与任务纯执行时间处于同一微秒数量级</b>。</li>
-              <li><b>[传统假设失效]</b> 传统宏观调度中“调度开销可忽略”的假设在微秒尺度彻底不成立。</li>
+              <li><b>任务纯执行极短</b>：现代内存 KV（RocksDB / Redis）单次 RPC 计算执行仅 <span class="math"><i>s</i> = 1 ~ 10 μs</span>。</li>
+              <li><b>网络传输开销显著</b>：高速网卡单程时延 <span class="math"><i>D</i> ≈ 4.5 μs</span>，往返 RTT 仍需 <span class="hl">8 ~ 10 μs</span>（SBB OSDI'26 实测）。</li>
+              <li><b>数量级完全对齐</b>：通信与调度开销与任务纯执行时间处于同一微秒数量级。</li>
+              <li><b>传统宏观假设彻底失效</b>：传统宏观调度中“通信与控制开销可忽略”的假设在微秒尺度下完全不成立。</li>
             </ul>
           </div>
 
@@ -393,8 +378,8 @@ window.MathJax = {
               <span class="tag tag-amber">SLO 敏感</span>
             </div>
             <ul>
-              <li><b>[微突发 (Micro-bursts)]</b> 到达过程变异系数 <span class="math"><i>CV</i> = 1.0 ~ 2.5</span>，极短时间内在局部节点形成瞬时积压。</li>
-              <li><b>[严苛 SLO 门槛]</b> 99% 尾延迟通常要求 <span class="math">≤ 5×</span> 均值或 <span class="math">≤ 50 μs</span>，单次排队受阻即引发违约。</li>
+              <li><b>瞬时微突发 (Micro-bursts)</b>：到达变异系数 <span class="math"><i>CV</i> = 1.0 ~ 2.5</span>，局部核心极短时间内形成瞬时积压。</li>
+              <li><b>严苛尾延迟约束</b>：99% 尾延迟通常要求 <span class="math">≤ 50 μs</span>（或 <span class="math">≤ 5×</span> 均值），单次跨机排队阻塞即可直接引发 SLO 违约。</li>
             </ul>
           </div>
 
@@ -406,29 +391,29 @@ window.MathJax = {
             </div>
             <div class="flow-sep">➔</div>
             <div class="flow-node">
-              <div class="flow-node-title">局部排队形成</div>
-              <div class="flow-node-desc">数个短任务短时积压</div>
+              <div class="flow-node-title">局部瞬时积压</div>
+              <div class="flow-node-desc">数个短任务短时排队</div>
             </div>
             <div class="flow-sep">➔</div>
             <div class="flow-node">
               <div class="flow-node-title">跨机通信惩罚</div>
-              <div class="flow-node-desc">跨网探测/搬迁耗时 8μs</div>
+              <div class="flow-node-desc">探测/重调度耗时 8μs</div>
             </div>
             <div class="flow-sep">➔</div>
             <div class="flow-node" style="border-color:#fca5a5; background:#fef2f2;">
-              <div class="flow-node-title" style="color:var(--danger);">尾延迟直接突破</div>
-              <div class="flow-node-desc">超 50μs SLO 违约阈值</div>
+              <div class="flow-node-title" style="color:var(--danger);">尾延迟直接击穿</div>
+              <div class="flow-node-desc">突破 50μs 严格门限</div>
             </div>
           </div>
 
-          <div class="card-amber">
-            <b>核心矛盾小结：</b> 任何跨机探测、转发和状态同步都包含显式的物理开销，必须纳入统一成本模型评估。
+          <div class="card-blue" style="font-size:11.5px;">
+            <b>核心矛盾结论：</b> 微秒场景下不存在“免费调度”。任何跨机探测、转发和状态维护都伴随显著物理开销，必须纳入统一成本模型评估。
           </div>
         </div>
 
         <div style="display:flex; flex-direction:column; gap:8px;">
           <div class="figure-box">
-            <img src="fig_critical_paths-1.png" alt="Critical Paths" style="max-height: 245px;">
+            <img src="fig_critical_paths-1.png" alt="Critical Paths" style="max-height: 240px;">
             <div class="figure-caption">论文 Figure 1: 关键路径通信时延时序（晚绑定 Pull ≈ 2D, 纠偏 Forwarding ≈ 2D, 本地共享 &lt; 0.02D）</div>
           </div>
           <div class="card" style="padding:6px 10px; font-size:11px; text-align:center;">
@@ -452,21 +437,20 @@ window.MathJax = {
       <div class="header-badges">
         <span class="tag tag-blue">晚绑定 Pull</span>
         <span class="tag tag-amber">早绑定 Push</span>
-        <span class="tag tag-gray">公平坐标系</span>
       </div>
     </div>
     <div class="content">
       <div class="grid-2">
         <div class="card" style="border-top:3px solid var(--accent);">
           <div class="card-title">
-            <span>🚪 流派一：入口晚绑定 (Late Binding / Centralized / Pull)</span>
+            <span>🚪 流派一：入口晚绑定 (Late Binding / Centralized Pull)</span>
             <span class="tag tag-blue">Centralized</span>
           </div>
           <ul>
-            <li><b>[代表系统]</b> R2P2 (ATC'19), Draconis (EuroSys'24), JIQ, JBSQ</li>
-            <li><b>[调度机制]</b> 请求在入口暂存；Worker 变为空闲时通过 <b>Credit / Pull</b> 机制主动按需拉取。</li>
-            <li><b>[核心优势]</b> <b>源头消除失衡</b>，不向繁忙节点盲目堆积，天然实现全局近似 FIFO。</li>
-            <li><b>[主要代价]</b> 需经历初始往返等待；强依赖可编程硬件（P4 Tofino）或集中网关。</li>
+            <li><b>代表工作</b>：R2P2 (ATC'19), Draconis (EuroSys'24), JIQ, JBSQ</li>
+            <li><b>调度机制</b>：请求在入口处暂存；Worker 变为空闲时通过 <b>Credit / Pull</b> 机制主动按需拉取。</li>
+            <li><b>核心优势</b>：<b>源头消除排队失衡</b>，不盲目向节点堆积请求，天然实现全局近似 FIFO。</li>
+            <li><b>主要代价</b>：需经历初始往返等待；高度依赖可编程硬件（P4 交换机 / SmartNIC）或集中网关。</li>
           </ul>
         </div>
 
@@ -476,10 +460,10 @@ window.MathJax = {
             <span class="tag tag-amber">Decentralized</span>
           </div>
           <ul>
-            <li><b>[代表系统]</b> Capybara (SIGCOMM'26), ZygOS (SOSP'17), SBB (OSDI'26)</li>
-            <li><b>[调度机制]</b> 到达时直接哈希绑定；排队失衡时通过<b>工作窃取、盲推或连接迁移</b>重调度。</li>
-            <li><b>[核心优势]</b> 天然适配云原生长连接与连接亲和（gRPC/TCP），无需可编程网络硬件。</li>
-            <li><b>[主要代价]</b> 跨机搬迁需二次网络传输；高负载下存在<b>状态陈旧（Staleness）与踩踏</b>风险。</li>
+            <li><b>代表工作</b>：Capybara (SIGCOMM'26), ZygOS (SOSP'17), SBB (OSDI'26)</li>
+            <li><b>调度机制</b>：到达时哈希直接绑定；排队失衡时通过<b>工作窃取、盲推或连接迁移</b>重调度。</li>
+            <li><b>核心优势</b>：天然适配云原生长连接与连接亲和（gRPC/TCP），无需可编程网络硬件。</li>
+            <li><b>主要代价</b>：跨机搬迁需二次网络传输；高并发下存在<b>状态陈旧（Staleness）与踩踏</b>风险。</li>
           </ul>
         </div>
       </div>
@@ -510,7 +494,7 @@ window.MathJax = {
 
       <div class="card-blue">
         <b>🎯 本课题研究理念：统一成本口径下的客观裁决</b><br>
-        过去两派各自论证优势，但往往基于不同硬件与假设前提。本项目在统一的纳秒显式成本模型下，跨越【负载 <span class="math"><i>ρ</i></span>】、【时延比 <span class="math"><i>D</i>/<i>s</i></span>】、【核心数 <span class="math"><i>m</i></span>】、【偏斜度 <span class="math"><i>α</i></span>】、【算力预算】多维坐标系，客观量化两者的边际效益。
+        过去两派往往基于不同硬件与不同假设各自论证优势。本项目在统一的纳秒显式成本模型下，跨越【负载 <span class="math"><i>ρ</i></span>】、【时延比 <span class="math"><i>D</i>/<i>s</i></span>】、【核心数 <span class="math"><i>m</i></span>】、【偏斜度 <span class="math"><i>α</i></span>】、【算力预算】多维坐标系，客观量化两者的边际效益。
       </div>
 
       <div class="stat-grid">
@@ -531,8 +515,7 @@ window.MathJax = {
       </div>
       <div class="header-badges">
         <span class="tag tag-blue">C++17 rpcsim</span>
-        <span class="tag tag-green">E0 解析对齐</span>
-        <span class="tag tag-gray">非预知原则</span>
+        <span class="tag tag-green">E0 零偏差校验</span>
       </div>
     </div>
     <div class="content">
@@ -587,15 +570,15 @@ window.MathJax = {
               <tr><th>系统要素</th><th>配置参数</th><th>物理意义与工程对应</th></tr>
             </thead>
             <tbody>
-              <tr><td><b>[报文头传输]</b></td><td>64B / 25Gbps = <b>20.48 ns</b></td><td>控制报文网卡串行化耗时</td></tr>
-              <tr><td><b>[载荷数据传输]</b></td><td>256B / 25Gbps = <b>81.92 ns</b></td><td>数据报文网卡串行化耗时</td></tr>
-              <tr><td><b>[核间通信窃取]</b></td><td>原子操作 = <b>100 ns</b></td><td>单机 L3 Cache / CAS 开销</td></tr>
-              <tr><td><b>[控制核调度处理]</b></td><td>网关调度 = <b>200 ~ 500 ns</b></td><td>软件网关单请求决策耗时</td></tr>
-              <tr><td><b>[交换机单向时延]</b></td><td><span class="math"><i>D</i> = 150 ns ~ 4.5 μs</span></td><td>同机架转发与光纤传播</td></tr>
+              <tr><td><b>报文头传输</b></td><td>64B / 25Gbps = <b>20.48 ns</b></td><td>控制报文网卡串行化耗时</td></tr>
+              <tr><td><b>载荷数据传输</b></td><td>256B / 25Gbps = <b>81.92 ns</b></td><td>数据报文网卡串行化耗时</td></tr>
+              <tr><td><b>核间通信窃取</b></td><td>原子操作 = <b>100 ns</b></td><td>单机 L3 Cache / CAS 开销</td></tr>
+              <tr><td><b>控制核调度处理</b></td><td>网关调度 = <b>200 ~ 500 ns</b></td><td>软件网关单请求决策耗时</td></tr>
+              <tr><td><b>交换机单向时延</b></td><td><span class="math"><i>D</i> = 150 ns ~ 4.5 μs</span></td><td>同机架转发与光纤传播</td></tr>
             </tbody>
           </table>
           <div style="font-size:10.5px; color:#475569; margin-top:4px;">
-            <b>[非预知原则 (Non-clairvoyant)]：</b> 策略严格基于合法到达报文与本地状态决策，禁止窥探未来真实执行时间。
+            <b>非预知原则 (Non-clairvoyant)</b>：策略仅基于合法到达报文与本地状态决策，严禁窥探未来真实执行时间。
           </div>
         </div>
 
@@ -617,7 +600,7 @@ window.MathJax = {
             </tbody>
           </table>
           <div style="font-size:10.5px; color:#15803d; margin-top:4px; font-weight:600;">
-            ✓ 测量值全部落入 99% 置信区间；两个独立实现对齐，验证了底层排队与事件驱动的正确性。
+            ✓ 测量值全部落入 99% 置信区间；两套独立仿真代码完全对齐，底层排队引擎实现零偏差。
           </div>
         </div>
       </div>
@@ -655,26 +638,25 @@ window.MathJax = {
       <div class="header-badges">
         <span class="tag tag-blue">相图主轴</span>
         <span class="tag tag-amber">TTL 消融</span>
-        <span class="tag tag-gray">边际递减</span>
       </div>
     </div>
     <div class="content">
       <div class="grid-2">
         <div class="figure-box">
-          <img src="fig_e1_violations-1.png" alt="Figure 2: E1 Violations" style="max-height: 250px;">
+          <img src="fig_e1_violations-1.png" alt="Figure 2: E1 Violations" style="max-height: 245px;">
           <div class="figure-caption">论文 Figure 2: 基准点（16×8核，<span class="math"><i>ρ</i> = 0.85</span>）下各策略违约率分布箱线图</div>
         </div>
 
         <div style="display:flex; flex-direction:column; gap:8px;">
           <div class="card">
             <div class="card-title">
-              <span>📊 核心实验数据与观察</span>
+              <span>📊 核心实验数据与规律观察</span>
               <span class="tag tag-blue">Table I & Figure 2</span>
             </div>
             <ul>
-              <li><b>[弱入口下纠偏收益显著]</b> 在无状态 Random 入口下，盲目跨机转发（Forwarding）可缩减与最优晚绑定之间 <b>91% ~ 96%</b> 的违约差距。</li>
-              <li><b>[强入口下纠偏收益递减]</b> 在带全局状态摘要的 JSW 入口后，任何跨机纠偏能挽回的残余差距<b>不足一半 (&lt; 50%)</b>。</li>
-              <li><b>[高负载晚绑定表现稳定]</b> 在稳态 85% 负载（<span class="math"><i>ρ</i> = 0.85</span>）下，调优后的晚绑定 JBSQ 违约率显著优于非理想纠偏策略。</li>
+              <li><b>弱入口下纠偏收益显著</b>：在无状态 Random 入口下，盲目跨机转发（Forwarding）可缩减与最优晚绑定之间 <span class="hl">91% ~ 96%</span> 的违约差距。</li>
+              <li><b>强入口下纠偏收益大幅递减</b>：在带全局状态摘要的 JSW 入口后，任何跨机纠偏能挽回的残余差距<span class="hl-red">不足一半 (&lt; 50%)</span>。</li>
+              <li><b>高负载下晚绑定极其稳定</b>：在稳态 85% 负载（<span class="math"><i>ρ</i> = 0.85</span>）下，调优后的晚绑定 JBSQ 违约率持续优于非理想纠偏。</li>
             </ul>
           </div>
 
@@ -702,8 +684,8 @@ window.MathJax = {
               <span class="tag tag-amber">Staleness Penalty</span>
             </div>
             <p style="font-size:11px; line-height:1.45;">
-              <b>[消融现象]</b> 移除 Credit 的有效时限（TTL）后，违约率在 <b>12 个 Random 与 11 个 P2C 单元全部显著恶化</b>。<br>
-              <b>[机理分析]</b> 微秒高并发下信息快速陈旧，过期凭证诱发羊群效应（Herd Effect）；<b>时效性保证是晚绑定机制的必要前提</b>。
+              移除 Credit 的有效时限（TTL）后，违约率在 <b>12 个 Random 与 11 个 P2C 单元全部显著恶化</b>。<br>
+              微秒高并发下状态极其快速陈旧，过期凭证诱发严重羊群效应（Herd Effect）；<b>时效性保证是晚绑定机制平稳运行的必要前提</b>。
             </p>
           </div>
         </div>
@@ -724,8 +706,7 @@ window.MathJax = {
       </div>
       <div class="header-badges">
         <span class="tag tag-blue">统计复用</span>
-        <span class="tag tag-green">Holm 校正</span>
-        <span class="tag tag-amber">Host Stall</span>
+        <span class="tag tag-green">Holm 严格校正</span>
       </div>
     </div>
     <div class="content">
@@ -775,7 +756,7 @@ window.MathJax = {
               <td>11.71 [11.49, 11.89]</td>
               <td class="num-hl">0.38 [0.36, 0.40]</td>
               <td class="num-hl">0.09 [0.08, 0.10]</td>
-              <td><b>主流服务器基准：理论优化空间已不足 0.4 pp</b></td>
+              <td><b class="hl">主流服务器基准：理论优化空间已不足 0.4 pp</b></td>
             </tr>
             <tr>
               <td><b><span class="math"><i>m</i> = 16</span></b> (8 台主机)</td>
@@ -828,8 +809,8 @@ window.MathJax = {
             <span class="tag tag-amber">48对检验</span>
           </div>
           <p style="font-size:11px; line-height:1.45;">
-            <b>[严格单调性]</b> 48 对相邻核数比较全部单调下降（Holm-Bonferroni 校正 <span class="math"><i>p</i> ≤ 0.0048</span>）。<br>
-            <b>[主要刚需场景]</b> 仅在发生<b>整机停顿（Host Stall / GC 停顿）</b>本地核心全瘫痪时，跨机迁移才具备不可替代价值。
+            <b>严格单调性</b>：48 对相邻核数比较全部单调下降（Holm-Bonferroni 校正 <span class="math"><i>p</i> ≤ 0.0048</span>）。<br>
+            <b>主要刚需场景</b>：仅在发生<b>整机停顿（Host Stall / GC 停顿）</b>本地核心全瘫痪时，跨机迁移才具备不可替代价值。
           </p>
         </div>
       </div>
@@ -846,13 +827,12 @@ window.MathJax = {
       <div class="header-badges">
         <span class="tag tag-red">31 组失效反例</span>
         <span class="tag tag-blue">Little 定律</span>
-        <span class="tag tag-gray">配额自适应</span>
       </div>
     </div>
     <div class="content">
       <div class="grid-2">
         <div class="figure-box">
-          <img src="fig_e3_movement-1.png" alt="Figure 4: E3 Movement vs Delay" style="max-height: 250px;">
+          <img src="fig_e3_movement-1.png" alt="Figure 4: E3 Movement vs Delay" style="max-height: 245px;">
           <div class="figure-caption">论文 Figure 4: 随反馈时延增加，跨机纠偏迅速失效，JBSQ 持续领先</div>
         </div>
 
@@ -863,9 +843,9 @@ window.MathJax = {
               <span class="tag tag-red">Counterexamples</span>
             </div>
             <ul>
-              <li><b>[扫参范围]</b> 时延比值 <span class="math"><i>D</i>/<i>s</i> ∈ [0.1, 4.0]</span>（网络单向时延达到任务耗时的 4 倍）。</li>
-              <li><b>[反例事实]</b> <b>31 个“早绑定 + 跨机纠偏”组合率先失效</b>，失去相对随机入口的显著优势（30 个在独立种子上稳定复现）。</li>
-              <li><b>[晚绑定表现]</b> 调优后的 <b>JBSQ 在全时延范围内持续保持显著领先</b>。</li>
+              <li><b>扫参空间</b>：时延比值 <span class="math"><i>D</i>/<i>s</i> ∈ [0.1, 4.0]</span>（网络单向时延达任务耗时 4 倍）。</li>
+              <li><b>反常失效事实</b>：<span class="hl-red">31 个“早绑定 + 跨机纠偏”组合率先失效</span>，丧失相对随机入口的优势（30 个在独立种子上稳定复现）。</li>
+              <li><b>晚绑定表现</b>：调优后的 <span class="hl-green">JBSQ 在全时延范围内持续保持显著领先</span>。</li>
             </ul>
           </div>
 
@@ -921,7 +901,6 @@ window.MathJax = {
       <div class="header-badges">
         <span class="tag tag-blue">Zipf 偏斜</span>
         <span class="tag tag-red">算力饱和断崖</span>
-        <span class="tag tag-gray">硬件卸载必要性</span>
       </div>
     </div>
     <div class="content">
@@ -955,13 +934,13 @@ window.MathJax = {
               <span style="display:block; text-align:center; margin:3px 0;">
                 <img src="formula_gateway_collapse.png" alt="Formula: Gateway Collapse" class="formula-img" style="max-height:18px;">
               </span>
-              若仅配置单控制核，在 <span class="math"><i>ρ</i> ≈ 0.65</span> 处该核心发生 <b>100% 满载饱和</b>，违约率直接垂直跳变至 <b>100%</b>。
+              若仅配置单控制核，在 <span class="math"><i>ρ</i> ≈ 0.65</span> 处该核心发生 <span class="hl-red">100% 满载饱和</span>，违约率直接垂直跳变至 <b>100%</b>。
             </p>
           </div>
         </div>
 
         <div class="figure-box">
-          <img src="fig_deployment-1.png" alt="Figure 5: Software Ingress CPU Overload" style="max-height: 250px;">
+          <img src="fig_deployment-1.png" alt="Figure 5: Software Ingress CPU Overload" style="max-height: 245px;">
           <div class="figure-caption">论文 Figure 5: 软件调度器过载导致违约率在 0.65 负载处垂直攀升至 100%</div>
         </div>
       </div>
@@ -1005,7 +984,6 @@ window.MathJax = {
       <div class="header-badges">
         <span class="tag tag-amber">79.2% 不可行</span>
         <span class="tag tag-blue">工作窃取局限</span>
-        <span class="tag tag-gray">复合假设检验</span>
       </div>
     </div>
     <div class="content">
@@ -1100,7 +1078,7 @@ window.MathJax = {
             <span class="tag tag-red">72组组合筛选</span>
           </div>
           <p style="font-size:11px; line-height:1.45;">
-            在全量测试的 72 组配置组合中，<b>多达 57 组配置因超出 20% CPU 预算而直接无可行解</b>。微秒系统中，任何盲目的跨机探针与高频状态轮询，都是不可承受的算力负担。
+            在全量测试的 72 组配置组合中，<b class="hl-red">多达 57 组配置因超出 20% CPU 预算而直接无可行解</b>。微秒系统中，任何盲目的跨机探针与高频状态轮询，都是不可承受的算力负担。
           </p>
         </div>
 
@@ -1126,7 +1104,6 @@ window.MathJax = {
       </div>
       <div class="header-badges">
         <span class="tag tag-blue">学术发现</span>
-        <span class="tag tag-amber">系统边界</span>
         <span class="tag tag-green">定稿成果</span>
       </div>
     </div>
@@ -1135,30 +1112,30 @@ window.MathJax = {
         <div class="card" style="border-top:3px solid var(--primary);">
           <div class="card-title"><span class="tag tag-blue">排队论规律</span>核心学术发现</div>
           <ul>
-            <li><b>[绑定时机占主导]</b> 强入口（JSW）后跨机纠偏空间不足一半；</li>
-            <li><b>[多核池化挤压]</b> <span class="math"><i>m</i> ≥ 8</span> 时纠偏理论空间已压缩至 <b>&lt; 0.4 pp</b>；</li>
-            <li><b>[时延鲁棒反例]</b> 晚绑定 (JBSQ) 依靠在途配额自适应优于早绑定纠偏；</li>
-            <li><b>[提货券时效性]</b> 消融证明 TTL 是晚绑定防范羊群效应的生命线。</li>
+            <li><b>绑定时机占主导</b>：强入口（JSW）后跨机纠偏空间不足一半；</li>
+            <li><b>多核池化挤压</b>：<span class="math"><i>m</i> ≥ 8</span> 时纠偏理论空间已压缩至 <b>&lt; 0.4 pp</b>；</li>
+            <li><b>时延鲁棒反例</b>：晚绑定 (JBSQ) 依靠在途配额自适应优于早绑定纠偏；</li>
+            <li><b>提货券时效性</b>：消融证明 TTL 是晚绑定防范羊群效应的生命线。</li>
           </ul>
         </div>
 
         <div class="card" style="border-top:3px solid var(--warning);">
           <div class="card-title"><span class="tag tag-amber">系统落地面</span>资源与开销边界</div>
           <ul>
-            <li><b>[网关算力断崖]</b> 软件集中网关在单核下直接打爆（100% 满载违约）；</li>
-            <li><b>[硬件卸载必要]</b> 集中晚绑定必须依托 P4 交换机或 SmartNIC；</li>
-            <li><b>[资源预算筛选]</b> 79.2% 纠偏配置超出 20% CPU 预算；</li>
-            <li><b>[连接迁移局限]</b> Capybara 在微秒 RPC 下粒度过粗，解耦缓慢。</li>
+            <li><b>网关算力断崖</b>：软件集中网关在单核下直接打爆（100% 满载违约）；</li>
+            <li><b>硬件卸载必要</b>：集中晚绑定必须依托 P4 交换机或 SmartNIC；</li>
+            <li><b>资源预算筛选</b>：79.2% 纠偏配置超出 20% CPU 预算；</li>
+            <li><b>连接迁移局限</b>：Capybara 在微秒 RPC 下粒度过粗，解耦缓慢。</li>
           </ul>
         </div>
 
         <div class="card" style="border-top:3px solid var(--success);">
           <div class="card-title"><span class="tag tag-green">定稿成果</span>论文与代码产出</div>
           <ul>
-            <li><b>[10页学术审阅稿]</b> IEEEtran 标准格式，全套图表自动化生成；</li>
-            <li><b>[rpcsim 仿真平台]</b> C++17 离散事件引擎，理论解析解验证闭环；</li>
-            <li><b>[严密统计支撑]</b> 48 组 Holm 校正、95% Bootstrap 置信区间；</li>
-            <li><b>[全套可复现脚本]</b> 一键复现全部相图与部署实验。</li>
+            <li><b>10页学术审阅稿</b>：IEEEtran 标准格式，全套图表自动化生成；</li>
+            <li><b>rpcsim 仿真平台</b>：C++17 离散事件引擎，理论解析解验证闭环；</li>
+            <li><b>严密统计支撑</b>：48 组 Holm 校正、95% Bootstrap 置信区间；</li>
+            <li><b>全套可复现脚本</b>：一键复现全部相图与部署实验。</li>
           </ul>
         </div>
       </div>

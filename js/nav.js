@@ -18,6 +18,19 @@
   function boot() {
     snapshot();
     highlight();
+    autoBoard();
+  }
+
+  // 勾了「下次打开直达告示牌」且是整页打开首页时，跳到 /board/。站内从告示牌回农场不跳。
+  function autoBoard() {
+    if (!document.body.classList.contains("home")) return;
+    try {
+      if (localStorage.getItem("ricardo_auto_board") !== "1") return;
+      if (sessionStorage.getItem("farm.board") === "seen") return;
+    } catch (error) {
+      return;
+    }
+    location.replace(new URL("board/", location.href).href);
   }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot);
   else boot();

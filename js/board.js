@@ -14,6 +14,7 @@
 
   var form, titleField, dateField, timeField, hintLine, syncLine, notesBox, monthLine, seasonMark, daysBox;
   var doneBox, doneCount, keyForm, keyOn, keyState, keyNote, unlink, toastBox, toastText, toastUndo, hint;
+  var scratchInput, scratchCopy, scratchSave, privateBox, autoOpen;
 
   function find() {
     form = document.querySelector("[data-add]");
@@ -36,6 +37,11 @@
     toastBox = document.querySelector("[data-toast]");
     toastText = document.querySelector("[data-toast-text]");
     toastUndo = document.querySelector("[data-toast-undo]");
+    scratchInput = document.getElementById("scratchpad-input");
+    scratchCopy = document.getElementById("scratchpad-copy-btn");
+    scratchSave = document.getElementById("scratchpad-save-btn");
+    privateBox = document.getElementById("board-task-private");
+    autoOpen = document.getElementById("board-auto-open");
     hint = hintLine.textContent;
   }
 
@@ -87,22 +93,66 @@
           time: /^\d{2}:\d{2}$/.test(t.time) ? t.time : "",
           done: typeof t.done === "string" ? t.done : "",
           made: typeof t.made === "string" ? t.made : "",
+          private: !!t.private,
+          updatedAt: typeof t.updatedAt === "number" ? t.updatedAt : 0,
         };
       });
   }
 
   // base 是上次从仓库拉到的（没连钥匙时就是本机的全部），queue 是还没推上去的改动。
+  function emptyPad() {
+    return { text: "", updatedAt: 0 };
+  }
+
+  function asPad(pad) {
+    if (!pad || typeof pad !== "object") return emptyPad();
+    return {
+      text: typeof pad.text === "string" ? pad.text : "",
+      updatedAt: typeof pad.updatedAt === "number" ? pad.updatedAt : 0,
+    };
+  }
+
+  function pickPad(a, b) {
+    var left = asPad(a);
+    var right = asPad(b);
+    return left.updatedAt >= right.updatedAt ? left : right;
+  }
+
+  // 旧版纯数组或 { tasks } 都收成 v2。
+  function asBoard(data) {
+    if (Array.isArray(data)) {
+      return { version: 2, updatedAt: Date.now(), scratchpad: emptyPad(), tasks: tidy(data) };
+    }
+    if (!data || typeof data !== "object") {
+      return { version: 2, updatedAt: 0, scratchpad: emptyPad(), tasks: [] };
+    }
+    return {
+      version: 2,
+      updatedAt: typeof data.updatedAt === "number" ? data.updatedAt : 0,
+      scratchpad: asPad(data.scratchpad),
+      tasks: tidy(data.tasks),
+    };
+  }
+
   var key = load("board.key", null);
   var saved = load("board.data", {}) || {};
+  if (Array.isArray(saved)) saved = { base: saved, sha: null, queue: [], synced: "", scratchpad: emptyPad() };
   var state = {
     base: tidy(saved.base),
     sha: saved.sha || null,
     queue: Array.isArray(saved.queue) ? saved.queue : [],
     synced: saved.synced || "",
+    scratchpad: asPad(saved.scratchpad),
   };
 
   function save() {
-    keep("board.data", { base: state.base, sha: state.sha, queue: state.queue, synced: state.synced });
+    keep("board.data", {
+      base: state.base,
+      sha: state.sha,
+      queue: state.queue,
+      synced: state.synced,
+      scratchpad: state.scratchpad,
+    });
   }
 
   // put 换掉同 id 的便条；make 为真时没有就新钉一张。drop 撕掉。
@@ -344,8 +394,15 @@
     return node;
   }
 
+  function fillScratchpad() {
+    if (!scratchInput) return;
+    if (document.activeElement === scratchInput) return;
+    scratchInput.value = state.scratchpad && state.scratchpad.text ? state.scratchpad.text : "";
+  }
+
   function render() {
     if (!here()) return;
+    fillScratchpad();
     var now = new Date();
     var all = tasks();
     var open = all.filter(function (t) {
@@ -409,6 +466,7 @@
     var tag = el("span", "due", u.text);
     tag.setAttribute("data-due", u.level);
     when.append(tag);
+    if (t.private) when.append(el("span", "note-private", "私密"));
     body.append(el("p", "note-title", t.title), when);
     var tools = el("p", "note-tools");
     var edit = button("", "改", "改：" + t.title, function () {
@@ -448,6 +506,11 @@
     time.type = "time";
     time.value = t.time;
     time.setAttribute("aria-label", "几点截止，可以不填");
+    var priv = el("label", "board-check");
+    var privBox = el("input");
+    privBox.type = "checkbox";
+    privBox.checked = !!t.private;
+    priv.append(privBox, document.createTextNode(" 私密"));
     var actions = el("p", "note-edit-actions");
     var store = el("button", "btn", "存好");
     store.type = "submit";
@@ -458,10 +521,16 @@
       if (back) back.focus();
     }
     actions.append(store, button("btn", "算了", "", stop));
-    box.append(title, date, time, actions);
+    box.append(title, date, time, priv, actions);
     box.addEventListener("submit", function (event) {
       event.preventDefault();
-      var next = Object.assign({}, t, { title: title.value.trim() || t.title, due: date.value, time: date.value ? time.value : "" });
+      var next = Object.assign({}, t, {
+        title: title.value.trim() || t.title,
+        due: date.value,
+        time: date.value ? time.value : "",
+        private: !!privBox.checked,
+        updatedAt: Date.now(),
+      });
       editing = "";
       change({ op: "put", task: next, say: "改：" + next.title });
       var back = document.querySelector('[data-focus="edit:' + t.id + '"]');
@@ -652,6 +721,8 @@
         time: dateField.value ? timeField.value : "",
         done: "",
         made: new Date().toISOString(),
+        private: !!(privateBox && privateBox.checked),
+        updatedAt: Date.now(),
       };
       form.reset();
       autoDate = autoTime = picked = "";
@@ -705,18 +776,27 @@
     return call(key, "GET", "/contents/" + FILE).then(
       function (file) {
         var data = JSON.parse(decode(file.content));
-        return { tasks: tidy(data.tasks), sha: file.sha };
+        var board = asBoard(data);
+        return { tasks: board.tasks, scratchpad: board.scratchpad, sha: file.sha };
       },
       function (error) {
         // 仓库里还没有 board.json：当它是空的，第一次推的时候建出来。
-        if (error.status === 404 || error.status === 409) return { tasks: [], sha: null };
+        if (error.status === 404 || error.status === 409) {
+          return { tasks: [], scratchpad: emptyPad(), sha: null };
+        }
         throw error;
       }
     );
   }
 
   function push(list, sha, message) {
-    var body = { message: message, content: encode(JSON.stringify({ tasks: list }, null, 2) + "\n") };
+    var payload = {
+      version: 2,
+      updatedAt: Date.now(),
+      scratchpad: asPad(state.scratchpad),
+      tasks: list,
+    };
+    var body = { message: message, content: encode(JSON.stringify(payload, null, 2) + "\n") };
     if (sha) body.sha = sha;
     return call(key, "PUT", "/contents/" + FILE, body).then(function (res) {
       return res.content.sha;
@@ -751,10 +831,16 @@
 
     function round() {
       return pull().then(function (remote) {
+        var localPad = asPad(state.scratchpad);
+        var remotePad = asPad(remote.scratchpad);
+        state.scratchpad = pickPad(localPad, remotePad);
         var sent = state.queue.slice();
-        if (!sent.length) return remote;
-        var next = apply(remote.tasks, sent);
-        var message = sent[0].say + (sent.length > 1 ? " 等 " + sent.length + " 处" : "");
+        var next = sent.length ? apply(remote.tasks, sent) : remote.tasks;
+        var needPush = sent.length > 0 || localPad.updatedAt > remotePad.updatedAt;
+        if (!needPush) return { tasks: next, sha: remote.sha };
+        var message = sent.length
+          ? sent[0].say + (sent.length > 1 ? " 等 " + sent.length + " 处" : "")
+          : "暂存贴";
         return push(next, remote.sha, message).then(
           function (sha) {
             state.queue = state.queue.slice(sent.length);
@@ -858,7 +944,7 @@
       // 断开就把这台设备上的都清掉，仓库里的不动。
       key = null;
       keep("board.key", null);
-      state = { base: [], sha: null, queue: [], synced: "" };
+      state = { base: [], sha: null, queue: [], synced: "", scratchpad: emptyPad() };
       problem = "";
       save();
       keyNote.textContent = "断开了。这台设备上的告示牌清空了，仓库里的还在。";
@@ -880,6 +966,59 @@
     if (!editing && !(active && active.closest && active.closest(".cal, .notes"))) render();
   }, 60000);
 
+  function saveScratchpad() {
+    if (!scratchInput) return;
+    state.scratchpad = { text: scratchInput.value, updatedAt: Date.now() };
+    save();
+    flush();
+  }
+
+  function bindScratchpad() {
+    if (!scratchInput) return;
+    scratchSave.addEventListener("click", saveScratchpad);
+    scratchInput.addEventListener("blur", saveScratchpad);
+    scratchCopy.addEventListener("click", function () {
+      var text = scratchInput.value;
+      var idle = scratchCopy.textContent;
+      function done(label) {
+        scratchCopy.textContent = label;
+        window.setTimeout(function () {
+          scratchCopy.textContent = idle;
+        }, 1500);
+      }
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(
+          function () {
+            done("已复制 ✓");
+          },
+          function () {
+            done("请手动复制");
+          }
+        );
+      } else {
+        done("请手动复制");
+      }
+    });
+  }
+
+  function bindAutoOpen() {
+    if (!autoOpen) return;
+    try {
+      autoOpen.checked = !!(local && local.getItem("ricardo_auto_board") === "1");
+    } catch (error) {
+      autoOpen.checked = false;
+    }
+    autoOpen.addEventListener("change", function () {
+      try {
+        if (!local) return;
+        if (autoOpen.checked) local.setItem("ricardo_auto_board", "1");
+        else local.removeItem("ricardo_auto_board");
+      } catch (error) {
+        /* 存不进就只这一趟有效。 */
+      }
+    });
+  }
+
   // 挂上：整页打开告示牌时一次；站内换页到告示牌（js/nav.js 发 farm:page）时再一次。别的页上什么都不做。
   function mount() {
     var next = document.querySelector("[data-add]");
@@ -888,9 +1027,14 @@
     shown = midnight(new Date());
     shown.setDate(1);
     picked = editing = autoDate = autoTime = "";
+    try {
+      sessionStorage.setItem("farm.board", "seen");
+    } catch (error) {}
     bindToast();
     bindForm();
     bindKey();
+    bindScratchpad();
+    bindAutoOpen();
     render();
   }
 

@@ -1315,6 +1315,72 @@ a.row:hover { background-color: var(--menu-deep); }
   color: var(--ink-soft);
 }
 
+.scratchpad {
+  display: grid;
+  gap: calc(2 * var(--px));
+  margin-bottom: calc(4 * var(--px));
+}
+
+.scratchpad h2 {
+  margin: 0;
+  color: var(--ink);
+  text-shadow: none;
+}
+
+.scratchpad textarea {
+  width: 100%;
+  min-height: calc(36 * var(--px));
+  padding: calc(2 * var(--px)) calc(3 * var(--px));
+  resize: vertical;
+  font-family: var(--font-sans);
+  font-size: clamp(14px, 1.02rem, 16px);
+  line-height: 1.75;
+  -webkit-font-smoothing: antialiased;
+  font-smooth: auto;
+  image-rendering: auto;
+}
+
+.scratchpad-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: calc(2 * var(--px));
+  margin: 0;
+}
+
+.board-check {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--px);
+  color: var(--ink);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.board-check input {
+  width: calc(8 * var(--px));
+  height: calc(8 * var(--px));
+  margin: 0;
+  accent-color: var(--ink);
+}
+
+.board .board-auto-open {
+  position: absolute;
+  top: calc(10 * var(--px));
+  right: calc(16 * var(--px));
+  z-index: 2;
+  color: var(--cream);
+  text-shadow: var(--px) var(--px) 0 var(--shadow);
+}
+
+.pin-form .board-check {
+  align-self: center;
+}
+
+.note-private {
+  color: var(--ink-soft);
+}
+
 .board-body {
   display: grid;
   grid-template-columns: minmax(0, 8fr) minmax(0, 7fr);
@@ -1842,6 +1908,14 @@ a.row:hover { background-color: var(--menu-deep); }
   .pin-form [type="date"] { grid-column: 1 / 3; }
 
   .pin-form [type="time"] { grid-column: 3 / 5; }
+
+  .pin-form .board-check { grid-column: 1 / -1; }
+
+  .board .board-auto-open {
+    position: static;
+    display: flex;
+    margin: 0 0 calc(3 * var(--px));
+  }
 
   .day {
     min-height: calc(17 * var(--px));

@@ -58,8 +58,18 @@
         <h1>告示牌</h1>
         <p class="stamp" role="status" data-sync>只存在这台设备</p>
       </div>
+      <label class="board-check board-auto-open" for="board-auto-open"><input type="checkbox" id="board-auto-open"> 下次打开直达告示牌</label>
 
       <noscript><p class="sheet">告示牌要开脚本才能用。</p></noscript>
+
+      <section class="sheet scratchpad" aria-labelledby="scratchpad-title">
+        <h2 id="scratchpad-title">📌 随手暂存贴（跨设备剪贴板）</h2>
+        <textarea class="field" id="scratchpad-input" rows="3" placeholder="在这里随手粘贴需要跨手机/电脑传递的链接、命令、代码片段或灵感..."></textarea>
+        <p class="scratchpad-actions">
+          <button class="btn" type="button" id="scratchpad-copy-btn">一键复制</button>
+          <button class="btn" type="button" id="scratchpad-save-btn">保存暂存</button>
+        </p>
+      </section>
 
       <form class="sheet pin-form" data-add>
         <label class="sr-only" for="add-title">要做的事</label>
@@ -69,6 +79,7 @@
         <label class="sr-only" for="add-time">几点截止，可以不填</label>
         <input class="field" id="add-time" name="time" type="time">
         <button class="btn" type="submit">钉上</button>
+        <label class="board-check" for="board-task-private"><input type="checkbox" id="board-task-private"> 私密</label>
         <p class="pin-hint" data-hint>日子可以直接写进句子：明天、周五、下周三、10月9日、3天后、晚上8点。</p>
       </form>
 

@@ -46,23 +46,42 @@
 
   <div class="menu-wrap">
     <nav class="tabs" aria-label="栏目">
-      <a href="../about/"><img class="pixel" src="../img/icon-about.png" width="33" height="33" alt=""><span>关于</span></a>
-      <a href="../now/"><img class="pixel" src="../img/icon-now.png" width="30" height="33" alt=""><span>近况</span></a>
-      <a href="./" aria-current="page"><img class="pixel" src="../img/icon-work.png" width="33" height="24" alt=""><span>作品</span></a>
-      <a href="../notes/"><img class="pixel" src="../img/icon-notes.png" width="30" height="33" alt=""><span>笔记</span></a>
-      <a href="../contact/"><img class="pixel" src="../img/icon-contact.png" width="33" height="24" alt=""><span>联系</span></a>
       <a href="../board/"><img class="pixel" src="../img/icon-board.png" width="33" height="33" alt=""><span>告示牌</span></a>
+      <a href="../log/"><img class="pixel" src="../img/icon-now.png" width="30" height="33" alt=""><span>日常</span></a>
+      <a href="../notes/" class="is-section"><img class="pixel" src="../img/icon-notes.png" width="30" height="33" alt=""><span>笔记</span></a>
+      <a href="../about/"><img class="pixel" src="../img/icon-about.png" width="33" height="33" alt=""><span>关于</span></a>
     </nav>
     <main class="panel menu" id="content">
       <a class="close" href="../" aria-label="关上，回农场"></a>
       <h1>作品</h1>
-      <div class="empty"><img class="pixel" src="../img/item-crate.png" width="32" height="32" alt=""><p>箱子还空着。</p></div>
+      <article class="bundle" id="my-ricardo">
+        <div class="item"><img class="pixel" src="../img/item-crate.png" width="32" height="32" alt=""></div>
+        <div>
+          <h2>my-ricardo 像素农场个人站</h2>
+          <p>纯静态零依赖 + Python 逐像素生成素材 + Web Audio 合成器的个人赛博木屋。</p>
+          <p class="bundle-meta"><a href="https://github.com/Ricardo3319/my-ricardo">源码</a></p>
+        </div>
+      </article>
+      <article class="bundle" id="rpc-slides">
+        <div class="item"><img class="pixel" src="../img/item-seeds.png" width="32" height="32" alt=""></div>
+        <div>
+          <h2>微秒级任务调度与 RPC 演示幻灯片</h2>
+          <p>关于超低延迟任务调度机制的可视化演示文稿。</p>
+          <p class="bundle-meta"><a href="../rpc-slides/">打开演示</a></p>
+        </div>
+      </article>
+      <ul class="bag">
+        <li class="slot"><span class="item"><img class="pixel" src="../img/item-crate.png" width="32" height="32" alt=""></span><span class="tip"><b>my-ricardo</b><small>站点</small>像素农场个人站</span></li>
+        <li class="slot"><span class="item"><img class="pixel" src="../img/item-seeds.png" width="32" height="32" alt=""></span><span class="tip"><b>RPC 幻灯片</b><small>演示</small>微秒级任务调度</span></li>
+        <li class="slot"></li><li class="slot"></li><li class="slot"></li><li class="slot"></li><li class="slot"></li><li class="slot"></li><li class="slot"></li><li class="slot"></li><li class="slot"></li><li class="slot"></li>
+      </ul>
+      <p class="actions"><a class="btn" href="../notes/">去笔记看看 →</a></p>
     </main>
   </div>
 
   <footer class="credit">
     <p>视觉受田园生活模拟游戏启发，非官方，与 ConcernedApe 无关。</p>
-    <p><a href="../">农场</a><a href="../about/">关于</a><a href="../now/">近况</a><a href="../log/">流水</a><a href="./">作品</a><a href="../notes/">笔记</a><a href="../contact/">联系</a><a href="../board/">告示牌</a></p>
+    <p><a href="../">农场</a><a href="../board/">告示牌</a><a href="../log/">日常</a><a href="../notes/">笔记</a><a href="../about/">关于</a></p>
   </footer>
   <script src="../js/nav.js"></script>
   <script src="../js/sound.js"></script>

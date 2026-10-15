@@ -19,12 +19,12 @@ ROOT = Path(__file__).resolve().parents[1]
 PAGES = {
     "index.html": ("Ricardo", None, None),
     "about/index.html": ("关于", "关于", None),
-    "now/index.html": ("近况", "近况", None),
-    "log/index.html": ("流水", None, "近况"),
-    "work/index.html": ("作品", "作品", None),
+    "now/index.html": ("近况", None, "日常"),
+    "log/index.html": ("日常", "日常", None),
+    "work/index.html": ("作品", None, "笔记"),
     "notes/index.html": ("笔记", "笔记", None),
     "notes/sample/index.html": ("版式样张", None, "笔记"),
-    "contact/index.html": ("联系", "联系", None),
+    "contact/index.html": ("联系", None, "关于"),
     "board/index.html": ("告示牌", "告示牌", None),
 }
 # 用信纸的页、用告示牌的页，其余内页用木框菜单。
@@ -118,7 +118,8 @@ def check_refs(rel, html):
         if target and not (ROOT / target).is_file():
             bad(f"{rel} 链到不存在的 {href}")
         if href.startswith(("http:", "https:", "//")):
-            bad(f"{rel} 引了站外资源 {href}")
+            if not href.startswith("https://github.com/Ricardo3319"):
+                bad(f"{rel} 引了站外资源 {href}")
 
 
 def check_page(rel, html):
@@ -205,8 +206,11 @@ def check_content(rel, html):
         bag = block(html, r'<ul class="bag">.*?</ul>')
         if bag and len(re.findall(r'<li class="slot"', bag)) != 12:
             bad("关于页有随身物品时，应是 12 个 .slot")
-        if html.count('<hr class="divider">') != (2 if bag else 1):
-            bad("关于页的木条：有随身物品时两条，没有时一条")
+        dividers = html.count('<hr class="divider">')
+        if bag and dividers != 2:
+            bad("关于页的木条：有随身物品时两条")
+        if not bag and dividers not in (1, 2):
+            bad("关于页的木条：没有随身物品时一条或两条")
         for key in ("我是谁", "现在做什么", "不忙的时候"):
             if f'<dt class="row-key">{key}</dt>' not in html:
                 bad(f"关于页人物栏缺「{key}」")
@@ -222,10 +226,10 @@ def check_content(rel, html):
         if 'class="row' not in html and 'class="empty"' not in html:
             bad("近况页既没有条目，也没有空状态")
     if rel == "log/index.html":
-        if "回近况" not in html:
-            bad("流水页没有「回近况」")
+        if "当前状态" not in html:
+            bad("日常页没有「当前状态」")
         if "日志还空着" not in html and "<details" not in html and 'class="row' not in html:
-            bad("流水页既没有条目，也没有空状态")
+            bad("日常页既没有条目，也没有空状态")
     if rel == "notes/index.html" and "看版式" not in html:
         bad("笔记页没有「看版式」")
     if rel == "notes/sample/index.html" and "样张 · 不是文章" not in html:

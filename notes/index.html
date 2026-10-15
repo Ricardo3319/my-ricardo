@@ -46,26 +46,33 @@
 
   <div class="menu-wrap">
     <nav class="tabs" aria-label="栏目">
-      <a href="../about/"><img class="pixel" src="../img/icon-about.png" width="33" height="33" alt=""><span>关于</span></a>
-      <a href="../now/"><img class="pixel" src="../img/icon-now.png" width="30" height="33" alt=""><span>近况</span></a>
-      <a href="../work/"><img class="pixel" src="../img/icon-work.png" width="33" height="24" alt=""><span>作品</span></a>
-      <a href="./" aria-current="page"><img class="pixel" src="../img/icon-notes.png" width="30" height="33" alt=""><span>笔记</span></a>
-      <a href="../contact/"><img class="pixel" src="../img/icon-contact.png" width="33" height="24" alt=""><span>联系</span></a>
       <a href="../board/"><img class="pixel" src="../img/icon-board.png" width="33" height="33" alt=""><span>告示牌</span></a>
+      <a href="../log/"><img class="pixel" src="../img/icon-now.png" width="30" height="33" alt=""><span>日常</span></a>
+      <a href="./" aria-current="page"><img class="pixel" src="../img/icon-notes.png" width="30" height="33" alt=""><span>笔记</span></a>
+      <a href="../about/"><img class="pixel" src="../img/icon-about.png" width="33" height="33" alt=""><span>关于</span></a>
     </nav>
     <main class="panel menu" id="content">
       <a class="close" href="../" aria-label="关上，回农场"></a>
       <h1>笔记</h1>
-      <ol class="rows">
-        <li><a class="row mail" href="sample/"><span class="row-key">样张</span><span>看版式<span class="row-note"> · 不是文章</span></span></a></li>
-      </ol>
-      <p class="bag-note">还没有正式的笔记。</p>
+      <section aria-labelledby="works">
+        <h2 id="works">代表作品与折腾</h2>
+        <ol class="rows">
+          <li><a class="row" href="https://github.com/Ricardo3319/my-ricardo"><span class="row-key">农场</span><span>my-ricardo 像素农场个人站</span></a></li>
+          <li><a class="row" href="../rpc-slides/"><span class="row-key">调度</span><span>微秒级任务调度与 RPC 演示幻灯片</span></a></li>
+        </ol>
+      </section>
+      <section aria-labelledby="letters">
+        <h2 id="letters">笔记</h2>
+        <ol class="rows">
+          <li><a class="row mail" href="sample/"><span class="row-key">样张</span><span>看版式<span class="row-note"> · 不是文章</span></span></a></li>
+        </ol>
+      </section>
     </main>
   </div>
 
   <footer class="credit">
     <p>视觉受田园生活模拟游戏启发，非官方，与 ConcernedApe 无关。</p>
-    <p><a href="../">农场</a><a href="../about/">关于</a><a href="../now/">近况</a><a href="../log/">流水</a><a href="../work/">作品</a><a href="./">笔记</a><a href="../contact/">联系</a><a href="../board/">告示牌</a></p>
+    <p><a href="../">农场</a><a href="../board/">告示牌</a><a href="../log/">日常</a><a href="./">笔记</a><a href="../about/">关于</a></p>
   </footer>
   <script src="../js/nav.js"></script>
   <script src="../js/sound.js"></script>

@@ -3,10 +3,10 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>流水 · Ricardo</title>
-  <meta name="description" content="公开的工作流水。">
-  <meta property="og:title" content="流水 · Ricardo">
-  <meta property="og:description" content="公开的工作流水。">
+  <title>日常 · Ricardo</title>
+  <meta name="description" content="当前状态和公开的日常流水。">
+  <meta property="og:title" content="日常 · Ricardo">
+  <meta property="og:description" content="当前状态和公开的日常流水。">
   <meta property="og:type" content="website">
   <script>
     (function () {
@@ -46,24 +46,33 @@
 
   <div class="menu-wrap">
     <nav class="tabs" aria-label="栏目">
-      <a href="../about/"><img class="pixel" src="../img/icon-about.png" width="33" height="33" alt=""><span>关于</span></a>
-      <a href="../now/" class="is-section"><img class="pixel" src="../img/icon-now.png" width="30" height="33" alt=""><span>近况</span></a>
-      <a href="../work/"><img class="pixel" src="../img/icon-work.png" width="33" height="24" alt=""><span>作品</span></a>
-      <a href="../notes/"><img class="pixel" src="../img/icon-notes.png" width="30" height="33" alt=""><span>笔记</span></a>
-      <a href="../contact/"><img class="pixel" src="../img/icon-contact.png" width="33" height="24" alt=""><span>联系</span></a>
       <a href="../board/"><img class="pixel" src="../img/icon-board.png" width="33" height="33" alt=""><span>告示牌</span></a>
+      <a href="./" aria-current="page"><img class="pixel" src="../img/icon-now.png" width="30" height="33" alt=""><span>日常</span></a>
+      <a href="../notes/"><img class="pixel" src="../img/icon-notes.png" width="30" height="33" alt=""><span>笔记</span></a>
+      <a href="../about/"><img class="pixel" src="../img/icon-about.png" width="33" height="33" alt=""><span>关于</span></a>
     </nav>
     <main class="panel menu" id="content">
       <a class="close" href="../" aria-label="关上，回农场"></a>
-      <a class="back" href="../now/">← 回近况</a>
-      <h1>流水</h1>
-      <div class="empty"><p>日志还空着。</p></div>
+      <h1>日常</h1>
+      <section aria-labelledby="now-status">
+        <h2 id="now-status">当前状态（Now）</h2>
+        <div class="row quest">
+          <p>🍁 2026 秋 · 在南航读研，日常和微秒级任务调度打交道，空下来打磨这座像素小农场。</p>
+        </div>
+      </section>
+      <hr class="divider">
+      <section aria-labelledby="log-list">
+        <h2 id="log-list">流水</h2>
+        <ol class="rows">
+          <li class="row quest"><span class="row-key">2026-10-15</span><span>把个人主页的木屋重新收拾了一遍，换上了更护眼的阅读字体，接下来把告示牌当成跨设备随身备忘录用。</span></li>
+        </ol>
+      </section>
     </main>
   </div>
 
   <footer class="credit">
     <p>视觉受田园生活模拟游戏启发，非官方，与 ConcernedApe 无关。</p>
-    <p><a href="../">农场</a><a href="../about/">关于</a><a href="../now/">近况</a><a href="./">流水</a><a href="../work/">作品</a><a href="../notes/">笔记</a><a href="../contact/">联系</a><a href="../board/">告示牌</a></p>
+    <p><a href="../">农场</a><a href="../board/">告示牌</a><a href="./">日常</a><a href="../notes/">笔记</a><a href="../about/">关于</a></p>
   </footer>
   <script src="../js/nav.js"></script>
   <script src="../js/sound.js"></script>

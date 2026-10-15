@@ -15,8 +15,12 @@
       return s.src;
     });
   }
-  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", snapshot);
-  else snapshot();
+  function boot() {
+    snapshot();
+    highlight();
+  }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot);
+  else boot();
   var latest = null;
   var shown = key(location.href);
 
@@ -41,6 +45,35 @@
     var url = new URL(href, location.href);
     url.hash = "";
     return url.href;
+  }
+
+  function normPath(pathname) {
+    var p = pathname.replace(/\/index\.html$/, "/");
+    if (p.charAt(p.length - 1) !== "/") p += "/";
+    return p;
+  }
+
+  // 兼容路由归到四个核心入口：/now/→日常，/work/→笔记，/contact/→关于。
+  function parentPath(pathname) {
+    var p = normPath(pathname);
+    if (/\/now\/$/.test(p)) return p.replace(/\/now\/$/, "/log/");
+    if (/\/work\/$/.test(p)) return p.replace(/\/work\/$/, "/notes/");
+    if (/\/contact\/$/.test(p)) return p.replace(/\/contact\/$/, "/about/");
+    if (/\/notes\/sample\/$/.test(p)) return p.replace(/sample\/$/, "");
+    return p;
+  }
+
+  function highlight() {
+    var here = normPath(location.pathname);
+    var want = parentPath(here);
+    Array.prototype.forEach.call(document.querySelectorAll("nav.tabs a"), function (a) {
+      a.removeAttribute("aria-current");
+      a.classList.remove("is-section");
+      var target = normPath(new URL(a.getAttribute("href"), location.href).pathname);
+      if (target !== want) return;
+      if (here === want) a.setAttribute("aria-current", "page");
+      else a.classList.add("is-section");
+    });
   }
 
   function inside(url) {
@@ -95,6 +128,7 @@
       load.src = src;
       document.body.appendChild(load);
     });
+    highlight();
     document.dispatchEvent(new CustomEvent("farm:page"));
   }
 

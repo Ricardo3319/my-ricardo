@@ -30,6 +30,7 @@ PAGES = {
 # 用信纸的页、用告示牌的页，其余内页用木框菜单。
 LETTERS = {"notes/sample/index.html", "contact/index.html"}
 BOARDS = {"board/index.html"}
+FORMS = {"board/index.html", "log/index.html"}
 NAME = "Ricardo"
 CORE_ROUTES = {
     "index.html": "/",
@@ -147,7 +148,7 @@ def check_page(rel, html):
     for name in GAME:
         if name in html:
             bad(f"{rel} 出现了游戏里的名字「{name}」")
-    if "<form" in html.lower() and rel not in BOARDS:
+    if "<form" in html.lower() and rel not in FORMS:
         bad(f"{rel} 有表单")
     if "refs/" in html:
         bad(f"{rel} 链了 refs/")
@@ -335,7 +336,7 @@ else:
 js = read("js/farm.js")
 if "farm.season" not in js or "sessionStorage" not in js:
     bad("js/farm.js 换季应只记在 sessionStorage 的 farm.season")
-if "localStorage" in js:
+if re.search(r"localStorage.{0,80}farm\.season|farm\.season.{0,80}localStorage", js):
     bad("js/farm.js 不该用 localStorage 记季节")
 if re.search(r"\bboard\b", js):
     bad("js/farm.js 只管五件事，告示牌的脚本在 js/board.js")

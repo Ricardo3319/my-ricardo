@@ -54,16 +54,29 @@
     <main class="panel menu" id="content">
       <a class="close" href="../" aria-label="关上，回农场"></a>
       <h1>日常</h1>
+      <details class="drawer" data-log-publish hidden>
+        <summary>发布新日常 / 更新近况</summary>
+        <form class="sheet" data-log-form>
+          <label for="log-now">近况</label>
+          <textarea class="field" id="log-now" name="nowStatus" rows="2" placeholder="一句话近况，可留空"></textarea>
+          <label for="log-text">新日常</label>
+          <textarea class="field" id="log-text" name="text" rows="3" placeholder="今天想记下的事，可留空"></textarea>
+          <label for="log-date">日期</label>
+          <input class="field" id="log-date" name="date" type="date">
+          <p class="key-actions"><button class="btn" type="submit">发布</button></p>
+          <p class="hint" role="status" data-log-note></p>
+        </form>
+      </details>
       <section aria-labelledby="now-status">
         <h2 id="now-status">当前状态（Now）</h2>
         <div class="row quest">
-          <p>🍁 2026 秋 · 在南航读研，日常和微秒级任务调度打交道，空下来打磨这座像素小农场。</p>
+          <p data-now-status>🍁 2026 秋 · 在南航读研，日常和微秒级任务调度打交道，空下来打磨这座像素小农场。</p>
         </div>
       </section>
       <hr class="divider">
       <section aria-labelledby="log-list">
         <h2 id="log-list">流水</h2>
-        <ol class="rows">
+        <ol class="rows" data-log-list>
           <li class="row quest"><span class="row-key">2026-10-15</span><span>把个人主页的木屋重新收拾了一遍，换上了更护眼的阅读字体，接下来把告示牌当成跨设备随身备忘录用。</span></li>
         </ol>
       </section>

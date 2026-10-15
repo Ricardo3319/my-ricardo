@@ -156,10 +156,130 @@
     });
   }
 
+  var logBound = null;
+
+  function passkeyValue() {
+    var disk = store("localStorage");
+    try {
+      return (disk && disk.getItem("ricardo_passkey")) || "";
+    } catch (error) {
+      return "";
+    }
+  }
+
+  function logsUrl() {
+    return new URL("../api/logs", location.href).href;
+  }
+
+  function fillLogs(data) {
+    var nowLine = document.querySelector("[data-now-status]");
+    var list = document.querySelector("[data-log-list]");
+    if (nowLine && data.nowStatus) nowLine.textContent = data.nowStatus;
+    if (!list || !data.logs || !data.logs.length) return;
+    while (list.firstChild) list.removeChild(list.firstChild);
+    data.logs.forEach(function (item) {
+      var li = document.createElement("li");
+      li.className = "row quest";
+      var when = document.createElement("span");
+      when.className = "row-key";
+      when.textContent = item.date || "";
+      var body = document.createElement("span");
+      body.textContent = item.text || "";
+      li.appendChild(when);
+      li.appendChild(body);
+      list.appendChild(li);
+    });
+  }
+
+  function loadLogs() {
+    var list = document.querySelector("[data-log-list]");
+    if (!list) {
+      logBound = null;
+      return;
+    }
+    var publish = document.querySelector("[data-log-publish]");
+    var form = document.querySelector("[data-log-form]");
+    var note = document.querySelector("[data-log-note]");
+    var pk = passkeyValue();
+    if (publish) publish.hidden = !pk;
+    fetch(logsUrl(), { headers: { Accept: "application/json" }, cache: "no-store", credentials: "same-origin" })
+      .then(function (res) {
+        if (!res.ok) return null;
+        var type = res.headers.get("Content-Type") || "";
+        if (type.indexOf("json") < 0) return null;
+        return res.json();
+      })
+      .then(function (data) {
+        if (data) fillLogs(data);
+      })
+      .catch(function () {});
+    if (form && form !== logBound) {
+      logBound = form;
+      form.addEventListener("submit", function (event) {
+        event.preventDefault();
+        var key = passkeyValue();
+        if (!key) {
+          if (note) note.textContent = "这台设备还没验证口令。";
+          return;
+        }
+        var nowStatus = form.elements.nowStatus.value.trim();
+        var text = form.elements.text.value.trim();
+        var date = form.elements.date.value;
+        if (!nowStatus && !text) {
+          if (note) note.textContent = "近况和日常至少写一样。";
+          return;
+        }
+        if (note) note.textContent = "正在发布…";
+        var body = {};
+        if (nowStatus) body.nowStatus = nowStatus;
+        if (text) body.text = text;
+        if (date) body.date = date;
+        fetch(logsUrl(), {
+          method: "POST",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            "X-Passkey": key,
+          },
+          cache: "no-store",
+          credentials: "same-origin",
+          body: JSON.stringify(body),
+        })
+          .then(function (res) {
+            if (res.status === 401) {
+              if (note) note.textContent = "口令不对。";
+              return null;
+            }
+            if (!res.ok) {
+              if (note) note.textContent = "没发上去。";
+              return null;
+            }
+            return res.json();
+          })
+          .then(function (out) {
+            if (!out) return;
+            form.reset();
+            if (note) note.textContent = "发布了。";
+            return fetch(logsUrl(), { headers: { Accept: "application/json" }, cache: "no-store", credentials: "same-origin" }).then(function (res) {
+              return res.ok ? res.json() : null;
+            });
+          })
+          .then(function (data) {
+            if (data) fillLogs(data);
+          })
+          .catch(function () {
+            if (note) note.textContent = "云端不可达。";
+          });
+      });
+    }
+  }
+
   function page() {
     typing();
     copying();
+    loadLogs();
   }
-  page();
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", page);
+  else page();
   document.addEventListener("farm:page", page);
 })();

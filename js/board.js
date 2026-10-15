@@ -15,6 +15,7 @@
   var form, titleField, dateField, timeField, hintLine, syncLine, notesBox, monthLine, seasonMark, daysBox;
   var doneBox, doneCount, keyForm, keyOn, keyState, keyNote, unlink, toastBox, toastText, toastUndo, hint;
   var scratchInput, scratchCopy, scratchSave, privateBox, autoOpen;
+  var passForm, passOn, passOff, passNote;
 
   function find() {
     form = document.querySelector("[data-add]");
@@ -42,6 +43,10 @@
     scratchSave = document.getElementById("scratchpad-save-btn");
     privateBox = document.getElementById("board-task-private");
     autoOpen = document.getElementById("board-auto-open");
+    passForm = document.querySelector("[data-passkey]");
+    passOn = document.querySelector("[data-passkey-on]");
+    passOff = document.querySelector("[data-passkey-off]");
+    passNote = document.querySelector("[data-passkey-note]");
     hint = hintLine.textContent;
   }
 
@@ -815,20 +820,104 @@
   var busy = false;
   var again = false;
   var problem = "";
+  var cloud = false;
 
-  function flush() {
-    if (!key) return;
-    if (busy) {
-      again = true;
-      return;
+  function passkeyValue() {
+    try {
+      return (local && local.getItem("ricardo_passkey")) || "";
+    } catch (error) {
+      return "";
     }
-    busy = true;
-    again = false;
-    problem = "";
-    renderSync();
+  }
+
+  function setPasskey(value) {
+    try {
+      if (!local) return;
+      if (value) local.setItem("ricardo_passkey", value);
+      else local.removeItem("ricardo_passkey");
+    } catch (error) {}
+  }
+
+  function apiUrl(name) {
+    return new URL("../api/" + name, location.href).href;
+  }
+
+  function jsonRes(res) {
+    if (res.status === 404 || res.status === 405) {
+      var miss = new Error("offline");
+      miss.offline = true;
+      throw miss;
+    }
+    var type = res.headers.get("Content-Type") || "";
+    if (type.indexOf("json") < 0) {
+      var html = new Error("offline");
+      html.offline = true;
+      throw html;
+    }
+    return res.json().then(function (body) {
+      body._status = res.status;
+      body._ok = res.ok;
+      return body;
+    });
+  }
+
+  function flushCloud() {
+    var pk = passkeyValue();
+    if (!pk) return Promise.resolve(false);
+    var headers = { Accept: "application/json", "X-Passkey": pk };
+    return fetch(apiUrl("board"), { method: "GET", headers: headers, cache: "no-store", credentials: "same-origin" })
+      .then(jsonRes)
+      .then(function (got) {
+        if (!got._ok) {
+          var bad = new Error("offline");
+          bad.offline = true;
+          throw bad;
+        }
+        if (!pk) return false;
+        headers["Content-Type"] = "application/json";
+        return fetch(apiUrl("board"), {
+          method: "PUT",
+          headers: headers,
+          cache: "no-store",
+          credentials: "same-origin",
+          body: JSON.stringify({
+            version: 2,
+            updatedAt: Date.now(),
+            scratchpad: asPad(state.scratchpad),
+            tasks: tasks(),
+          }),
+        }).then(jsonRes);
+      })
+      .then(function (out) {
+        if (!out) return false;
+        if (out._status === 401) {
+          problem = "口令不对";
+          cloud = false;
+          return false;
+        }
+        if (!out._ok || !out.data) {
+          var bad = new Error("offline");
+          bad.offline = true;
+          throw bad;
+        }
+        state.base = tidy(out.data.tasks);
+        state.scratchpad = asPad(out.data.scratchpad);
+        state.queue = [];
+        state.synced = new Date().toISOString();
+        cloud = true;
+        problem = "";
+        return true;
+      })
+      .catch(function (error) {
+        cloud = false;
+        if (error && error.offline) return false;
+        return false;
+      });
+  }
+
+  function flushGithub() {
     var tries = 0;
     var using = key;
-
     function round() {
       return pull().then(function (remote) {
         var localPad = asPad(state.scratchpad);
@@ -847,44 +936,61 @@
             return { tasks: next, sha: sha };
           },
           function (error) {
-            // 别的设备刚推过：重新拉一次再补。
             if ((error.status === 409 || error.status === 422) && ++tries < 3) return round();
             throw error;
           }
         );
       });
     }
+    return round().then(
+      function (remote) {
+        if (key !== using) return;
+        state.base = remote.tasks;
+        state.sha = remote.sha;
+        state.synced = new Date().toISOString();
+      },
+      function (error) {
+        problem = explain(error);
+      }
+    );
+  }
 
-    round()
-      .then(
-        function (remote) {
-          if (key !== using) return;
-          state.base = remote.tasks;
-          state.sha = remote.sha;
-          state.synced = new Date().toISOString();
-        },
-        function (error) {
-          problem = explain(error);
-        }
-      )
+  function flush() {
+    if (busy) {
+      again = true;
+      return;
+    }
+    busy = true;
+    again = false;
+    problem = "";
+    renderSync();
+    flushCloud()
+      .then(function (ok) {
+        if (ok || !key) return;
+        return flushGithub();
+      })
       .then(function () {
         busy = false;
         save();
         render();
-        if (again && key) flush();
+        if (again) flush();
       });
   }
 
   function renderSync() {
     if (!here()) return;
     var waiting = state.queue.length ? "，" + state.queue.length + " 处等着推上去" : "";
-    if (!key) syncLine.textContent = "只存在这台设备";
-    else if (busy) syncLine.textContent = "同步中…";
+    var pk = passkeyValue();
+    if (busy) syncLine.textContent = "同步中…";
+    else if (cloud) syncLine.textContent = (state.synced ? "已同步云端 " + clock(state.synced) : "云端已连") + waiting;
     else if (problem) syncLine.textContent = "没同步上：" + problem + waiting;
-    else syncLine.textContent = (state.synced ? "已同步 " + clock(state.synced) : "还没同步") + waiting;
-    keyState.textContent = key ? "连着 " + key.repo : "还没连";
+    else if (key) syncLine.textContent = (state.synced ? "已同步 " + clock(state.synced) : "还没同步") + waiting;
+    else syncLine.textContent = pk ? "口令已存，云端不可达时只存在这台设备" : "只存在这台设备";
+    keyState.textContent = cloud ? "云端" : key ? "连着 " + key.repo : pk ? "有口令" : "还没连";
     keyForm.hidden = !!key;
     keyOn.hidden = !key;
+    if (passForm) passForm.hidden = !!pk;
+    if (passOn) passOn.hidden = !pk;
   }
 
   function bindKey() {
@@ -1019,6 +1125,48 @@
     });
   }
 
+  function bindPasskey() {
+    if (!passForm) return;
+    passForm.addEventListener("submit", function (event) {
+      event.preventDefault();
+      var value = passForm.elements.passkey.value.trim();
+      if (!value) {
+        if (passNote) passNote.textContent = "还没填口令。";
+        return;
+      }
+      if (passNote) passNote.textContent = "正在验证口令…";
+      fetch(apiUrl("auth/verify"), {
+        method: "POST",
+        headers: { Accept: "application/json", "X-Passkey": value },
+        cache: "no-store",
+        credentials: "same-origin",
+      })
+        .then(jsonRes)
+        .then(function (body) {
+          if (!body._ok || !body.ok) {
+            if (passNote) passNote.textContent = "口令不对。";
+            return;
+          }
+          setPasskey(value);
+          passForm.reset();
+          if (passNote) passNote.textContent = "口令对了。告示牌会走云端同步。";
+          render();
+          flush();
+        })
+        .catch(function () {
+          if (passNote) passNote.textContent = "云端不可达，口令没存。GitHub Pages 上请用下面的钥匙。";
+        });
+    });
+    if (passOff) {
+      passOff.addEventListener("click", function () {
+        setPasskey("");
+        cloud = false;
+        if (passNote) passNote.textContent = "口令已从这台设备拿掉。";
+        render();
+      });
+    }
+  }
+
   // 挂上：整页打开告示牌时一次；站内换页到告示牌（js/nav.js 发 farm:page）时再一次。别的页上什么都不做。
   function mount() {
     var next = document.querySelector("[data-add]");
@@ -1033,6 +1181,7 @@
     bindToast();
     bindForm();
     bindKey();
+    bindPasskey();
     bindScratchpad();
     bindAutoOpen();
     render();

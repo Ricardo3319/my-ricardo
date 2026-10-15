@@ -111,6 +111,15 @@
       <details class="drawer" data-key-box>
         <summary>钥匙 · <span data-key-state>还没连</span></summary>
         <div class="sheet key">
+          <p>有自建云端时，填主人口令就能把告示牌和暂存贴同步到服务器。</p>
+          <form class="key-form" data-passkey>
+            <label for="passkey">主人口令（Passkey）</label>
+            <input class="field" id="passkey" name="passkey" type="password" autocomplete="off" placeholder="口令">
+            <p class="key-actions"><button class="btn" type="submit">验证口令</button></p>
+          </form>
+          <p class="key-actions" data-passkey-on hidden><button class="btn" type="button" data-passkey-off>断开口令</button></p>
+          <p class="hint" role="status" data-passkey-note></p>
+          <p>没有云端时，仍可用 GitHub 钥匙：</p>
           <p>换了设备也想看到同一块告示牌，要一把钥匙：</p>
           <ol>
             <li>在 GitHub 新建一个私有仓库，比如 board，建的时候勾上 README。</li>

@@ -1327,7 +1327,8 @@ a.row:hover { background-color: var(--menu-deep); }
   text-shadow: none;
 }
 
-.scratchpad textarea {
+.scratchpad textarea,
+[data-log-form] textarea {
   width: 100%;
   min-height: calc(36 * var(--px));
   padding: calc(2 * var(--px)) calc(3 * var(--px));
@@ -1338,6 +1339,11 @@ a.row:hover { background-color: var(--menu-deep); }
   -webkit-font-smoothing: antialiased;
   font-smooth: auto;
   image-rendering: auto;
+}
+
+[data-log-form] {
+  display: grid;
+  gap: calc(2 * var(--px));
 }
 
 .scratchpad-actions {

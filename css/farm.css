@@ -13,6 +13,10 @@
   /* 农场是背景，单独放大，不和界面比粗细。 */
   --wpx: 3px;
 
+  /* 外壳像素字，正文现代字。像素字号仍是 12 × --px。 */
+  --font-pixel: "Ark Pixel", monospace;
+  --font-sans: system-ui, -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif;
+
   --ink: #5b2a12;
   --ink-soft: #6e3b1b;
   --menu: #ffc97f;
@@ -23,7 +27,7 @@
   --shadow: #2a140a;
   --focus: #3b1d0e;
   --dim: rgb(30 16 8 / 0.55);
-  --dim-inner: rgb(30 16 8 / 0.3);
+  --dim-inner: rgba(18, 14, 10, 0.42);
 
   --edge: #4e974c;
   --grass: #84c669;
@@ -65,14 +69,15 @@ html[data-phase="dawn"] .world::before { background: rgb(255 170 110 / 0.12); }
 html[data-phase="dusk"] .world::before { background: rgb(160 70 90 / 0.2); }
 html[data-phase="night"] .world::before { background: rgb(14 22 62 / 0.45); }
 
-/* 打开菜单时，世界压暗一点，农场还看得见。站内换页时世界不重画，压暗淡入淡出。 */
+/* 阅读态遮罩（DESIGN.md .farm-backdrop-dim）：内页木框打开时压暗农场，首页漫游时透明。 */
 .world::after {
   content: "";
   position: absolute;
   inset: 0;
   background: var(--dim-inner);
   opacity: 0;
-  transition: opacity 260ms ease;
+  transition: opacity 0.25s ease;
+  pointer-events: none;
 }
 
 .inner .world::after { opacity: 1; }
@@ -189,11 +194,80 @@ body {
   min-height: 100vh;
   min-height: 100svh;
   color: var(--ink);
-  font-family: "Ark Pixel", "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+  font-family: var(--font-pixel);
   font-size: var(--fs);
   line-height: var(--lh);
   -webkit-font-smoothing: none;
   font-smooth: never;
+}
+
+/* 游戏外壳保持像素字。 */
+.hud,
+nav,
+.panel h1,
+.panel h2,
+.panel h3,
+.nameplate,
+button,
+.btn,
+.nametag,
+.bubble,
+.walk-hint,
+.credit {
+  font-family: var(--font-pixel);
+}
+
+/* 内页正文改用系统无衬线，长文和输入框好读。 */
+.panel p:not(.nameplate),
+.panel li,
+.panel dd,
+.panel dt,
+.panel .row,
+.panel .greet,
+.panel .empty,
+.panel .hint,
+.letter .prose,
+.letter .meta,
+.board .field,
+.board input,
+.board textarea,
+.board .note-title,
+.board .note-when,
+.board .day,
+.board .cal-week,
+.board .cal-foot,
+.board .pin-hint,
+.board label {
+  font-family: var(--font-sans);
+  font-size: clamp(14px, 1.02rem, 16px);
+  line-height: 1.75;
+  -webkit-font-smoothing: antialiased;
+  font-smooth: auto;
+}
+
+/* 标题、按钮就算落在正文容器里，也仍用像素字。 */
+.panel h1,
+.panel h2,
+.panel h3,
+.panel .nameplate,
+.panel button,
+.panel .btn,
+.board button,
+.board .btn,
+.board .cal-step,
+.board .drawer > summary,
+.board .note-group h3 {
+  font-family: var(--font-pixel);
+  -webkit-font-smoothing: none;
+  font-smooth: never;
+}
+
+.panel button,
+.panel .btn,
+.board button,
+.board .btn {
+  font-size: var(--fs);
+  line-height: var(--lh);
 }
 
 a { color: inherit; }

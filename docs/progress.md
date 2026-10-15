@@ -7,7 +7,7 @@
 - [x] 上线 `https://www.my-ricardo.com`（GitHub Pages 静态托管）
 
 ## V2 赛博木屋工作台升级计划
-- [ ] **Task 0**：更新 `AGENTS.md` 与 `docs/*` 规范文档，放宽 `tools/check.py` 校验约束
+- [x] **Task 0**：更新 `AGENTS.md` 与 `docs/*` 规范文档，放宽 `tools/check.py` 校验约束
 - [ ] **Task 1**：实施“外皮像素 + 内里现代”双轨字体混搭与弹窗阅读态背景压暗
 - [ ] **Task 2**：将底部导航栏精简为 4 个核心入口，充实 `/about/`、`/log/`、`/notes/`、`/work/` 初始内容
 - [ ] **Task 3**：升级 `/board/` 告示牌，新增“跨端临时剪贴板（Scratchpad）”、私密开关与首屏直达工作台模式

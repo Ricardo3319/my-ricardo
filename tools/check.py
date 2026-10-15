@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
-"""机器能查的验收，对照 docs/SPEC.md。不代替打开页面看。"""
+"""机器能查的验收，对照 docs/SPEC.md。不代替打开页面看。
+
+导航不要求列齐全部旧页签：页签、首页选项或页脚里凑齐核心入口即可
+（/、/board/、/log/、/notes/、/about/），多出来的兼容路由不算错。
+阅读层允许 system-ui / sans-serif / clamp()，不把双轨字体当错误。
+"""
 
 import html as htmlmod
 import json
@@ -26,9 +31,13 @@ PAGES = {
 LETTERS = {"notes/sample/index.html", "contact/index.html"}
 BOARDS = {"board/index.html"}
 NAME = "Ricardo"
-TABS = ["关于", "近况", "作品", "笔记", "联系", "告示牌"]
-CHOICES = [("about/", "关于"), ("now/", "近况"), ("work/", "作品"), ("notes/", "笔记"), ("contact/", "联系")]
-SITEMAP = ["农场", "关于", "近况", "流水", "作品", "笔记", "联系", "告示牌"]
+CORE_ROUTES = {
+    "index.html": "/",
+    "board/index.html": "/board/",
+    "log/index.html": "/log/",
+    "notes/index.html": "/notes/",
+    "about/index.html": "/about/",
+}
 DISCLAIMER = "视觉受田园生活模拟游戏启发，非官方，与 ConcernedApe 无关。"
 GAME = ("星露谷", "Stardew", "鹈鹕镇", "Pelican Town", "祝尼魔", "Junimo", "刘易斯", "威利", "罗宾", "阿比盖尔", "皮埃尔")
 
@@ -58,6 +67,37 @@ def links(fragment):
 
 def text(fragment):
     return re.sub(r"<[^>]+>", "", fragment).strip()
+
+
+def chrome_targets(rel, html):
+    """页签、首页选项、页脚和红叉里的站内目标。"""
+    parts = [
+        block(html, r'<header class="hud">.*?</header>'),
+        block(html, r'<nav class="choices".*?</nav>'),
+        block(html, r'<nav class="tabs".*?</nav>'),
+        block(html, r'<footer class="credit">.*?</footer>'),
+    ]
+    hrefs = [h for frag in parts for h, _t in links(frag)]
+    close = re.search(r'<a class="close" href="([^"]+)"', html)
+    if close:
+        hrefs.append(close.group(1))
+    out = set()
+    for href in hrefs:
+        target = resolve(rel, href)
+        if target:
+            out.add(target)
+    return out
+
+
+def check_core_nav(rel, html):
+    got = chrome_targets(rel, html)
+    missing = [
+        label
+        for route, label in CORE_ROUTES.items()
+        if route != rel and route not in got
+    ]
+    if missing:
+        bad(f"{rel} 导航缺核心入口：{', '.join(missing)}")
 
 
 def resolve(rel, href):
@@ -124,10 +164,7 @@ def check_page(rel, html):
     foot = block(html, r'<footer class="credit">.*?</footer>')
     if DISCLAIMER not in foot:
         bad(f"{rel} 页脚缺非官方声明")
-    names = [text(t) for _h, t in links(foot)]
-    want_map = SITEMAP[1:] if home else SITEMAP
-    if names != want_map:
-        bad(f"{rel} 页脚站点地图是 {names}，应为 {want_map}")
+    check_core_nav(rel, html)
 
     if not re.search(r'<script src="[./]*js/farm\.js"></script>\s*</body>', html):
         bad(f"{rel} 应在 </body> 前引 js/farm.js")
@@ -137,10 +174,6 @@ def check_page(rel, html):
     if home:
         if not re.search(r'<script src="[./]*js/world-data\.js"></script>\s*<script src="[./]*js/walk\.js"></script>\s*<script src="[./]*js/farm\.js"></script>', html):
             bad("首页应在 farm.js 前依次引 js/world-data.js、js/walk.js")
-        nav = block(html, r'<nav class="choices".*?</nav>')
-        got = [(h, text(re.search(r"<small>(.*?)</small>", t).group(1)) if "<small>" in t else "") for h, t in links(nav)]
-        if got != CHOICES:
-            bad(f"首页选项是 {got}，应为 {CHOICES}")
         if f'<h1 class="nameplate" id="speaker">{NAME}</h1>' not in html:
             bad(f"首页没有名字纸卷 <h1>{NAME}</h1>")
         if f"我是 {NAME}。" not in html:
@@ -148,9 +181,6 @@ def check_page(rel, html):
         return
 
     nav = block(html, r'<nav class="tabs".*?</nav>')
-    tabs = links(nav)
-    if [text(t) for _h, t in tabs] != TABS:
-        bad(f"{rel} 页签是 {[text(t) for _h, t in tabs]}，应为 {TABS}")
     marked = re.findall(r'<a\b[^>]*aria-current="page"[^>]*>(.*?)</a>', nav, re.S)
     if [text(t) for t in marked] != ([current] if current else []):
         bad(f"{rel} 的 aria-current 应只在「{current}」上" if current else f"{rel} 不该有 aria-current 页签")
@@ -241,6 +271,7 @@ if re.search(r"background-size:\s*cover", css):
     bad("像素图用了 cover 缩放")
 if "googleapis" in css:
     bad("farm.css 引了外部字体服务")
+# 阅读层允许 system-ui、sans-serif、clamp() 字号；像素字只用于 HUD、导航、标题和按钮。
 if re.search(r":focus\s*\{[^}]*outline:\s*none", css):
     bad("去掉了 :focus 的轮廓")
 if "@view-transition" not in css or "navigation: none" not in css:

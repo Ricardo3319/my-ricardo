@@ -11,6 +11,6 @@
 - [x] **Task 1**：实施“外皮像素 + 内里现代”双轨字体混搭与弹窗阅读态背景压暗
 - [x] **Task 2**：将底部导航栏精简为 4 个核心入口，充实 `/about/`、`/log/`、`/notes/`、`/work/` 初始内容
 - [x] **Task 3**：升级 `/board/` 告示牌，新增“跨端临时剪贴板（Scratchpad）”、私密开关与首屏直达工作台模式
-- [ ] **Task 4**：编写 `server/app.py`（Python 3 标准库 + SQLite）提供 `/api/board` 与 `/api/logs` 接口
+- [x] **Task 4**：编写 `server/app.py`（Python 3 标准库 + SQLite）提供 `/api/board` 与 `/api/logs` 接口
 - [ ] **Task 5**：完成前端 `js/board.js` 与 `/log/` 对接自建云端 API，支持手机/电脑输入口令直接发日常与同步剪贴板
 - [ ] **Task 6**：添加 `Dockerfile`、`docker-compose.yml`、`Caddyfile` 与 `server/backup.sh` 云服务器一键部署配置

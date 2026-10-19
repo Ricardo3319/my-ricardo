@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-season="spring" data-phase="day">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>微秒级任务调度 · Ricardo</title>
+  <meta name="description" content="同机架微秒级 RPC 调度研究笔记：基于 C++17 纳秒显式计费仿真器剖析晚绑定 JBSQ、多核池化挤压与跨机纠偏可行域边界。">
+  <link rel="canonical" href="https://www.my-ricardo.com/notes/rpc-scheduling/">
+  <meta property="og:title" content="微秒级任务调度 · Ricardo">
+  <meta property="og:description" content="同机架微秒级 RPC 调度研究笔记：基于 C++17 纳秒显式计费仿真器剖析晚绑定 JBSQ、多核池化挤压与跨机纠偏可行域边界。">
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://www.my-ricardo.com/notes/rpc-scheduling/">
+  <meta property="og:image" content="https://www.my-ricardo.com/img/farm-spring.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="微秒级任务调度 · Ricardo">
+  <meta name="twitter:description" content="同机架微秒级 RPC 调度研究笔记：基于 C++17 纳秒显式计费仿真器剖析晚绑定 JBSQ、多核池化挤压与跨机纠偏可行域边界。">
+  <meta name="twitter:image" content="https://www.my-ricardo.com/img/farm-spring.png">
+  <script>
+    (function () {
+      var d = document.documentElement, now = new Date(), h = now.getHours();
+      var s = ["winter", "winter", "spring", "spring", "spring", "summer", "summer", "summer", "autumn", "autumn", "autumn", "winter"][now.getMonth()];
+      try {
+        var v = sessionStorage.getItem("farm.season");
+        if (/^(spring|summer|autumn|winter)$/.test(v)) s = v;
+      } catch (e) {}
+      d.setAttribute("data-season", s);
+      d.setAttribute("data-phase", h < 5 || h >= 19 ? "night" : h < 7 ? "dawn" : h < 17 ? "day" : "dusk");
+      var l = document.createElement("link");
+      l.rel = "preload";
+      l.as = "image";
+      l.href = "../../img/farm-" + s + ".png";
+      document.head.appendChild(l);
+    })();
+  </script>
+  <link rel="preload" href="../../fonts/shard-common.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="../../css/fonts.css">
+  <link rel="stylesheet" href="../../css/farm.css">
+  <link rel="icon" href="../../img/favicon.png">
+</head>
+<body class="inner">
+  <a class="skip" href="#content">跳到内容</a>
+  <div class="world" aria-hidden="true"></div>
+
+  <header class="hud">
+    <div class="hud-box">
+      <div class="hud-sky" aria-hidden="true"><span class="hud-sun"></span></div>
+      <div class="hud-lines">
+        <p><time data-today>今天</time></p>
+        <p><time data-clock>现在</time><button class="hud-season" type="button" data-season-cycle aria-label="换季"><span class="hud-season-icon"></span><span class="hud-season-name"></span></button><button class="hud-sound" type="button" data-sound aria-label="声音" hidden><span class="hud-sound-icon"></span></button></p>
+      </div>
+    </div>
+  </header>
+
+  <div class="menu-wrap">
+    <nav class="tabs" aria-label="栏目">
+      <a href="../../board/"><img class="pixel" src="../../img/icon-board.png" width="33" height="33" alt=""><span>告示牌</span></a>
+      <a href="../../log/"><img class="pixel" src="../../img/icon-now.png" width="30" height="33" alt=""><span>日常</span></a>
+      <a href="../" class="is-section"><img class="pixel" src="../../img/icon-notes.png" width="30" height="33" alt=""><span>笔记</span></a>
+      <a href="../../about/"><img class="pixel" src="../../img/icon-about.png" width="33" height="33" alt=""><span>关于</span></a>
+    </nav>
+    <main class="panel letter" id="content">
+      <a class="close" href="../../" aria-label="关上，回农场"></a>
+      <a class="back" href="../">← 回笔记</a>
+      <h1>微秒级任务调度</h1>
+      <p class="meta">2026-10-18 · 同机架微秒级 RPC 绑定时机与跨机纠偏边界</p>
+      <div class="prose">
+        <p>在现代数据中心内存键值存储与微服务调用中，单次 RPC 的纯计算耗时往往只有 1 到 10 微秒，而同机架高速网络的单向传输时延也在数微秒量级。当通信开销与任务执行时间处在同一个数量级、且 99% 尾延迟门限被严格卡在 50 微秒以内时，传统宏观调度里「跨机迁移与状态同步近似免费」的假设便不再成立。</p>
+        <p>围绕这一核心矛盾，学术界演化出两条截然不同的路线：一是以 R2P2、Draconis、JBSQ 为代表的「入口晚绑定（Late Binding）」，请求先在网关暂存，由空闲工作节点通过提货券（Credit）按需拉取，从源头避免节点队列失衡；二是以 ZygOS、Capybara、SBB 为代表的「早绑定加事后跨机纠偏（Early Binding + Movement）」，请求到达时直接按连接或哈希派发，出现局部积压后再通过工作窃取（Work Stealing）或盲推转发重调度。</p>
+
+        <h2>一、全链路纳秒级显式计费仿真（rpcsim）</h2>
+        <p>为了脱离两派各自偏好的理想化假设，我用 C++17 构建了 128 核机架规模的离散事件仿真引擎 rpcsim，把每一次控制交互都折算为真实的物理耗时，并严格遵循非预知（Non-clairvoyant）原则：</p>
+        <ul>
+          <li>控制帧与数据帧网卡串行化耗时分别按 64B（20.48 纳秒）与 256B（81.92 纳秒）显式计入链路。</li>
+          <li>单机多核共享队列的核间原子窃取（L3 Cache / CAS）计费 100 纳秒，软件网关单次调度决策计费 200 至 500 纳秒。</li>
+          <li>底层引擎在 E0 基准校验阶段与 M/M/k 闭式解、M/G/1（P-K 公式）及 M/H2/k 矩阵几何解完成了背靠背比对，20 组测试单元 100% 落入 99% 理论置信区间，且与独立编写的 Python 验证器在相同随机种子下完全对齐（误差 1.21 SE）。</li>
+        </ul>
+
+        <h2>二、四个核心实验发现与反例</h2>
+        <p>在跨越负载强度、网络与服务耗时比（D/s）、单机核数（m）与控制算力预算的多维空间扫参后，实验揭示了四条关键规律：</p>
+        <ul>
+          <li>绑定时机占据决定性主导：在无状态随机入口下，跨机转发能缩减 91% 至 96% 的违约差距；但一旦入口具备轻量状态感知（如 JSW），事后跨机纠偏能挽回的残余空间不足一半。同时消融实验证实，移除提货券的有效期（TTL）会因陈旧凭证诱发严重羊群效应，导致 23 个测试单元违约率全面恶化。</li>
+          <li>单机多核池化强烈挤压跨机纠偏空间：固定机架 128 核与 85% 负载，当单机核数达到主流的 8 核及以上时，单机内部 100 纳秒级的共享队列依靠统计复用消化了 95% 以上的微突发失衡，跨机迁移的理论改善上限从单核时的 10.85 个百分点断崖式跌至 0.09 至 0.38 个百分点（Holm-Bonferroni 校正 p 小于 0.0048）。跨机迁移真正不可替代的刚需，仅在于发生整机停顿（Host Stall 或 GC 暂停）导致单机核心池整体失能的场景。</li>
+          <li>打破直觉的时延鲁棒性反例：直觉常认为反馈环路越长，集中晚绑定越脆弱。然而在 D/s 从 0.1 扫至 4.0 的过程中，多达 31 组「早绑定加跨机纠偏」组合率先失效反噬；当单向网络时延达到任务耗时的 4 倍时，跨机盲推因状态滞后踩踏将尾延迟违约率从基线的 18.78% 恶化至 35.47%，而调优在途配额（n* = 64）的晚绑定 JBSQ 依靠 Little 定律填满管道，违约率始终稳定在 4.12%。</li>
+          <li>软件网关算力断崖与资源预算红线：若采用纯软件集中网关（每包处理 200 至 500 纳秒），单控制核在 65% 负载处即发生 100% 饱和雪崩；而在限定额外控制 CPU 不超过 20%、端口带宽不超过 1% 的 72 组异构配置筛选中，有 79.2%（57 组）因高频探针与轮询超标而无可行解。</li>
+        </ul>
+
+        <h2>三、关键实验指标速览</h2>
+        <dl class="rows">
+          <div class="row"><dt class="row-key">E0 基准对齐</dt><dd>128 核仿真器与 M/M/k、M/G/1、M/H2/k 解析解 20 组单元 100% 落入 99% 置信区间（误差 1.21 SE）。</dd></div>
+          <div class="row"><dt class="row-key">多核池化效应</dt><dd>单机核数 m ≥ 8 时，核间 100ns 共享队列消化 95% 以上微突发，跨机纠偏增益上限从 10.85pp 压至 0.09–0.38pp。</dd></div>
+          <div class="row"><dt class="row-key">高时延反噬</dt><dd>在 D/s ∈ [0.1, 4.0] 扫描中 31 组早绑定+跨机纠偏反噬（盲推恶化至 35.47%），晚绑定 JBSQ（n*=64）稳定在 4.12%。</dd></div>
+          <div class="row"><dt class="row-key">控制预算红线</dt><dd>纯软件集中网关在 65% 负载处饱和雪崩；20% 控制 CPU 与 1% 带宽红线下 79.2%（57/72）异构配置无可行解。</dd></div>
+        </dl>
+
+        <h2>四、工程架构选型结论</h2>
+        <p>微秒级 RPC 调度的工程选型可以归结为两条清晰准则：当机架具备可编程交换机（P4 Switch）或智能网卡（SmartNIC）硬件卸载条件时，应优先采用带 TTL 保护的入口晚绑定（JBSQ / Credit Pull），从源头消灭排队失衡；而在纯软件部署且单机核数不少于 8 核的常规机房中，「强入口派发（JSW）配合单机多核本地池化」即可逼近理论最优边界，跨机搬迁只需作为整机停顿时的兜底容灾机制。</p>
+        <p>这项研究的完整实验图表、数学公式与十页汇报文稿整理在站内的 <a href="../../rpc-slides/">微秒级 RPC 调度组会演示幻灯片</a> 中，可直接在线翻阅。</p>
+      </div>
+      <p class="actions">
+        <a class="btn" href="../pixel-cabin/">下一篇：零依赖像素木屋</a>
+        <a class="btn" href="../../rpc-slides/">打开 10 页组会幻灯片 →</a>
+      </p>
+      <p class="sign">——Ricardo</p>
+    </main>
+  </div>
+
+  <footer class="credit">
+    <p><a href="../../">农场</a><a href="../../board/">告示牌</a><a href="../../log/">日常</a><a href="../">笔记</a><a href="../../about/">关于</a></p>
+    <p>视觉受田园生活模拟游戏启发，非官方，与 ConcernedApe 无关。</p>
+  </footer>
+  <script src="../../js/nav.js"></script>
+  <script src="../../js/sound.js"></script>
+  <script src="../../js/farm.js"></script>
+</body>
+</html>

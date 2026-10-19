@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """my-ricardo lightweight backend server (Python stdlib + SQLite)."""
+import hmac
 import json
 import os
 import pathlib
@@ -10,7 +11,7 @@ from urllib.parse import parse_qs, urlparse
 
 ROOT_DIR = pathlib.Path(__file__).resolve().parent.parent
 DATA_DIR = pathlib.Path(__file__).resolve().parent / "data"
-DB_PATH = DATA_DIR / "ricardo.db"
+DB_PATH = DB_FILE = DATA_DIR / "ricardo.db"
 PASSKEY = os.environ.get("RICARDO_PASSKEY", "dev-passkey")
 PORT = int(os.environ.get("PORT", "8000"))
 
@@ -47,12 +48,22 @@ def load_board_state():
     return {"version": 2, "updatedAt": 0, "scratchpad": {"text": "", "updatedAt": 0}, "tasks": []}
 
 
+FAILED_AUTH = {}
+AUTH_WINDOW_SEC = 60
+AUTH_MAX_FAILS = 8
+
+
 def merge_board_state(current, incoming):
     if isinstance(incoming, list):
-        incoming = {"version": 2, "updatedAt": int(time.time() * 1000), "scratchpad": {"text": "", "updatedAt": 0}, "tasks": incoming}
-    cur_sp = current.get("scratchpad") or {"text": "", "updatedAt": 0}
-    inc_sp = incoming.get("scratchpad") or {"text": "", "updatedAt": 0}
-    merged_sp = inc_sp if inc_sp.get("updatedAt", 0) >= cur_sp.get("updatedAt", 0) else cur_sp
+        incoming = {"version": 2, "updatedAt": int(time.time() * 1000), "scratchpad": {"text": "", "updatedAt": 0, "history": []}, "tasks": incoming}
+    cur_sp = current.get("scratchpad") or {"text": "", "updatedAt": 0, "history": []}
+    inc_sp = incoming.get("scratchpad") or {"text": "", "updatedAt": 0, "history": []}
+    merged_sp = dict(inc_sp if inc_sp.get("updatedAt", 0) >= cur_sp.get("updatedAt", 0) else cur_sp)
+    hist = []
+    for item in (inc_sp.get("history") or []) + (cur_sp.get("history") or []):
+        if isinstance(item, str) and item.strip() and item.strip() != (merged_sp.get("text") or "").strip() and item.strip() not in hist:
+            hist.append(item.strip())
+    merged_sp["history"] = hist[:5]
 
     task_map = {}
     for t in current.get("tasks", []):
@@ -85,9 +96,30 @@ class RicardoRequestHandler(SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, directory=str(ROOT_DIR), **kwargs)
 
-    def _is_authed(self):
+    def _client_ip(self):
+        fwd = self.headers.get("X-Forwarded-For", "").split(",")[0].strip()
+        return fwd or (self.client_address[0] if self.client_address else "unknown")
+
+    def _is_rate_limited(self):
+        ip = self._client_ip()
+        now = time.time()
+        recent = [ts for ts in FAILED_AUTH.get(ip, []) if now - ts < AUTH_WINDOW_SEC]
+        FAILED_AUTH[ip] = recent
+        return len(recent) >= AUTH_MAX_FAILS
+
+    def _is_authed(self, record_fail=False):
+        if self._is_rate_limited():
+            return False
         header_key = self.headers.get("X-Passkey", "").strip()
-        return bool(header_key and header_key == PASSKEY)
+        if not header_key or not PASSKEY:
+            return False
+        ok = hmac.compare_digest(header_key.encode("utf-8"), PASSKEY.encode("utf-8"))
+        if not ok and record_fail:
+            ip = self._client_ip()
+            FAILED_AUTH.setdefault(ip, []).append(time.time())
+        elif ok:
+            FAILED_AUTH.pop(self._client_ip(), None)
+        return ok
 
     def _send_json(self, status, payload):
         body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
@@ -119,7 +151,7 @@ class RicardoRequestHandler(SimpleHTTPRequestHandler):
                     "data": {
                         "version": 2,
                         "updatedAt": state.get("updatedAt", 0),
-                        "scratchpad": {"text": "", "updatedAt": 0},
+                        "scratchpad": {"text": "", "updatedAt": 0, "history": []},
                         "tasks": public_tasks,
                     },
                 },
@@ -140,9 +172,12 @@ class RicardoRequestHandler(SimpleHTTPRequestHandler):
     def do_POST(self):
         parsed = urlparse(self.path)
         if parsed.path == "/api/auth/verify":
-            return self._send_json(200 if self._is_authed() else 401, {"ok": self._is_authed()})
+            if self._is_rate_limited():
+                return self._send_json(429, {"ok": False, "error": "Too many attempts"})
+            authed = self._is_authed(record_fail=True)
+            return self._send_json(200 if authed else 401, {"ok": authed})
         if parsed.path == "/api/logs":
-            if not self._is_authed():
+            if not self._is_authed(record_fail=True):
                 return self._send_json(401, {"error": "Unauthorized"})
             body = self._read_json()
             now_ms = int(time.time() * 1000)
@@ -178,7 +213,14 @@ class RicardoRequestHandler(SimpleHTTPRequestHandler):
             if not self._is_authed():
                 return self._send_json(401, {"error": "Unauthorized"})
             qs = parse_qs(parsed.query)
-            log_id = int(qs.get("id", ["0"])[0])
+            raw_id = qs.get("id", [None])[0]
+            if raw_id is None:
+                body = self._read_json()
+                raw_id = body.get("id", 0)
+            try:
+                log_id = int(raw_id)
+            except (TypeError, ValueError):
+                log_id = 0
             with get_db() as conn:
                 conn.execute("DELETE FROM logs WHERE id = ?", (log_id,))
                 conn.commit()
@@ -188,6 +230,8 @@ class RicardoRequestHandler(SimpleHTTPRequestHandler):
 
 if __name__ == "__main__":
     init_db()
+    if PASSKEY == "dev-passkey":
+        print("Notice: using default dev-passkey. Set RICARDO_PASSKEY in production.")
     server = ThreadingHTTPServer(("0.0.0.0", PORT), RicardoRequestHandler)
     print(f"Serving my-ricardo on http://127.0.0.1:{PORT}")
     server.serve_forever()

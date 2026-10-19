@@ -75,10 +75,12 @@
   // 下面两件跟着页面走：整页打开时做一次，站内换页（js/nav.js 发 farm:page）后再做一次。
   var still = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   var stopTyping = null;
+  var meScript = document.currentScript;
 
   // 首页打字：每字 30ms，这次浏览只打一遍。点一下或按任意键直接出全文。减少动效时不打字。
   function typing() {
     if (stopTyping) stopTyping();
+    if (document.body.classList.contains("home") && !document.body.classList.contains("is-farm-mode")) return;
     var box = document.querySelector("[data-type-box]");
     var line = box && box.querySelector("[data-type]");
     if (!line) return;
@@ -161,21 +163,69 @@
   function passkeyValue() {
     var disk = store("localStorage");
     try {
-      return (disk && disk.getItem("ricardo_passkey")) || "";
+      return (disk && (disk.getItem("ricardo_passkey") || disk.getItem("ricardo_owner"))) || "";
     } catch (error) {
       return "";
     }
   }
 
   function logsUrl() {
-    return new URL("../api/logs", location.href).href;
+    return meScript ? new URL("../api/logs", meScript.src).href : new URL("../api/logs", location.href).href;
+  }
+
+  function readLocalLogs() {
+    var disk = store("localStorage");
+    try {
+      var raw = disk && disk.getItem("farm.logs.v1");
+      return raw ? JSON.parse(raw) : null;
+    } catch (error) {
+      return null;
+    }
+  }
+
+  function writeLocalLogs(data) {
+    var disk = store("localStorage");
+    try {
+      if (disk && data) disk.setItem("farm.logs.v1", JSON.stringify(data));
+    } catch (error) {}
+  }
+
+  function snapshotStaticLogs(list, nowLine) {
+    var items = [];
+    if (list) {
+      Array.prototype.forEach.call(list.querySelectorAll("li.row"), function (li, idx) {
+        var spans = li.querySelectorAll("span");
+        if (spans.length >= 2) {
+          items.push({
+            id: idx + 1,
+            date: spans[0].textContent || "",
+            text: spans[1].textContent || "",
+          });
+        }
+      });
+    }
+    return {
+      nowStatus: nowLine ? nowLine.textContent || "" : "",
+      logs: items,
+    };
+  }
+
+  function removeLocalLog(id, list, nowLine) {
+    var cur = readLocalLogs() || snapshotStaticLogs(list, nowLine);
+    cur.logs = (cur.logs || []).filter(function (it) {
+      return String(it.id) !== String(id);
+    });
+    writeLocalLogs(cur);
+    return cur;
   }
 
   function fillLogs(data) {
     var nowLine = document.querySelector("[data-now-status]");
     var list = document.querySelector("[data-log-list]");
+    var note = document.querySelector("[data-log-note]");
     if (nowLine && data.nowStatus) nowLine.textContent = data.nowStatus;
     if (!list || !data.logs || !data.logs.length) return;
+    var pk = passkeyValue();
     while (list.firstChild) list.removeChild(list.firstChild);
     data.logs.forEach(function (item) {
       var li = document.createElement("li");
@@ -187,13 +237,53 @@
       body.textContent = item.text || "";
       li.appendChild(when);
       li.appendChild(body);
+      if (pk && item.id) {
+        var del = document.createElement("button");
+        del.className = "log-del";
+        del.type = "button";
+        del.textContent = "删掉";
+        del.addEventListener("click", function () {
+          var key = passkeyValue();
+          if (!key) return;
+          del.disabled = true;
+          fetch(logsUrl(), {
+            method: "DELETE",
+            headers: {
+              Accept: "application/json",
+              "Content-Type": "application/json",
+              "X-Passkey": key,
+            },
+            cache: "no-store",
+            credentials: "same-origin",
+            body: JSON.stringify({ id: item.id }),
+          })
+            .then(function (res) {
+              if (res.status === 401) {
+                del.disabled = false;
+                if (note) note.textContent = "口令不对。";
+                return;
+              }
+              if (!res.ok) throw new Error("offline");
+              removeLocalLog(item.id, list, nowLine);
+              if (li.parentNode) li.parentNode.removeChild(li);
+              if (note) note.textContent = "已删掉一条流水。";
+            })
+            .catch(function () {
+              removeLocalLog(item.id, list, nowLine);
+              if (li.parentNode) li.parentNode.removeChild(li);
+              if (note) note.textContent = "已从本机删掉一条流水。";
+            });
+        });
+        li.appendChild(del);
+      }
       list.appendChild(li);
     });
   }
 
   function loadLogs() {
     var list = document.querySelector("[data-log-list]");
-    if (!list) {
+    var nowLine = document.querySelector("[data-now-status]");
+    if (!list && !nowLine) {
       logBound = null;
       return;
     }
@@ -202,6 +292,8 @@
     var note = document.querySelector("[data-log-note]");
     var pk = passkeyValue();
     if (publish) publish.hidden = !pk;
+    var cached = readLocalLogs();
+    if (cached) fillLogs(cached);
     fetch(logsUrl(), { headers: { Accept: "application/json" }, cache: "no-store", credentials: "same-origin" })
       .then(function (res) {
         if (!res.ok) return null;
@@ -210,7 +302,10 @@
         return res.json();
       })
       .then(function (data) {
-        if (data) fillLogs(data);
+        if (data && ((data.logs && data.logs.length) || data.nowStatus)) {
+          writeLocalLogs(data);
+          fillLogs(data);
+        }
       })
       .catch(function () {});
     if (form && form !== logBound) {
@@ -224,7 +319,7 @@
         }
         var nowStatus = form.elements.nowStatus.value.trim();
         var text = form.elements.text.value.trim();
-        var date = form.elements.date.value;
+        var date = form.elements.date.value || new Date().toISOString().slice(0, 10);
         if (!nowStatus && !text) {
           if (note) note.textContent = "近况和日常至少写一样。";
           return;
@@ -250,10 +345,7 @@
               if (note) note.textContent = "口令不对。";
               return null;
             }
-            if (!res.ok) {
-              if (note) note.textContent = "没发上去。";
-              return null;
-            }
+            if (!res.ok) throw new Error("offline");
             return res.json();
           })
           .then(function (out) {
@@ -265,10 +357,21 @@
             });
           })
           .then(function (data) {
-            if (data) fillLogs(data);
+            if (data) {
+              writeLocalLogs(data);
+              fillLogs(data);
+            }
           })
           .catch(function () {
-            if (note) note.textContent = "云端不可达。";
+            var cur = readLocalLogs() || snapshotStaticLogs(list, nowLine);
+            if (nowStatus) cur.nowStatus = nowStatus;
+            if (text) {
+              cur.logs = [{ id: Date.now(), date: date, text: text }].concat(cur.logs || []);
+            }
+            writeLocalLogs(cur);
+            fillLogs(cur);
+            form.reset();
+            if (note) note.textContent = "已保存在这台设备。";
           });
       });
     }

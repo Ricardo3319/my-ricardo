@@ -4,10 +4,17 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Ricardo</title>
-  <meta name="description" content="Ricardo 的个人网站。在南京航空航天大学读研，做微秒级任务调度。">
+  <meta name="description" content="Ricardo 的个人网站。在南京航空航天大学读研，研究同机架微秒级任务调度（RPC），打造零依赖像素农场数字花园与随身工作台。">
+  <link rel="canonical" href="https://www.my-ricardo.com/">
   <meta property="og:title" content="Ricardo">
-  <meta property="og:description" content="Ricardo 的个人网站。在南京航空航天大学读研，做微秒级任务调度。">
+  <meta property="og:description" content="Ricardo 的个人网站。在南京航空航天大学读研，研究同机架微秒级任务调度（RPC），打造零依赖像素农场数字花园与随身工作台。">
   <meta property="og:type" content="website">
+  <meta property="og:url" content="https://www.my-ricardo.com/">
+  <meta property="og:image" content="https://www.my-ricardo.com/img/farm-spring.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Ricardo">
+  <meta name="twitter:description" content="Ricardo 的个人网站。在南京航空航天大学读研，研究同机架微秒级任务调度（RPC），打造零依赖像素农场数字花园与随身工作台。">
+  <meta name="twitter:image" content="https://www.my-ricardo.com/img/farm-spring.png">
   <script>
     (function () {
       var d = document.documentElement, now = new Date(), h = now.getHours();
@@ -35,6 +42,7 @@
   <div class="world" aria-hidden="true"></div>
 
   <header class="hud">
+    <button class="btn hud-mode-switch" type="button" data-home-mode-toggle aria-label="切换到互动像素农场漫游模式">🌾 进入像素农场</button>
     <div class="hud-box">
       <div class="hud-sky" aria-hidden="true"><span class="hud-sun"></span></div>
       <div class="hud-lines">
@@ -45,17 +53,236 @@
   </header>
 
   <main class="stage" id="content">
+    <div class="landing-wrap" id="landing-view">
+      <!-- 背景层：蓝天、飘动的云朵、远山、松林与木屋炊烟（田园开始菜单全景） -->
+      <div class="title-scenery" aria-hidden="true">
+        <div class="title-clouds">
+          <span class="cloud cloud-1"></span>
+          <span class="cloud cloud-2"></span>
+          <span class="cloud cloud-3"></span>
+          <span class="cloud cloud-4"></span>
+        </div>
+        <div class="title-easter-layer" data-title-fx></div>
+        <svg class="title-horizon" viewBox="0 0 1440 420" preserveAspectRatio="none">
+          <!-- 远景雪顶群山 -->
+          <path class="mtn-far" d="M0,420 L0,250 L110,165 L215,235 L350,115 L490,220 L610,140 L760,245 L910,95 L1065,215 L1195,135 L1330,225 L1440,160 L1440,420 Z"/>
+          <!-- 中景青黛山峦 -->
+          <path class="mtn-mid" d="M0,420 L0,285 L160,210 L310,275 L470,185 L640,280 L810,195 L980,275 L1140,190 L1290,265 L1440,215 L1440,420 Z"/>
+          <!-- 近景田园缓坡 -->
+          <path class="hill-near" d="M0,420 L0,330 Q220,275 460,320 T940,310 T1440,325 L1440,420 Z"/>
+          <!-- 远方小木屋与烟囱 -->
+          <g class="horizon-cabin" transform="translate(1070, 268)">
+            <rect x="8" y="18" width="38" height="26" fill="#8c4a27"/>
+            <polygon points="2,20 27,2 52,20" fill="#5b2a12"/>
+            <rect x="36" y="4" width="7" height="14" fill="#6e3b1b"/>
+            <rect x="21" y="26" width="12" height="18" fill="#ffdf8e"/>
+          </g>
+          <!-- 前景松林剪影与草甸 -->
+          <path class="forest-line" d="M0,420 L0,342 L18,312 L34,342 L48,302 L66,342 L84,318 L100,345 L122,296 L142,345 L160,315 L178,348 L210,348 Q420,332 720,346 Q1020,360 1230,340 L1248,306 L1266,342 L1284,294 L1304,342 L1322,312 L1340,344 L1362,288 L1384,344 L1404,308 L1422,342 L1440,316 L1440,420 Z"/>
+        </svg>
+      </div>
+
+      <!-- 第一屏：完整的田园风格开始菜单画面 -->
+      <section class="title-screen" aria-label="开始菜单首屏">
+        <div class="title-plaque-wrap">
+          <div class="title-plaque" data-title-plaque>
+            <!-- 左上与右上藤蔓树叶装饰（点按触发彩蛋） -->
+            <button class="title-vine title-vine-left" type="button" data-title-leaf aria-label="轻触树叶彩蛋" title="点一下树叶试试"></button>
+            <button class="title-vine title-vine-right" type="button" data-title-leaf aria-label="轻触树叶彩蛋" title="点一下树叶试试"></button>
+            <!-- 四角铆钉（点按飞出蝴蝶） -->
+            <span class="title-nail nail-tl" data-title-nail></span>
+            <span class="title-nail nail-tr" data-title-nail></span>
+            <span class="title-nail nail-bl" data-title-nail></span>
+            <span class="title-nail nail-br" data-title-nail></span>
+
+            <p class="title-eyebrow">RICARDO'S CYBER CABIN</p>
+            <p class="title-main">Ricardo</p>
+            <p class="title-en">MY-RICARDO.COM</p>
+          </div>
+
+          <!-- 铁链悬挂的副标题木牌 -->
+          <div class="title-sub-plaque">
+            <span class="title-chain chain-left" aria-hidden="true"></span>
+            <span class="title-chain chain-right" aria-hidden="true"></span>
+            <p>南京航空航天大学硕士研究生 · 微秒级 RPC 任务调度</p>
+          </div>
+        </div>
+
+        <!-- 开始菜单经典竖向木牌按钮组（New / Load / Co-op / Exit 比例） -->
+        <nav class="title-menu" aria-label="开始菜单主选项">
+          <button class="title-btn is-primary" type="button" data-enter-farm>
+            <span class="title-btn-window">
+              <img class="pixel" src="img/season-spring.png" width="36" height="36" alt="">
+            </span>
+            <span class="title-btn-label">漫游农场</span>
+            <small>进入实景与小游戏</small>
+          </button>
+
+          <a class="title-btn" href="#overview">
+            <span class="title-btn-window">
+              <img class="pixel" src="img/portrait.png" width="48" height="48" alt="">
+            </span>
+            <span class="title-btn-label">个人概览</span>
+            <small>一页速览研究与近况</small>
+          </a>
+
+          <a class="title-btn" href="notes/">
+            <span class="title-btn-window">
+              <img class="pixel" src="img/icon-notes.png" width="30" height="33" alt="">
+            </span>
+            <span class="title-btn-label">研究与笔记</span>
+            <small>rpcsim · 论文与长文</small>
+          </a>
+
+          <a class="title-btn" href="board/">
+            <span class="title-btn-window">
+              <img class="pixel" src="img/icon-board.png" width="33" height="33" alt="">
+            </span>
+            <span class="title-btn-label">随身告示牌</span>
+            <small>待办日历 · 剪贴板</small>
+          </a>
+
+          <a class="title-btn" href="about/">
+            <span class="title-btn-window">
+              <img class="pixel" src="img/icon-about.png" width="33" height="33" alt="">
+            </span>
+            <span class="title-btn-label">关于与联系</span>
+            <small>学术履历 · 邮箱</small>
+          </a>
+        </nav>
+
+        <a class="title-scroll-cue" href="#overview">
+          <span>向下滚动查看一页式个人主页（研究 · 笔记 · 动态）</span>
+          <i aria-hidden="true">↓</i>
+        </a>
+      </section>
+
+      <!-- 第二屏：只保留暖木羊皮纸配色、去掉厚重像素框的现代清爽个人主页 -->
+      <div class="landing-body" id="overview">
+        <section class="clean-card clean-profile" aria-labelledby="home-who">
+          <div class="clean-profile-main">
+            <img class="clean-avatar pixel" src="img/portrait.png" width="96" height="96" alt="Ricardo 头像">
+            <div>
+              <div class="clean-title-row">
+                <h2 id="home-who">你好，我是 Ricardo</h2>
+                <span class="clean-badge">南航 · 计算机硕士在读（本科推免）</span>
+              </div>
+              <p class="clean-lead">目前就读于南京航空航天大学计算机科学与技术专业，专注于数据中心同机架微秒级 RPC 任务调度、多核排队论建模与长尾延迟（P99）抑制。闲暇时喜欢像素独立游戏与音乐，并亲手搭建了这座零前端框架依赖的个人小站。</p>
+              <p class="clean-status" data-now-status>🍁 2026 秋 · 在南航读研，日常和微秒级任务调度打交道，空下来打磨这座像素小农场。</p>
+              <div class="clean-actions">
+                <a class="clean-btn is-solid" href="about/">完整学术履历</a>
+                <a class="clean-btn" href="https://github.com/Ricardo3319">GitHub · @Ricardo3319</a>
+                <a class="clean-btn" href="contact/">发邮件联系</a>
+                <button class="clean-btn" type="button" data-copy="Renmingyang3319@outlook.com">抄下邮箱</button>
+                <a class="clean-btn" href="feed.xml">RSS 订阅</a>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="clean-section" id="home-works" aria-labelledby="home-works-title">
+          <div class="clean-section-head">
+            <h2 id="home-works-title">代表研究与项目</h2>
+            <a class="clean-more" href="work/">查看全部作品箱 →</a>
+          </div>
+          <div class="clean-grid-2">
+            <article class="clean-card clean-project">
+              <div class="clean-card-top">
+                <span class="clean-tag">在研核心课题 · C++17</span>
+                <span class="clean-meta">128 核纳秒级离散事件仿真</span>
+              </div>
+              <h3>同机架微秒级 RPC 调度研究（rpcsim）</h3>
+              <p>面向 1–10 μs 极短任务与 50 μs 尾延迟约束的数据中心 RPC 调度研究。构建全链路纳秒显式计费仿真引擎 rpcsim（与 M/M/k、M/G/1、M/H2/k 解析解 100% 置信对齐），系统量化入口晚绑定（JBSQ / Credit Pull）与早绑定跨机纠偏（Work Stealing / Forwarding）的性能相图、多核池化挤压效应与资源可行域红线。</p>
+              <div class="clean-actions">
+                <a class="clean-btn is-solid" href="rpc-slides/index.html">看组会汇报 PPT（10 页）</a>
+                <a class="clean-btn" href="notes/rpc-scheduling/">阅读研究笔记</a>
+                <a class="clean-btn" href="work/#rpc-slides">项目详情</a>
+              </div>
+            </article>
+
+            <article class="clean-card clean-project">
+              <div class="clean-card-top">
+                <span class="clean-tag is-green">开源工程 · 原生 Web / Python</span>
+                <span class="clean-meta">零外部依赖 · 双通道云同步</span>
+              </div>
+              <h3>my-ricardo · 田园赛博木屋与跨端工作台</h3>
+              <p>兼顾「清爽个人落地页」与「互动像素农场」的个人网站与随身效率工作台。由 Python 脚本逐像素生成四季地图与碰撞数据，配备按需字库分片、Web Audio 实时八音盒合成器，以及支持自建 SQLite 云端与 GitHub 仓库双通道同步的告示牌、待办日历与跨设备剪贴板。</p>
+              <div class="clean-actions">
+                <a class="clean-btn is-solid" href="board/">打开随身告示牌</a>
+                <a class="clean-btn" href="notes/pixel-cabin/">阅读架构笔记</a>
+                <a class="clean-btn" href="https://github.com/Ricardo3319/my-ricardo">GitHub 源码</a>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <div class="clean-grid-2">
+          <section class="clean-card" aria-labelledby="home-notes-title">
+            <div class="clean-section-head">
+              <h2 id="home-notes-title">最新技术笔记</h2>
+              <a class="clean-more" href="notes/">全部笔记 →</a>
+            </div>
+            <ul class="clean-list">
+              <li>
+                <a class="clean-list-item" href="notes/rpc-scheduling/">
+                  <span class="clean-date">2026-10-18 · 分布式系统</span>
+                  <strong>微秒级任务调度：绑定时机与跨机纠偏的边界</strong>
+                  <span>从 128 核纳秒级仿真剖析 JBSQ、多核池化挤压与 20% 算力预算红线。</span>
+                </a>
+              </li>
+              <li>
+                <a class="clean-list-item" href="notes/pixel-cabin/">
+                  <span class="clean-date">2026-10-16 · 工程架构</span>
+                  <strong>零依赖像素木屋：程序化绘图、字库分片与实时音频合成</strong>
+                  <span>不引前端框架与外部 CDN，用 Python 与原生 Web API 搭一座四季农场。</span>
+                </a>
+              <li>
+                <a class="clean-list-item" href="notes/sample/">
+                  <span class="clean-date">2026-10-15 · 图形与交互</span>
+                  <strong>Canvas 打造像素农场：游戏循环、深度遮挡与超采样漫游</strong>
+                  <span>原生 60FPS 调度、Y-sorting 层叠优化与 4 款亚像素小程序的工程复盘。</span>
+                </a>
+              </li>
+            </ul>
+          </section>
+
+          <section class="clean-card" aria-labelledby="home-logs-title">
+            <div class="clean-section-head">
+              <h2 id="home-logs-title">近期日常与牧场互动</h2>
+              <a class="clean-more" href="log/">全部日常 →</a>
+            </div>
+            <ul class="clean-list">
+              <li class="clean-log-item">
+                <span class="clean-date">2026-10-18</span>
+                <span>整理完同机架微秒级 RPC 调度的实验笔记与十页组会幻灯片，把多核池化挤压跨机纠偏的定量结论放进了笔记栏。</span>
+              </li>
+              <li class="clean-log-item">
+                <span class="clean-date">2026-10-17</span>
+                <span>给农场池塘、矿车街机、菜地番茄钟和古井祈愿签补上了常驻名牌与 4 倍超采样平滑动画。</span>
+              </li>
+            </ul>
+            <div class="clean-mini-bar" aria-label="牧场小程序快捷体验">
+              <button class="clean-btn is-solid" type="button" data-enter-farm>🌾 进入农场漫游</button>
+              <button class="clean-btn" type="button" data-open-game="fish">🎣 池塘垂钓</button>
+              <button class="clean-btn" type="button" data-open-game="cart">🛤️ 矿车历险</button>
+              <button class="clean-btn" type="button" data-open-game="crop">🍅 农田番茄钟</button>
+              <button class="clean-btn" type="button" data-open-game="well">🪣 古井祈愿签</button>
+            </div>
+          </section>
+        </div>
+      </div>
+    </div>
+
     <section class="dialogue" data-type-box aria-labelledby="speaker">
       <div class="dialogue-text">
         <p class="dialogue-line" data-type>你好，我是 Ricardo。在南京航空航天大学读研，做微秒级任务调度。</p>
         <nav class="choices" aria-label="栏目">
-          <a href="about/">你是做什么的？<small>关于</small></a>
-          <a href="now/">最近在忙什么？<small>近况</small></a>
-          <a href="work/">做过些什么？<small>作品</small></a>
-          <a href="notes/">有写东西吗？<small>笔记</small></a>
-          <a href="contact/">怎么联系你？<small>联系</small></a>
+          <a href="board/">板上钉着什么待办和便条？<small>告示牌</small></a>
+          <a href="log/">最近在忙什么？<small>日常</small></a>
+          <a href="notes/">做过什么项目、写了哪些笔记？<small>笔记</small></a>
+          <a href="about/">你是做什么的、怎么联系？<small>关于</small></a>
         </nav>
-        <p class="walk-hint" hidden>也可以方向键或点地面，在农场里走走；走近了按 F 搭话。</p>
+        <p class="walk-hint" hidden>方向键或点地面在农场走动；点带名牌的景物或按 F 互动。</p>
       </div>
       <div class="dialogue-face">
         <div class="portrait-box"><img src="img/portrait.png" width="144" height="144" alt=""></div>
@@ -68,11 +295,12 @@
   <button class="btn rotate-hint" type="button" hidden>把手机横过来，农场看得更全。</button>
 
   <footer class="credit">
-    <p>视觉受田园生活模拟游戏启发，非官方，与 ConcernedApe 无关。</p>
     <p><a href="./">农场</a><a href="board/">告示牌</a><a href="log/">日常</a><a href="notes/">笔记</a><a href="about/">关于</a></p>
+    <p>视觉受田园生活模拟游戏启发，非官方，与 ConcernedApe 无关。</p>
   </footer>
   <script src="js/nav.js"></script>
   <script src="js/sound.js"></script>
+  <script src="js/games.js"></script>
   <script src="js/world-data.js"></script>
   <script src="js/walk.js"></script>
   <script src="js/farm.js"></script>

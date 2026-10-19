@@ -31,9 +31,12 @@ PAGES = [
     "log/index.html",
     "work/index.html",
     "notes/index.html",
+    "notes/rpc-scheduling/index.html",
+    "notes/pixel-cabin/index.html",
     "notes/sample/index.html",
     "contact/index.html",
     "board/index.html",
+    "404.html",
 ]
 
 # 页面里不一定写得到、但界面一定会出的字：ASCII  printable 和常用全角标点。

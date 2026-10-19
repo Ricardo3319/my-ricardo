@@ -23,12 +23,14 @@ PAGES = {
     "log/index.html": ("日常", "日常", None),
     "work/index.html": ("作品", None, "笔记"),
     "notes/index.html": ("笔记", "笔记", None),
-    "notes/sample/index.html": ("版式样张", None, "笔记"),
+    "notes/rpc-scheduling/index.html": ("微秒级任务调度", None, "笔记"),
+    "notes/pixel-cabin/index.html": ("零依赖像素木屋", None, "笔记"),
+    "notes/sample/index.html": ("Canvas 打造像素农场", None, "笔记"),
     "contact/index.html": ("联系", None, "关于"),
     "board/index.html": ("告示牌", "告示牌", None),
 }
 # 用信纸的页、用告示牌的页，其余内页用木框菜单。
-LETTERS = {"notes/sample/index.html", "contact/index.html"}
+LETTERS = {"notes/rpc-scheduling/index.html", "notes/pixel-cabin/index.html", "notes/sample/index.html", "contact/index.html"}
 BOARDS = {"board/index.html"}
 FORMS = {"board/index.html", "log/index.html"}
 NAME = "Ricardo"
@@ -119,7 +121,7 @@ def check_refs(rel, html):
         if target and not (ROOT / target).is_file():
             bad(f"{rel} 链到不存在的 {href}")
         if href.startswith(("http:", "https:", "//")):
-            if not href.startswith("https://github.com/Ricardo3319"):
+            if not (href.startswith("https://github.com/Ricardo3319") or href.startswith("https://www.my-ricardo.com")):
                 bad(f"{rel} 引了站外资源 {href}")
 
 
@@ -231,10 +233,10 @@ def check_content(rel, html):
             bad("日常页没有「当前状态」")
         if "日志还空着" not in html and "<details" not in html and 'class="row' not in html:
             bad("日常页既没有条目，也没有空状态")
-    if rel == "notes/index.html" and "看版式" not in html:
-        bad("笔记页没有「看版式」")
-    if rel == "notes/sample/index.html" and "样张 · 不是文章" not in html:
-        bad("版式样张没写「样张 · 不是文章」")
+    if rel == "notes/index.html" and "Canvas 打造像素农场" not in html:
+        bad("笔记页缺少「Canvas 打造像素农场」")
+    if rel == "notes/sample/index.html" and "游戏循环" not in html:
+        bad("Canvas 打造像素农场笔记缺少正文核心内容")
     if rel == "work/index.html":
         slots = len(re.findall(r'<li class="slot"', html))
         if 'class="bundle"' in html and (slots < 12 or slots % 12):

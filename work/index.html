@@ -4,10 +4,17 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>作品 · Ricardo</title>
-  <meta name="description" content="做过的事。短案例，不是技能条。">
+  <meta name="description" content="Ricardo 的代表项目与作品箱：rpcsim 纳秒显式计费调度仿真器、my-ricardo 赛博木屋及 4 款亚像素互动小程序。">
+  <link rel="canonical" href="https://www.my-ricardo.com/work/">
   <meta property="og:title" content="作品 · Ricardo">
-  <meta property="og:description" content="做过的事。短案例，不是技能条。">
+  <meta property="og:description" content="Ricardo 的代表项目与作品箱：rpcsim 纳秒显式计费调度仿真器、my-ricardo 赛博木屋及 4 款亚像素互动小程序。">
   <meta property="og:type" content="website">
+  <meta property="og:url" content="https://www.my-ricardo.com/work/">
+  <meta property="og:image" content="https://www.my-ricardo.com/img/farm-spring.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="作品 · Ricardo">
+  <meta name="twitter:description" content="Ricardo 的代表项目与作品箱：rpcsim 纳秒显式计费调度仿真器、my-ricardo 赛博木屋及 4 款亚像素互动小程序。">
+  <meta name="twitter:image" content="https://www.my-ricardo.com/img/farm-spring.png">
   <script>
     (function () {
       var d = document.documentElement, now = new Date(), h = now.getHours();
@@ -53,35 +60,54 @@
     </nav>
     <main class="panel menu" id="content">
       <a class="close" href="../" aria-label="关上，回农场"></a>
+      <a class="back" href="../notes/">← 回笔记</a>
       <h1>作品</h1>
-      <article class="bundle" id="my-ricardo">
-        <div class="item"><img class="pixel" src="../img/item-crate.png" width="32" height="32" alt=""></div>
-        <div>
-          <h2>my-ricardo 像素农场个人站</h2>
-          <p>纯静态零依赖 + Python 逐像素生成素材 + Web Audio 合成器的个人赛博木屋。</p>
-          <p class="bundle-meta"><a href="https://github.com/Ricardo3319/my-ricardo">源码</a></p>
-        </div>
-      </article>
       <article class="bundle" id="rpc-slides">
-        <div class="item"><img class="pixel" src="../img/item-seeds.png" width="32" height="32" alt=""></div>
+        <div class="item"><img class="pixel" src="../img/item-seeds.png" width="48" height="48" alt=""></div>
         <div>
-          <h2>微秒级任务调度与 RPC 演示幻灯片</h2>
-          <p>关于超低延迟任务调度机制的可视化演示文稿。</p>
-          <p class="bundle-meta"><a href="../rpc-slides/">打开演示</a></p>
+          <h2>同机架微秒级 RPC 调度研究（rpcsim）</h2>
+          <p>面向 1 至 10 微秒极短任务与 50 微秒尾延迟约束的数据中心 RPC 调度研究。使用 C++17 编写 128 核机架级全链路纳秒显式计费仿真引擎 rpcsim（E0 阶段与 M/M/k、M/G/1、M/H2/k 数学解析解 100% 置信对齐），系统量化了入口晚绑定（JBSQ / Credit Pull）与早绑定跨机纠偏（Work Stealing / Forwarding / 连接迁移）的性能相图、多核池化挤压效应与资源可行域红线。</p>
+          <p class="bundle-meta"><a href="../notes/rpc-scheduling/">研究笔记</a> · <a href="../rpc-slides/">组会汇报幻灯片（10 页）</a></p>
         </div>
       </article>
+      <article class="bundle" id="my-ricardo">
+        <div class="item"><img class="pixel" src="../img/item-crate.png" width="48" height="48" alt=""></div>
+        <div>
+          <h2>my-ricardo 像素农场个人站与工作台</h2>
+          <p>纯静态零前端构建依赖的个人赛博木屋：由 Python 脚本逐像素生成四季地图、碰撞数据与木纹边框，采用双轨制字体与 unicode-range 按需字库分片，兼具自建 SQLite 云端与 GitHub 仓库双通道同步的跨设备告示牌、待办日历与随手暂存贴。</p>
+          <p class="bundle-meta"><a href="https://github.com/Ricardo3319/my-ricardo">源码仓库</a> · <a href="../board/">打开告示牌</a></p>
+        </div>
+      </article>
+      <article class="bundle" id="pastoral-games">
+        <div class="item"><img class="pixel" src="../img/item-tomato.png" width="48" height="48" alt=""></div>
+        <div>
+          <h2>牧场像素小程序与实时合成八音盒</h2>
+          <p>内嵌于农场漫游场景的 4 款 4 倍超采样（960×576）亚像素互动小程序：池塘垂钓（蓄力抛物线与弹簧阻尼控鱼）、矿车历险（长按可变高度跳跃与多段视差洞穴）、农田番茄钟（与告示牌待办联动的专注种菜计时器）、古井祈愿签（每日田园宜忌黄历与摇柄打水动效），配以 Web Audio API 实时合成的四季背景乐与环境鸟鸣虫鸣。</p>
+          <p class="bundle-meta"><a href="../">回农场体验互动</a> · <a href="../log/">查看日常记录</a></p>
+        </div>
+      </article>
+      <hr class="divider">
       <ul class="bag">
-        <li class="slot"><span class="item"><img class="pixel" src="../img/item-crate.png" width="32" height="32" alt=""></span><span class="tip"><b>my-ricardo</b><small>站点</small>像素农场个人站</span></li>
-        <li class="slot"><span class="item"><img class="pixel" src="../img/item-seeds.png" width="32" height="32" alt=""></span><span class="tip"><b>RPC 幻灯片</b><small>演示</small>微秒级任务调度</span></li>
-        <li class="slot"></li><li class="slot"></li><li class="slot"></li><li class="slot"></li><li class="slot"></li><li class="slot"></li><li class="slot"></li><li class="slot"></li><li class="slot"></li><li class="slot"></li>
+        <li class="slot"><span class="item" tabindex="0"><img class="pixel" src="../img/item-seeds.png" width="48" height="48" alt=""><span class="tip"><b>rpcsim 仿真器</b><small>C++17 引擎</small><span>128 核机架级纳秒显式计费与排队论解析对齐。</span></span></span></li>
+        <li class="slot"><span class="item" tabindex="0"><img class="pixel" src="../img/item-wheat.png" width="48" height="48" alt=""><span class="tip"><b>RPC 组会演示</b><small>10 页幻灯片</small><span>绑定时机、多核池化挤压与跨机纠偏边界。</span></span></span></li>
+        <li class="slot"><span class="item" tabindex="0"><img class="pixel" src="../img/item-crate.png" width="48" height="48" alt=""><span class="tip"><b>my-ricardo</b><small>赛博木屋</small><span>零构建依赖的四季像素农场与 SPA 无刷新切页。</span></span></span></li>
+        <li class="slot"><span class="item" tabindex="0"><img class="pixel" src="../img/item-cabbage.png" width="48" height="48" alt=""><span class="tip"><b>随身告示牌</b><small>跨端工作台</small><span>自然语言解析截止期、最近 5 条剪贴板与云端同步。</span></span></span></li>
+        <li class="slot"><span class="item" tabindex="0"><img class="pixel" src="../img/item-tomato.png" width="48" height="48" alt=""><span class="tip"><b>农田番茄钟</b><small>专注种菜</small><span>6 种作物 5 阶段生长，收获自动记入告示牌番茄数。</span></span></span></li>
+        <li class="slot"><span class="item" tabindex="0"><img class="pixel" src="../img/item-bucket.png" width="48" height="48" alt=""><span class="tip"><b>古井祈愿签</b><small>每日黄历</small><span>摇柄提桶抽签，收录 12 支田园科研宜忌竹签。</span></span></span></li>
+        <li class="slot"><span class="item" tabindex="0"><img class="pixel" src="../img/item-carrot.png" width="48" height="48" alt=""><span class="tip"><b>池塘与矿车</b><small>街机小游戏</small><span>亚像素平滑渲染的垂钓控鱼与矿洞横版跳跃。</span></span></span></li>
+        <li class="slot"><span class="item" tabindex="0"><img class="pixel" src="../img/item-corn.png" width="48" height="48" alt=""><span class="tip"><b>字体与美术管线</b><small>Python 工具链</small><span>tools/art.py 逐像素绘图与 unicode-range 字库分片。</span></span></span></li>
+        <li class="slot" aria-hidden="true"></li>
+        <li class="slot" aria-hidden="true"></li>
+        <li class="slot" aria-hidden="true"></li>
+        <li class="slot" aria-hidden="true"></li>
       </ul>
       <p class="actions"><a class="btn" href="../notes/">去笔记看看 →</a></p>
     </main>
   </div>
 
   <footer class="credit">
-    <p>视觉受田园生活模拟游戏启发，非官方，与 ConcernedApe 无关。</p>
     <p><a href="../">农场</a><a href="../board/">告示牌</a><a href="../log/">日常</a><a href="../notes/">笔记</a><a href="../about/">关于</a></p>
+    <p>视觉受田园生活模拟游戏启发，非官方，与 ConcernedApe 无关。</p>
   </footer>
   <script src="../js/nav.js"></script>
   <script src="../js/sound.js"></script>

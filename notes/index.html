@@ -4,10 +4,17 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>笔记 · Ricardo</title>
-  <meta name="description" content="值得留下的笔记。现在还空着。">
+  <meta name="description" content="Ricardo 的技术笔记与代表研究：同机架微秒级 RPC 调度（rpcsim）、零依赖像素农场架构及实战复盘。">
+  <link rel="canonical" href="https://www.my-ricardo.com/notes/">
   <meta property="og:title" content="笔记 · Ricardo">
-  <meta property="og:description" content="值得留下的笔记。现在还空着。">
+  <meta property="og:description" content="Ricardo 的技术笔记与代表研究：同机架微秒级 RPC 调度（rpcsim）、零依赖像素农场架构及实战复盘。">
   <meta property="og:type" content="website">
+  <meta property="og:url" content="https://www.my-ricardo.com/notes/">
+  <meta property="og:image" content="https://www.my-ricardo.com/img/farm-spring.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="笔记 · Ricardo">
+  <meta name="twitter:description" content="Ricardo 的技术笔记与代表研究：同机架微秒级 RPC 调度（rpcsim）、零依赖像素农场架构及实战复盘。">
+  <meta name="twitter:image" content="https://www.my-ricardo.com/img/farm-spring.png">
   <script>
     (function () {
       var d = document.documentElement, now = new Date(), h = now.getHours();
@@ -55,24 +62,42 @@
       <a class="close" href="../" aria-label="关上，回农场"></a>
       <h1>笔记</h1>
       <section aria-labelledby="works">
-        <h2 id="works">代表作品与折腾</h2>
-        <ol class="rows">
-          <li><a class="row" href="https://github.com/Ricardo3319/my-ricardo"><span class="row-key">农场</span><span>my-ricardo 像素农场个人站</span></a></li>
-          <li><a class="row" href="../rpc-slides/"><span class="row-key">调度</span><span>微秒级任务调度与 RPC 演示幻灯片</span></a></li>
-        </ol>
+        <div class="page-head">
+          <h2 id="works">代表研究与项目</h2>
+          <a class="back" href="../work/">查看作品箱 →</a>
+        </div>
+        <article class="bundle" id="rpc-project">
+          <div class="item"><img class="pixel" src="../img/item-seeds.png" width="32" height="32" alt=""></div>
+          <div>
+            <h3>同机架微秒级 RPC 调度研究（rpcsim）</h3>
+            <p>针对 1 至 10 微秒极短任务下通信开销与服务时间同量级的调度难题，基于 C++17 构建 128 核机架级全链路纳秒显式计费仿真器（E0 与 M/M/k、M/G/1、M/H2/k 解析解 100% 置信对齐）。量化揭示了单机多核池化（8 核及以上）将跨机纠偏空间压缩至 0.4 个百分点以内、31 组高时延反噬反例，以及软件网关饱和断崖与 20% 算力预算下 79.2% 配置无解的资源红线。</p>
+            <p class="bundle-meta"><a href="rpc-scheduling/">研究笔记</a> · <a href="../rpc-slides/">组会汇报幻灯片（10 页）</a></p>
+          </div>
+        </article>
+        <article class="bundle" id="farm-project">
+          <div class="item"><img class="pixel" src="../img/item-crate.png" width="32" height="32" alt=""></div>
+          <div>
+            <h3>my-ricardo 像素农场个人站与随身工作台</h3>
+            <p>零前端框架依赖的个人赛博木屋：由 Python 逐像素生成四季农场与碰撞位图，内置 Web Audio 实时合成田园音乐、4 倍超采样像素互动小程序（池塘垂钓、矿车历险、农田番茄钟、古井祈愿签），以及支持自建 SQLite 云端与 GitHub 仓库降级同步的跨设备告示牌与剪贴板。</p>
+            <p class="bundle-meta"><a href="pixel-cabin/">工程笔记</a> · <a href="https://github.com/Ricardo3319/my-ricardo">GitHub 源码</a> · <a href="../work/">查看作品箱</a></p>
+          </div>
+        </article>
       </section>
+      <hr class="divider">
       <section aria-labelledby="letters">
-        <h2 id="letters">笔记</h2>
+        <h2 id="letters">文章与研究笔记</h2>
         <ol class="rows">
-          <li><a class="row mail" href="sample/"><span class="row-key">样张</span><span>看版式<span class="row-note"> · 不是文章</span></span></a></li>
+          <li><a class="row mail" href="rpc-scheduling/"><span class="row-key">2026-10-18</span><span>微秒级任务调度：绑定时机与跨机纠偏的边界<span class="row-note"> · 分布式系统</span></span></a></li>
+          <li><a class="row mail" href="pixel-cabin/"><span class="row-key">2026-10-16</span><span>零依赖像素木屋：程序化绘图、字库分片与实时音频合成<span class="row-note"> · 工程架构</span></span></a></li>
+          <li><a class="row mail" href="sample/"><span class="row-key">2026-10-15</span><span>Canvas 打造像素农场：游戏循环、深度遮挡与超采样漫游<span class="row-note"> · 图形与交互</span></span></a></li>
         </ol>
       </section>
     </main>
   </div>
 
   <footer class="credit">
-    <p>视觉受田园生活模拟游戏启发，非官方，与 ConcernedApe 无关。</p>
     <p><a href="../">农场</a><a href="../board/">告示牌</a><a href="../log/">日常</a><a href="./">笔记</a><a href="../about/">关于</a></p>
+    <p>视觉受田园生活模拟游戏启发，非官方，与 ConcernedApe 无关。</p>
   </footer>
   <script src="../js/nav.js"></script>
   <script src="../js/sound.js"></script>

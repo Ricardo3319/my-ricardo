@@ -14,7 +14,7 @@
 
   var form, titleField, dateField, timeField, hintLine, syncLine, notesBox, monthLine, seasonMark, daysBox;
   var doneBox, doneCount, keyForm, keyOn, keyState, keyNote, unlink, toastBox, toastText, toastUndo, hint;
-  var scratchInput, scratchCopy, scratchSave, privateBox, autoOpen;
+  var scratchInput, scratchCopy, scratchSave, scratchNote, scratchHistory, privateBox, autoOpen;
   var passForm, passOn, passOff, passNote;
 
   function find() {
@@ -41,6 +41,8 @@
     scratchInput = document.getElementById("scratchpad-input");
     scratchCopy = document.getElementById("scratchpad-copy-btn");
     scratchSave = document.getElementById("scratchpad-save-btn");
+    scratchNote = document.getElementById("scratchpad-note");
+    scratchHistory = document.getElementById("scratchpad-history");
     privateBox = document.getElementById("board-task-private");
     autoOpen = document.getElementById("board-auto-open");
     passForm = document.querySelector("[data-passkey]");
@@ -106,21 +108,38 @@
 
   // base 是上次从仓库拉到的（没连钥匙时就是本机的全部），queue 是还没推上去的改动。
   function emptyPad() {
-    return { text: "", updatedAt: 0 };
+    return { text: "", updatedAt: 0, history: [] };
   }
 
   function asPad(pad) {
     if (!pad || typeof pad !== "object") return emptyPad();
+    var hist = Array.isArray(pad.history)
+      ? pad.history.filter(function (s) {
+          return typeof s === "string" && s.trim();
+        }).slice(0, 5)
+      : [];
     return {
       text: typeof pad.text === "string" ? pad.text : "",
       updatedAt: typeof pad.updatedAt === "number" ? pad.updatedAt : 0,
+      history: hist,
     };
   }
 
   function pickPad(a, b) {
     var left = asPad(a);
     var right = asPad(b);
-    return left.updatedAt >= right.updatedAt ? left : right;
+    var win = left.updatedAt >= right.updatedAt ? left : right;
+    var lose = left.updatedAt >= right.updatedAt ? right : left;
+    var mergedHist = [];
+    function pushClip(s) {
+      var v = (s || "").trim();
+      if (!v || v === (win.text || "").trim() || mergedHist.indexOf(v) >= 0) return;
+      if (mergedHist.length < 5) mergedHist.push(v);
+    }
+    if (lose.text) pushClip(lose.text);
+    win.history.forEach(pushClip);
+    lose.history.forEach(pushClip);
+    return { text: win.text, updatedAt: win.updatedAt, history: mergedHist };
   }
 
   // 旧版纯数组或 { tasks } 都收成 v2。
@@ -139,9 +158,36 @@
     };
   }
 
+  var PRESET_WELCOME_TASKS = [
+    {
+      id: "preset-welcome-note",
+      title: "🌾 欢迎来到赛博木屋！这是你的随手便签板，内容保存在当前浏览器本地，放心测试~",
+      due: "",
+      time: "",
+      done: "",
+      made: new Date().toISOString(),
+      private: false,
+      updatedAt: 1,
+    },
+    {
+      id: "preset-guide-note",
+      title: "💡 提示：在上方暂存贴按 Ctrl+S 随手记剪贴板；主人登录口令后可开启跨设备云同步。",
+      due: "",
+      time: "",
+      done: "",
+      made: new Date().toISOString(),
+      private: false,
+      updatedAt: 2,
+    },
+  ];
+
   var key = load("board.key", null);
-  var saved = load("board.data", {}) || {};
+  var rawSaved = load("board.data", null);
+  var saved = rawSaved || {};
   if (Array.isArray(saved)) saved = { base: saved, sha: null, queue: [], synced: "", scratchpad: emptyPad() };
+  if (!rawSaved && (!saved.base || !saved.base.length)) {
+    saved.base = PRESET_WELCOME_TASKS;
+  }
   var state = {
     base: tidy(saved.base),
     sha: saved.sha || null,
@@ -399,10 +445,32 @@
     return node;
   }
 
+  function fillScratchpadHistory() {
+    if (!scratchHistory) return;
+    while (scratchHistory.firstChild) scratchHistory.removeChild(scratchHistory.firstChild);
+    var hist = (state.scratchpad && state.scratchpad.history) || [];
+    if (!hist.length) {
+      scratchHistory.hidden = true;
+      return;
+    }
+    scratchHistory.hidden = false;
+    scratchHistory.append(el("span", "row-note", "近期暂存："));
+    hist.forEach(function (clip) {
+      var shortText = clip.replace(/\s+/g, " ").slice(0, 18) + (clip.length > 18 ? "…" : "");
+      var chip = button("scratchpad-chip", shortText, "恢复暂存：" + shortText, function () {
+        scratchInput.value = clip;
+        saveScratchpad();
+      });
+      scratchHistory.append(chip);
+    });
+  }
+
   function fillScratchpad() {
     if (!scratchInput) return;
-    if (document.activeElement === scratchInput) return;
-    scratchInput.value = state.scratchpad && state.scratchpad.text ? state.scratchpad.text : "";
+    if (document.activeElement !== scratchInput) {
+      scratchInput.value = state.scratchpad && state.scratchpad.text ? state.scratchpad.text : "";
+    }
+    fillScratchpadHistory();
   }
 
   function render() {
@@ -472,6 +540,9 @@
     tag.setAttribute("data-due", u.level);
     when.append(tag);
     if (t.private) when.append(el("span", "note-private", "私密"));
+    var pomoMap = load("farm.crop.taskCounts", {}) || {};
+    var pomoCount = pomoMap[t.id] || 0;
+    if (pomoCount > 0) when.append(el("span", "note-private", "🍅×" + pomoCount));
     body.append(el("p", "note-title", t.title), when);
     var tools = el("p", "note-tools");
     var edit = button("", "改", "改：" + t.title, function () {
@@ -985,12 +1056,19 @@
     else if (cloud) syncLine.textContent = (state.synced ? "已同步云端 " + clock(state.synced) : "云端已连") + waiting;
     else if (problem) syncLine.textContent = "没同步上：" + problem + waiting;
     else if (key) syncLine.textContent = (state.synced ? "已同步 " + clock(state.synced) : "还没同步") + waiting;
-    else syncLine.textContent = pk ? "口令已存，云端不可达时只存在这台设备" : "只存在这台设备";
+    else syncLine.textContent = pk ? "口令已存，云端不可达时只存这台设备" : "本地沙盒（只存这台设备）";
     keyState.textContent = cloud ? "云端" : key ? "连着 " + key.repo : pk ? "有口令" : "还没连";
     keyForm.hidden = !!key;
     keyOn.hidden = !key;
     if (passForm) passForm.hidden = !!pk;
     if (passOn) passOn.hidden = !pk;
+    if (scratchNote && !scratchTimer) {
+      scratchNote.textContent = cloud ? "☁️ 已连云端 · 自动多端同步" : key ? "☁️ GitHub 同步 · 自动留存近 5 条" : "🔒 访客本地存储（未登录口令不公开）· Ctrl+S";
+    }
+    var scratchTip = document.querySelector(".scratchpad-tip");
+    if (scratchTip) {
+      scratchTip.textContent = (cloud || key) ? "※ 已连接主人同步通道，支持跨设备漫游" : "※ 仅当前浏览器本地可见，不会同步到全站";
+    }
   }
 
   function bindKey() {
@@ -1016,6 +1094,7 @@
           }
           key = { repo: info.full_name, token: token };
           keep("board.key", key);
+          keep("ricardo_owner", "1");
           // 这台设备上原来的便条，一张张搬进仓库。
           state.queue = state.base
             .map(function (t) {
@@ -1050,6 +1129,7 @@
       // 断开就把这台设备上的都清掉，仓库里的不动。
       key = null;
       keep("board.key", null);
+      keep("ricardo_owner", null);
       state = { base: [], sha: null, queue: [], synced: "", scratchpad: emptyPad() };
       problem = "";
       save();
@@ -1072,10 +1152,37 @@
     if (!editing && !(active && active.closest && active.closest(".cal, .notes"))) render();
   }, 60000);
 
+  var scratchTimer = 0;
   function saveScratchpad() {
     if (!scratchInput) return;
-    state.scratchpad = { text: scratchInput.value, updatedAt: Date.now() };
+    var prev = state.scratchpad ? (state.scratchpad.text || "").trim() : "";
+    var nextText = scratchInput.value;
+    var nextTrim = nextText.trim();
+    var hist = (state.scratchpad && Array.isArray(state.scratchpad.history)) ? state.scratchpad.history.slice() : [];
+    if (prev && prev !== nextTrim) {
+      hist = [prev].concat(
+        hist.filter(function (s) {
+          return s !== prev && s !== nextTrim;
+        })
+      ).slice(0, 5);
+    } else if (nextTrim) {
+      hist = hist.filter(function (s) {
+        return s !== nextTrim;
+      }).slice(0, 5);
+    }
+    state.scratchpad = { text: nextText, updatedAt: Date.now(), history: hist };
     save();
+    fillScratchpadHistory();
+    if (scratchNote) {
+      scratchNote.textContent = cloud ? "已保存到云端 ✓" : "已保存到本地 ✓";
+      window.clearTimeout(scratchTimer);
+      scratchTimer = window.setTimeout(function () {
+        scratchTimer = 0;
+        if (scratchNote) {
+          scratchNote.textContent = cloud ? "☁️ 已连云端 · 自动多端同步" : key ? "☁️ GitHub 同步 · 自动留存近 5 条" : "🔒 访客本地存储（未登录口令不公开）· Ctrl+S";
+        }
+      }, 1800);
+    }
     flush();
   }
 
@@ -1083,6 +1190,12 @@
     if (!scratchInput) return;
     scratchSave.addEventListener("click", saveScratchpad);
     scratchInput.addEventListener("blur", saveScratchpad);
+    scratchInput.addEventListener("keydown", function (event) {
+      if ((event.ctrlKey || event.metaKey) && (event.key === "s" || event.key === "S")) {
+        event.preventDefault();
+        saveScratchpad();
+      }
+    });
     scratchCopy.addEventListener("click", function () {
       var text = scratchInput.value;
       var idle = scratchCopy.textContent;

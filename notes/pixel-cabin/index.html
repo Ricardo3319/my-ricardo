@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-season="spring" data-phase="day">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>零依赖像素木屋 · Ricardo</title>
+  <meta name="description" content="不引入任何前端框架与外部 CDN，用 Python 程序化生成像素图、按需字库分片与 Web Audio 合成构建个人赛博木屋。">
+  <link rel="canonical" href="https://www.my-ricardo.com/notes/pixel-cabin/">
+  <meta property="og:title" content="零依赖像素木屋 · Ricardo">
+  <meta property="og:description" content="不引入任何前端框架与外部 CDN，用 Python 程序化生成像素图、按需字库分片与 Web Audio 合成构建个人赛博木屋。">
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://www.my-ricardo.com/notes/pixel-cabin/">
+  <meta property="og:image" content="https://www.my-ricardo.com/img/farm-spring.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="零依赖像素木屋 · Ricardo">
+  <meta name="twitter:description" content="不引入任何前端框架与外部 CDN，用 Python 程序化生成像素图、按需字库分片与 Web Audio 合成构建个人赛博木屋。">
+  <meta name="twitter:image" content="https://www.my-ricardo.com/img/farm-spring.png">
+  <script>
+    (function () {
+      var d = document.documentElement, now = new Date(), h = now.getHours();
+      var s = ["winter", "winter", "spring", "spring", "spring", "summer", "summer", "summer", "autumn", "autumn", "autumn", "winter"][now.getMonth()];
+      try {
+        var v = sessionStorage.getItem("farm.season");
+        if (/^(spring|summer|autumn|winter)$/.test(v)) s = v;
+      } catch (e) {}
+      d.setAttribute("data-season", s);
+      d.setAttribute("data-phase", h < 5 || h >= 19 ? "night" : h < 7 ? "dawn" : h < 17 ? "day" : "dusk");
+      var l = document.createElement("link");
+      l.rel = "preload";
+      l.as = "image";
+      l.href = "../../img/farm-" + s + ".png";
+      document.head.appendChild(l);
+    })();
+  </script>
+  <link rel="preload" href="../../fonts/shard-common.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="../../css/fonts.css">
+  <link rel="stylesheet" href="../../css/farm.css">
+  <link rel="icon" href="../../img/favicon.png">
+</head>
+<body class="inner">
+  <a class="skip" href="#content">跳到内容</a>
+  <div class="world" aria-hidden="true"></div>
+
+  <header class="hud">
+    <div class="hud-box">
+      <div class="hud-sky" aria-hidden="true"><span class="hud-sun"></span></div>
+      <div class="hud-lines">
+        <p><time data-today>今天</time></p>
+        <p><time data-clock>现在</time><button class="hud-season" type="button" data-season-cycle aria-label="换季"><span class="hud-season-icon"></span><span class="hud-season-name"></span></button><button class="hud-sound" type="button" data-sound aria-label="声音" hidden><span class="hud-sound-icon"></span></button></p>
+      </div>
+    </div>
+  </header>
+
+  <div class="menu-wrap">
+    <nav class="tabs" aria-label="栏目">
+      <a href="../../board/"><img class="pixel" src="../../img/icon-board.png" width="33" height="33" alt=""><span>告示牌</span></a>
+      <a href="../../log/"><img class="pixel" src="../../img/icon-now.png" width="30" height="33" alt=""><span>日常</span></a>
+      <a href="../" class="is-section"><img class="pixel" src="../../img/icon-notes.png" width="30" height="33" alt=""><span>笔记</span></a>
+      <a href="../../about/"><img class="pixel" src="../../img/icon-about.png" width="33" height="33" alt=""><span>关于</span></a>
+    </nav>
+    <main class="panel letter" id="content">
+      <a class="close" href="../../" aria-label="关上，回农场"></a>
+      <a class="back" href="../">← 回笔记</a>
+      <h1>零依赖像素木屋</h1>
+      <p class="meta">2026-10-16 · 程序化像素生成、按需字库分片与实时音频合成</p>
+      <div class="prose">
+        <p>做个人网站时很容易陷入两个极端：要么套一层沉重的现代前端脚手架，几年后因为依赖过期连本地构建都跑不通；要么只放一页冷冰冰的简历，连自己平时都不愿意打开。搭建这座赛博木屋（my-ricardo）时，我定下了三条工程准则：零外部构建依赖、首屏极致轻量、并且它必须是我每天真正顺手在用的跨设备备忘录。</p>
+
+        <h2>一、Python 逐像素程序化生成（tools/art.py）</h2>
+        <p>站内所有的四季农场全景底图、九宫格木纹边框、人物行走序列帧以及 56×32 的地面碰撞位图，全部由单个 Python 脚本从零绘出并直接编码为 PNG：</p>
+        <ul>
+          <li>脚本内建调色板与确定性伪随机噪声，一次运行即可同时产出春、夏、秋、冬四套色温一致的 896×512 农场地图与物品图标。</li>
+          <li>木框、按钮、信纸毛边与图钉采用 CSS border-image 九宫格切片（如 8px 切片按整数倍像素变量 --px 拉伸），让任意长宽的页面容器都保持严丝合缝的像素颗粒感。</li>
+          <li>地图渲染的同时自动导出 js/world-data.js 的可通行网格与交互锚点，避免美术资源与碰撞逻辑脱节。</li>
+        </ul>
+
+        <h2>二、双轨字体与 unicode-range 按需分片（tools/font-shards.py）</h2>
+        <p>全站如果直接塞入完整的中文像素字体，首屏需要下载数兆字节的字库；而如果正篇长文全部使用低分辨率点阵字，在高分屏与手机上又容易造成阅读疲劳。为此站内采用了「双轨制字体 + 自动子集分片」方案：</p>
+        <ul>
+          <li>右上角时钟面板、页签、标题纸卷、按钮与地图名牌使用 12px 整数倍缩放的 Ark Pixel 像素字；而研究笔记、日常流水与告示牌正文则切换为清晰的现代无衬线字体，兼顾游戏氛围与长文可读性。</li>
+          <li>分片脚本自动扫描全站 HTML 与 JS 源码中实际出现的约 1200 个字符，打包成仅 34KB 的 shard-common.woff2 并配合 preload 与 font-display: block，做到首访零闪烁；剩余两万多个汉字按 1024 码位切分为 24 个扩展分片，仅在告示牌输入生僻字时由浏览器按 unicode-range 自动拉取对应分块。</li>
+        </ul>
+
+        <h2>三、无刷新切页、合成器八音盒与随身工作台</h2>
+        <p>为了让整座农场像真正的桌面小程序一样连贯运转，前后端交互都尽量压缩到了最简的原语：</p>
+        <ul>
+          <li>无刷新导航（js/nav.js）：拦截站内链接并仅替换中央木框或信纸 DOM，结合浏览器原生 View Transitions API 实现平滑升降，底层四季农场画布与背景音乐全程不断流。</li>
+          <li>实时音频合成（js/sound.js）：不加载外部 MP3，直接用 Web Audio API 的振荡器与滤波器实时合成五声音阶田园八音盒，并根据昼夜相位叠加白昼鸟鸣或夜晚虫鸣。</li>
+          <li>4× 超采样互动小程序（js/games.js）：在 960×576 内部画布上实现亚像素平滑运动的池塘垂钓、矿车历险、古井祈愿签与农田番茄钟，并将番茄钟收获直接关联到告示牌待办。</li>
+          <li>双通道同步告示牌（js/board.js 与 server/app.py）：后端仅用 Python 标准库 http.server 与 SQLite 即可通过 Docker 一键部署，支持中文自然语言解析截止时间（「周五 晚上8点」）、最近 5 条跨端剪贴板历史，且在纯静态托管时自动降级至 GitHub REST API 与本机存储。</li>
+        </ul>
+
+        <p>每次修改页面或脚本后，只需跑一遍 tools/check.py 即可在百毫秒内完成死链、无障碍属性、导航一致性与字体覆盖率的静态验收。</p>
+      </div>
+      <p class="actions">
+        <a class="btn" href="../../work/">查看作品箱</a>
+        <a class="btn" href="../../board/">去试试告示牌 →</a>
+      </p>
+      <p class="sign">——Ricardo</p>
+    </main>
+  </div>
+
+  <footer class="credit">
+    <p><a href="../../">农场</a><a href="../../board/">告示牌</a><a href="../../log/">日常</a><a href="../">笔记</a><a href="../../about/">关于</a></p>
+    <p>视觉受田园生活模拟游戏启发，非官方，与 ConcernedApe 无关。</p>
+  </footer>
+  <script src="../../js/nav.js"></script>
+  <script src="../../js/sound.js"></script>
+  <script src="../../js/farm.js"></script>
+</body>
+</html>

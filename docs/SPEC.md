@@ -24,7 +24,7 @@
 三级存储与同步降级机制：
 1. **自建云服务器模式（优先）**：当配置了主人口令（Passkey）且 `/api/board` 可达时，通过 `GET /api/board` 与 `PUT /api/board` 实时同步。
 2. **GitHub API 模式（次选）**：在纯静态托管（GitHub Pages）且配置了 GitHub PAT 时，读写仓库中的 `board.json`。
-3. **本地沙盒模式（默认）**：未解锁口令的访客读写浏览器本地 `localStorage`，且服务端自动过滤掉 `private: true` 的私密条目。
+3. **本地沙盒模式（默认）**：未解锁口令的访客读写浏览器本地 `localStorage`，界面明确提示「本地暂存（未登录口令不对外公开）」，初次进入且为空时自动预置 2 条欢迎指引便签供访客测试，且服务端自动过滤掉 `private: true` 的私密条目。
 
 ## 3. 云端后端 API 契约（`server/app.py`）
 - `POST /api/auth/verify`：校验请求头 `X-Passkey` 是否与服务端环境变量 `RICARDO_PASSKEY` 匹配，返回 `{"ok": true}`。
@@ -33,3 +33,16 @@
 - `GET /api/logs`：公开返回 `{"nowStatus": "...", "logs": [{"id": 1, "date": "2026-10-15", "text": "..."}]}`。
 - `POST /api/logs`：需 `X-Passkey` 鉴权。支持新增日常流水或更新 `nowStatus`。
 - `DELETE /api/logs?id=<id>`：需 `X-Passkey` 鉴权。删除指定日常条目。
+
+## 4. 场景微交互、移动端竖屏与传播卡片规格
+- **场景微交互与彩蛋反馈**：
+  - 农舍大门：点击弹出气泡「正在屋里跑 rpcsim 仿真实验……」；
+  - 篝火堆：点击弹出气泡并切换白昼/夜晚配色（`data-phase` 昼夜光影与环境音效联动）；
+  - 牲口棚小鸡：点击弹出欢快气泡与啄米扑腾动效；
+  - 钓鱼 NPC 阿涟：点击弹出垂钓咬钩趣味气泡与互动提示。
+- **移动端竖屏镜头与热区**：
+  - 竖屏高屏占比（`vh > vw`）下，角色与 NPC 默认对齐至视口上部 30%–35% 舒适视野，对话框贴底展开，避免遮挡角色；
+  - 可点击物触控热区全部扩大至 `≥48×48px`，减少小屏点按误触。
+- **SEO 与社交分享卡片**：
+  - 全站静态页面具备独立 `<title>`、`<meta name="description">`、`<meta property="og:...">` 与 `<meta name="twitter:...">`；
+  - `sitemap.xml` 完整涵盖所有核心路由与公开技术笔记。

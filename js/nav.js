@@ -72,7 +72,7 @@
     if (/\/now\/$/.test(p)) return p.replace(/\/now\/$/, "/log/");
     if (/\/work\/$/.test(p)) return p.replace(/\/work\/$/, "/notes/");
     if (/\/contact\/$/.test(p)) return p.replace(/\/contact\/$/, "/about/");
-    if (/\/notes\/sample\/$/.test(p)) return p.replace(/sample\/$/, "");
+    if (/\/notes\/[^/]+\/$/.test(p)) return p.replace(/[^/]+\/$/, "");
     return p;
   }
 
@@ -138,6 +138,7 @@
       if (loaded.indexOf(src) >= 0) return;
       loaded.push(src);
       var load = document.createElement("script");
+      load.async = false;
       load.src = src;
       document.body.appendChild(load);
     });

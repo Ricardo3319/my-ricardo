@@ -14,20 +14,25 @@
 
   // 顺序就是 walk-npcs.png 里脸的顺序。台词只说村民自己和引导语，不虚构 Ricardo 的事。
   var NPCS = [
-    { name: "陈伯", col: 26, row: 15, face: 0, tab: "关于", page: "about/", line: "我在这农场边上住了几十年啦。你是做什么的？——哦，是你问 Ricardo。" },
-    { name: "阿荞", col: 23, row: 16, face: 1, tab: "近况", page: "now/", line: "节气不等人，苗一天一个样。最近在忙什么？" },
-    { name: "老木", col: 32, row: 12, face: 2, tab: "作品", page: "work/", line: "好木头要慢慢刨。做过些什么？" },
+    { name: "陈伯", col: 26, row: 15, face: 0, tab: "关于", page: "about/", game: "well", gameLabel: "去古井摇一支今日黄历签", gameTag: "小程序", line: "我在这农场边上住了几十年啦。你是做什么的？——哦，是你问 Ricardo。" },
+    { name: "阿荞", col: 23, row: 16, face: 1, tab: "日常 · 近况", page: "now/", game: "crop", gameLabel: "定个番茄钟在菜地专注种菜", gameTag: "小程序", line: "节气不等人，苗一天一个样。最近在忙什么？" },
+    { name: "老木", col: 32, row: 12, face: 2, tab: "笔记 · 作品", page: "work/", game: "cart", gameLabel: "玩一把谷仓边的矿车街机", gameTag: "小游戏", line: "好木头要慢慢刨。做过些什么？" },
     { name: "小满", col: 22, row: 21, face: 3, tab: "笔记", page: "notes/", line: "信我都收得好好的。有写东西吗？" },
-    { name: "阿涟", col: 33, row: 15, face: 4, tab: "联系", page: "contact/", line: "鱼不上钩的时候，最适合想事情。怎么联系你？" },
+    { name: "阿涟", col: 33, row: 15, face: 4, tab: "关于 · 联系", page: "contact/", game: "fish", gameLabel: "在池塘边钓会儿鱼", gameTag: "小游戏", easterEgg: "fish", bubbleText: "嘘……别出声，水底好像有大鱼在试探咬钩呢！🐟", line: "鱼不上钩的时候，最适合想事情。怎么联系你？" },
   ];
-  var BOARD = { name: "告示牌", col: 27, row: 13, face: -1, icon: "img/icon-board.png", tab: "告示牌", page: "board/", line: "板上钉着 Ricardo 的截止日期。" };
+  var BOARD = { name: "告示牌", badge: "📌 告示牌", col: 27, row: 13, face: -1, icon: "img/icon-board.png", tab: "告示牌", page: "board/", line: "板上钉着 Ricardo 的截止日期。" };
 
-  // 场景点：画进世界图的东西，走近按空格搭一句；信箱多一个去笔记的链接。
+  // 场景点：画进世界图的东西，走近按空格搭一句；池塘、矿车街机、古井、菜地能打开像素小游戏与小程序。
   var SCENES = [
-    { name: "信箱", col: 23, row: 21, face: -1, icon: "img/icon-contact.png", tab: "笔记", page: "notes/", line: "信送到这儿，写出来的东西也收在这儿。" },
-    { name: "井", col: 20, row: 9, w: 1, h: 2, face: -1, icon: "img/item-bucket.png", line: "井水凉，打上来要慢一点。" },
-    { name: "池塘", col: 34, row: 13, w: 9, h: 5, face: -1, icon: "img/icon-pond.png", line: "水面平的时候，能照见天。" },
-    { name: "牲口", col: 36, row: 8, w: 5, h: 3, face: -1, icon: "img/item-hay.png", line: "牲口吃饱了就不理人，下雪天躲进棚里。" },
+    { name: "农舍大门", badge: "🚪 农舍", col: 24, row: 10, w: 1, h: 2, face: -1, icon: "img/item-crate.png", easterEgg: "door", bubbleText: "正在屋里跑 rpcsim 仿真实验，128 核纳秒调度中 🔬", line: "农舍木门关得严严实实，门前贴着便签：「正在屋里跑 rpcsim 仿真实验，纳秒计时中……」" },
+    { name: "篝火", badge: "🔥 篝火", col: 28, row: 17, w: 1, h: 1, face: -1, easterEgg: "campfire", bubbleText: "篝火噼啪作响……（点击切换昼夜配色）", line: "石头围着一小堆柴火，火光暖烘烘的。点一下能切换白昼与夜间配色。" },
+    { name: "小鸡", badge: "🐣 芦花小鸡", col: 37, row: 9, w: 2, h: 2, face: -1, icon: "img/item-hay.png", easterEgg: "chicken", bubbleText: "咕咕？小鸡歪着头啄了啄米粒，欢快地扑腾起小翅膀~ 🐣", line: "两只毛茸茸的芦花小鸡在圈里啄米，听见动静欢快地扑腾起小翅膀。" },
+    { name: "信箱", badge: "信箱", lowTag: true, col: 23, row: 21, face: -1, icon: "img/icon-contact.png", tab: "笔记", page: "notes/", line: "信送到这儿，写出来的东西也收在这儿。" },
+    { name: "井", badge: "✦ 古井抽签", col: 20, row: 9, w: 1, h: 2, face: -1, icon: "img/item-bucket.png", game: "well", gameLabel: "摇动辘轳打水抽签（每日黄历）", gameTag: "小程序", line: "井水凉，打上来要慢一点。木桶里时常浮着竹签筒。" },
+    { name: "菜地", badge: "✦ 菜地番茄钟", col: 13, row: 14, w: 9, h: 6, face: -1, icon: "img/item-seeds.png", game: "crop", gameLabel: "播下种子（农田番茄钟）", gameTag: "小程序", line: "四垄黑土翻得松软，定下心来专注一阵，庄稼就能熟一茬。" },
+    { name: "矿车街机", badge: "✦ 矿车街机", col: 30, row: 10, w: 1, h: 1, face: -1, icon: "img/icon-arcade.png", game: "cart", gameLabel: "投币开局（矿车历险）", gameTag: "小游戏", line: "谷仓边立着一台复古木壳街机，屏幕还亮着。" },
+    { name: "池塘", badge: "✦ 池塘垂钓", col: 34, row: 13, w: 9, h: 5, face: -1, icon: "img/icon-pond.png", game: "fish", gameLabel: "抛竿垂钓", gameTag: "小游戏", line: "水面平的时候，能照见天。" },
+    { name: "牲口", badge: "牲口棚", col: 36, row: 8, w: 5, h: 3, face: -1, icon: "img/item-hay.png", line: "牲口吃饱了就不理人，下雪天躲进棚里。" },
   ];
 
   var root = document.documentElement;
@@ -66,11 +71,18 @@
   var greeting = null; // 第一次挂载时记下的招呼对话
   var grid = null;
   var gridSeason = "";
+  var HOME_MODE_KEY = "ricardo_home_mode";
+  var farmModeOn = false;
+  var hudToggleBound = null;
   // 「在走路」自己记一份：站内换页时 body.className 先被换掉，再发 farm:page，到时候读 class 就晚了。
   var walkOn = false;
 
   function walking() {
     return walkOn;
+  }
+
+  function farmMode() {
+    return farmModeOn;
   }
 
   // --wpx 只跟着视口宽度变（CSS 里的媒体查询），读一次记住，窗口尺寸一变再读。
@@ -108,11 +120,24 @@
     );
   }
 
+  function actorDist(actor, x, y) {
+    var d = actor.data;
+    var w = d.w || 1;
+    var h = d.h || 1;
+    var x0 = d.col * TILE + 8;
+    var x1 = (d.col + w - 1) * TILE + 8;
+    var y0 = d.row * TILE + 15;
+    var y1 = (d.row + h - 1) * TILE + 15;
+    var cx = Math.max(x0, Math.min(x1, x));
+    var cy = Math.max(y0, Math.min(y1, y));
+    return Math.hypot(cx - x, cy - y);
+  }
+
   function nearest() {
     var best = null;
     var dist = REACH;
     actors.forEach(function (a) {
-      var d = Math.hypot(a.fx - pos.x, a.fy - pos.y);
+      var d = actorDist(a, pos.x, pos.y);
       if (d < dist) {
         dist = d;
         best = a;
@@ -169,7 +194,11 @@
       img.hidden = false;
       img.setAttribute("src", d.icon);
     }
-    box.querySelector("[data-type]").textContent = d.line;
+    var lineText = d.line;
+    if (d.game && d.face < 0 && window.FARM_GAMES && window.FARM_GAMES.summary) {
+      lineText += " " + window.FARM_GAMES.summary(d.game);
+    }
+    box.querySelector("[data-type]").textContent = lineText;
     var hint = box.querySelector(".walk-hint");
     hint.textContent = COARSE ? "点下面的选项继续。" : "W/S 挑一句，回车确认；Esc 接着逛。";
     hint.hidden = false;
@@ -183,6 +212,19 @@
       small.textContent = d.tab;
       go.appendChild(small);
       options.push(go);
+    }
+    if (d.game && window.FARM_GAMES && window.FARM_GAMES.open) {
+      var play = document.createElement("button");
+      play.type = "button";
+      play.textContent = (d.gameLabel || "开始游玩") + " →";
+      var gsmall = document.createElement("small");
+      gsmall.textContent = d.gameTag || "小游戏";
+      play.appendChild(gsmall);
+      play.addEventListener("click", function () {
+        closeTalk();
+        window.FARM_GAMES.open(d.game);
+      });
+      options.push(play);
     }
     var stay = document.createElement("button");
     stay.type = "button";
@@ -212,6 +254,84 @@
     list[next].focus({ preventScroll: true });
   }
 
+  function makeRoamButton() {
+    var btn = document.createElement("button");
+    btn.type = "button";
+    btn.setAttribute("data-roam-btn", "1");
+    btn.textContent = "在农场里走走（钓鱼 · 矿车 · 种菜 · 抽签）";
+    var small = document.createElement("small");
+    small.textContent = "农场";
+    btn.appendChild(small);
+    btn.addEventListener("click", function () {
+      closeTalk();
+      setWalking(true);
+    });
+    return btn;
+  }
+
+  function makeLandingButton() {
+    var btn = document.createElement("button");
+    btn.type = "button";
+    btn.setAttribute("data-landing-btn", "1");
+    btn.textContent = "切回一页式标准个人主页";
+    var small = document.createElement("small");
+    small.textContent = "概览";
+    btn.appendChild(small);
+    btn.addEventListener("click", function () {
+      setHomeMode("landing", true);
+    });
+    return btn;
+  }
+
+  function ensureHudToggle() {
+    var hud = document.querySelector(".hud");
+    if (!hud) return null;
+    var btn = hud.querySelector("[data-home-mode-toggle]");
+    if (!btn) {
+      btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "btn hud-mode-switch";
+      btn.setAttribute("data-home-mode-toggle", "");
+      hud.insertBefore(btn, hud.firstChild);
+    }
+    if (btn !== hudToggleBound) {
+      hudToggleBound = btn;
+      btn.addEventListener("click", function () {
+        setHomeMode(farmMode() ? "landing" : "farm", true);
+      });
+    }
+    return btn;
+  }
+
+  function setHomeMode(mode, persist) {
+    var isFarm = mode === "farm";
+    farmModeOn = isFarm;
+    document.body.classList.toggle("is-farm-mode", isFarm);
+    if (persist) {
+      try {
+        if (window.localStorage) window.localStorage.setItem(HOME_MODE_KEY, isFarm ? "farm" : "landing");
+      } catch (error) {}
+    }
+    var toggleBtn = ensureHudToggle();
+    if (toggleBtn) {
+      toggleBtn.textContent = isFarm ? "📋 返回标准主页" : "🌾 进入像素农场";
+      toggleBtn.setAttribute("aria-label", isFarm ? "切回标准像素风个人概览主页" : "切换到互动像素农场漫游模式");
+    }
+    if (!isFarm) {
+      closeTalk();
+      setWalking(false);
+      save();
+      if (persist) window.scrollTo(0, 0);
+    } else {
+      cam.set = false;
+      if (persist) {
+        setWalking(true);
+        save();
+        window.scrollTo(0, 0);
+      }
+    }
+  }
+
   function greet() {
     closeTalk();
     setWalking(false);
@@ -224,12 +344,15 @@
     img.hidden = false;
     img.setAttribute("src", greeting.portrait);
     box.querySelector("[data-type]").textContent = greeting.line;
-    box.querySelector(".choices").replaceChildren.apply(
-      box.querySelector(".choices"),
+    var choicesEl = box.querySelector(".choices");
+    choicesEl.replaceChildren.apply(
+      choicesEl,
       greeting.choices.map(function (node) {
         return node.cloneNode(true);
       })
     );
+    choicesEl.appendChild(makeRoamButton());
+    choicesEl.appendChild(makeLandingButton());
     var hint = box.querySelector(".walk-hint");
     hint.textContent = greeting.hint;
     hint.hidden = false;
@@ -282,7 +405,7 @@
         var x = c * TILE + 8;
         var y = (r + 1) * TILE - 2;
         if (!freeAt(x, y)) continue;
-        var key = Math.hypot(x - actor.fx, y - actor.fy) * 1000 + Math.hypot(x - pos.x, y - pos.y);
+        var key = actorDist(actor, x, y) * 1000 + Math.hypot(x - pos.x, y - pos.y);
         if (!best || key < bestKey) {
           bestKey = key;
           best = { x: x, y: y };
@@ -294,7 +417,7 @@
 
   function walkTo(actor) {
     // 已经够得着就直接开话；不然走到离他最近的可站立点，到了自动搭话。
-    if (Math.hypot(actor.fx - pos.x, actor.fy - pos.y) < REACH) {
+    if (actorDist(actor, pos.x, pos.y) < REACH) {
       openTalk(actor);
       return;
     }
@@ -369,7 +492,7 @@
      立刻回调，换页和以前一样快。路是碰撞格上 BFS 找出来的，绕得开告示牌和栅栏；
      实在没有路（人卡在圈里）或跑得比 LEAVE_CAP 久，就地淡出换页。 */
   function leave(done) {
-    if (!layer || !walking() || still) {
+    if (!layer || !farmMode() || !walking() || still) {
       done();
       return;
     }
@@ -409,6 +532,10 @@
 
   function frame(now) {
     raf = window.requestAnimationFrame(frame);
+    if (!farmMode()) {
+      frame.last = now;
+      return;
+    }
     var dt = Math.min(0.05, (now - (frame.last || now)) / 1000);
     frame.last = now;
 
@@ -431,7 +558,7 @@
           }
         }
       }
-    } else if (!talking) {
+    } else if (!talking && !(window.FARM_GAMES && window.FARM_GAMES.isOpen())) {
       if (keys.left) dx -= 1;
       if (keys.right) dx += 1;
       if (keys.up) dy -= 1;
@@ -486,7 +613,7 @@
           var bd = Math.hypot(bx, by) || 1;
           pos.x += bx / bd;
           pos.y += by / bd;
-        } else if (target && target.talk && Math.hypot(target.talk.fx - pos.x, target.talk.fy - pos.y) < REACH) {
+        } else if (target && target.talk && actorDist(target.talk, pos.x, pos.y) < REACH) {
           // 跟前那格被占也别傻站着：够得着就直接开话。
           openTalk(target.talk);
           target = null;
@@ -523,15 +650,25 @@
 
     var k = wpx();
 
-    // 镜头：人放在视口 (50%, 44%)，地图边不外露；减少动效时直接到位。
+    // 镜头：宽屏人放在视口 (50%, 44%)；竖屏下聚焦角色于视口上部 33%（对话时 26%），避免被底部对话框遮挡。
     var mapW = 896 * k;
     var mapH = 512 * k;
     var vw = window.innerWidth;
     var vh = window.innerHeight;
-    var tx = mapW / 2 - pos.x * k;
-    var ty = vh * 0.06 + mapH * 0.38 - pos.y * k;
-    tx = mapW > vw ? Math.min(Math.max(tx, vw / 2 - mapW / 2), mapW / 2 - vw / 2) : 0;
-    ty = mapH > vh ? Math.min(Math.max(ty, (vh - mapH) * 0.62), (mapH - vh) * 0.38) : 0;
+    var isPortrait = vh > vw;
+    var tx, ty;
+    if (isPortrait) {
+      var focusY = talking ? vh * 0.26 : vh * 0.33;
+      tx = vw / 2 - pos.x * k;
+      ty = focusY - pos.y * k;
+      tx = mapW > vw ? Math.min(Math.max(tx, vw - mapW), 0) : (vw - mapW) / 2;
+      ty = mapH > vh ? Math.min(Math.max(ty, vh - mapH), 0) : (vh - mapH) / 2;
+    } else {
+      tx = mapW / 2 - pos.x * k;
+      ty = vh * 0.06 + mapH * 0.38 - pos.y * k;
+      tx = mapW > vw ? Math.min(Math.max(tx, vw / 2 - mapW / 2), mapW / 2 - vw / 2) : 0;
+      ty = mapH > vh ? Math.min(Math.max(ty, (vh - mapH) * 0.62), (mapH - vh) * 0.38) : 0;
+    }
     if (!cam.set || still) {
       cam.x = tx;
       cam.y = ty;
@@ -587,7 +724,7 @@
   var ARROWS = { ArrowLeft: "left", ArrowRight: "right", ArrowUp: "up", ArrowDown: "down", a: "left", d: "right", w: "up", s: "down" };
 
   function onKeyDown(event) {
-    if (!layer || leaving) return;
+    if (!layer || !farmMode() || leaving || (window.FARM_GAMES && window.FARM_GAMES.isOpen())) return;
     var tag = event.target && event.target.tagName;
     var onControl = tag === "A" || tag === "BUTTON" || tag === "INPUT" || tag === "SUMMARY";
     if (talking) {
@@ -596,6 +733,89 @@
         closeTalk();
       } else if (event.key === "w" || event.key === "W" || event.key === "ArrowUp") {
         // 对话里 W/S（和上下方向键）在选项间挪焦点，Enter/空格确认当前那条。
+        event.preventDefault();
+        stepChoice(-1);
+      } else if (event.key === "s" || event.key === "S" || event.key === "ArrowDown") {
+        event.preventDefault();
+        stepChoice(1);
+      } else if (event.key === " " && onControl) {
+        event.preventDefault();
+        event.target.click();
+      }
+      return;
+    }
+    var dir = ARROWS[event.key];
+    if (dir && !onControl) {
+      event.preventDefault();
+  var activeBubble = null;
+  var activeBubbleTimer = 0;
+
+  function showSpeechBubble(actor, text) {
+    if (!actor || !actor.el) return;
+    if (activeBubble) {
+      activeBubble.remove();
+      activeBubble = null;
+    }
+    window.clearTimeout(activeBubbleTimer);
+    var bubble = document.createElement("div");
+    bubble.className = "speech-bubble";
+    bubble.textContent = text;
+    actor.el.appendChild(bubble);
+    activeBubble = bubble;
+    activeBubbleTimer = window.setTimeout(function () {
+      if (activeBubble === bubble) {
+        bubble.classList.add("is-fading");
+        window.setTimeout(function () {
+          if (activeBubble === bubble) {
+            bubble.remove();
+            activeBubble = null;
+          }
+        }, 320);
+      }
+    }, 3200);
+  }
+
+  function triggerEasterEgg(actor) {
+    if (!actor || !actor.data) return false;
+    var d = actor.data;
+    if (d.easterEgg === "campfire") {
+      var curPhase = root.getAttribute("data-phase") || "day";
+      var nextPhase = curPhase === "night" ? "day" : "night";
+      root.setAttribute("data-phase", nextPhase);
+      try {
+        sessionStorage.setItem("farm.phase", nextPhase);
+      } catch (e) {}
+      var msg = nextPhase === "night"
+        ? "添上一根松木，篝火暖洋洋的……夜幕降临，繁星点点 🔥"
+        : "晨光破晓，火堆渐渐隐去，农场在晨曦中苏醒 ☀️";
+      showSpeechBubble(actor, msg);
+      if (window.FARM_SOUND && window.FARM_SOUND.talk) window.FARM_SOUND.talk();
+      return true;
+    }
+    if (d.easterEgg === "chicken") {
+      actor.el.classList.remove("is-hopping");
+      void actor.el.offsetWidth;
+      actor.el.classList.add("is-hopping");
+      showSpeechBubble(actor, d.bubbleText || "咕咕？小鸡欢快地扑腾起小翅膀~ 🐣");
+      if (window.FARM_SOUND && window.FARM_SOUND.talk) window.FARM_SOUND.talk();
+      return true;
+    }
+    if (d.bubbleText) {
+      showSpeechBubble(actor, d.bubbleText);
+      if (window.FARM_SOUND && window.FARM_SOUND.talk) window.FARM_SOUND.talk();
+      return true;
+    }
+    return false;
+  }
+
+  function onKeyDown(event) {
+    var onControl = event.target && event.target.closest && event.target.closest("input, textarea, button, a");
+    if (!farmMode() || leaving || (window.FARM_GAMES && window.FARM_GAMES.isOpen())) return;
+    if (talking) {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        closeTalk();
+      } else if (event.key === "w" || event.key === "W" || event.key === "ArrowUp") {
         event.preventDefault();
         stepChoice(-1);
       } else if (event.key === "s" || event.key === "S" || event.key === "ArrowDown") {
@@ -619,6 +839,7 @@
       if (near) {
         event.preventDefault();
         if (!walking()) setWalking(true);
+        triggerEasterEgg(near);
         openTalk(near);
       }
     }
@@ -630,11 +851,13 @@
   }
 
   function onPoint(event) {
-    if (talking || leaving) return;
+    if (!farmMode() || leaving || (window.FARM_GAMES && window.FARM_GAMES.isOpen())) return;
+    if (talking) closeTalk();
     if (!walking()) setWalking(true);
     if (event.currentTarget !== hitArea) {
       var actor = actors[Number(event.currentTarget.getAttribute("data-actor"))];
       if (actor) {
+        triggerEasterEgg(actor);
         walkTo(actor);
         return;
       }
@@ -677,9 +900,61 @@
     if (COARSE) {
       // 触屏没有 W/S 和回车可说，提示换成点法的。
       var h0 = document.querySelector(".walk-hint");
-      if (h0) h0.textContent = "点地面走走，走近了点一下搭话。";
+      if (h0) h0.textContent = "点地面或带名牌的地方走过去搭话。";
     }
     rememberGreeting();
+    var initChoices = document.querySelector(".dialogue .choices");
+    if (initChoices && !initChoices.querySelector("[data-roam-btn]")) {
+      initChoices.appendChild(makeRoamButton());
+      initChoices.appendChild(makeLandingButton());
+    }
+    Array.prototype.forEach.call(document.querySelectorAll("[data-enter-farm]"), function (btn) {
+      btn.addEventListener("click", function () {
+        setHomeMode("farm", true);
+      });
+    });
+    Array.prototype.forEach.call(document.querySelectorAll("[data-open-game]"), function (btn) {
+      btn.addEventListener("click", function () {
+        var g = btn.getAttribute("data-open-game");
+        if (g && window.FARM_GAMES && window.FARM_GAMES.open) {
+          window.FARM_GAMES.open(g);
+        }
+      });
+    });
+
+    var fxLayer = document.querySelector("[data-title-fx]");
+    function spawnCritters(icons, event) {
+      if (!fxLayer) return;
+      if (window.FARM_SOUND) window.FARM_SOUND.talk();
+      var x0 = event && event.clientX ? event.clientX : window.innerWidth * 0.5;
+      var y0 = event && event.clientY ? event.clientY : window.innerHeight * 0.24;
+      for (var i = 0; i < 4; i++) {
+        (function (idx) {
+          var el = document.createElement("span");
+          el.className = "title-critter";
+          el.textContent = icons[idx % icons.length];
+          el.style.left = x0 + (idx - 1.5) * 18 + "px";
+          el.style.top = y0 + "px";
+          var dir = idx % 2 === 0 ? 1 : -1;
+          el.style.setProperty("--dx", dir * (110 + idx * 55) + "px");
+          el.style.setProperty("--dy", -(90 + idx * 42) + "px");
+          fxLayer.appendChild(el);
+          window.setTimeout(function () {
+            if (el.parentNode) el.parentNode.removeChild(el);
+          }, 4300);
+        })(i);
+      }
+    }
+    Array.prototype.forEach.call(document.querySelectorAll("[data-title-leaf]"), function (leaf) {
+      leaf.addEventListener("click", function (ev) {
+        spawnCritters(["🍃", "🐦", "🌱", "🍃"], ev);
+      });
+    });
+    Array.prototype.forEach.call(document.querySelectorAll("[data-title-nail]"), function (nail) {
+      nail.addEventListener("click", function (ev) {
+        spawnCritters(["🦋", "✨", "🦋", "🌼"], ev);
+      });
+    });
 
     layer = document.createElement("div");
     layer.className = "roam";
@@ -693,7 +968,12 @@
     actors = [];
     NPCS.concat([BOARD], SCENES).forEach(function (d, i) {
       var el = document.createElement("div");
-      el.className = d.face >= 0 ? "actor actor-npc" : "actor actor-fixture";
+      var cls = d.face >= 0 ? "actor actor-npc" : "actor actor-fixture";
+      if (d.game && d.face < 0) cls += " actor-game";
+      if ((d.w || 1) >= 4) cls += " actor-zone";
+      if (d.lowTag) cls += " actor-low";
+      if (d.easterEgg) cls += " actor-" + d.easterEgg;
+      el.className = cls;
       el.setAttribute("data-actor", String(i));
       el.style.left = "calc(" + d.col * TILE + " * var(--wpx))";
       el.style.top = "calc(" + (d.row * TILE - 1) + " * var(--wpx))";
@@ -701,7 +981,7 @@
       el.style.height = "calc(" + 16 * (d.h || 1) + " * var(--wpx))";
       el.style.zIndex = d.row * TILE + 15;
       if (d.face >= 0) el.style.backgroundPosition = "calc(" + -16 * d.face + " * var(--wpx)) 0";
-      else el.style.pointerEvents = "auto"; // 告示牌没有图，留个能点的热区
+      else el.style.pointerEvents = "auto";
       var bubble = document.createElement("span");
       bubble.className = "bubble";
       bubble.textContent = "！";
@@ -709,7 +989,8 @@
       el.appendChild(bubble);
       var tag = document.createElement("span");
       tag.className = "nametag";
-      tag.textContent = d.name;
+      tag.textContent = d.badge || d.name;
+      tag.style.animationDelay = (i * -0.27).toFixed(2) + "s";
       el.appendChild(tag);
       map.appendChild(el);
       el.addEventListener("pointerdown", onPoint);
@@ -743,7 +1024,15 @@
       });
     }
 
+    var savedMode = "landing";
+    try {
+      if (window.localStorage && window.localStorage.getItem(HOME_MODE_KEY) === "farm") {
+        savedMode = "farm";
+      }
+    } catch (error) {}
     restore();
+    if (walking()) savedMode = "farm";
+    setHomeMode(savedMode, false);
     cam.set = false;
     frame.last = 0;
     // 上一帧写过的值：换页重建过元素，得从头写一遍。

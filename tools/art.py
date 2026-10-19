@@ -602,167 +602,110 @@ ICONS = {
         ".onnnnnnno.",
         "..ooooooo..",
     ],
+    # 街机：谷仓边的木壳游戏机，搭话时肖像框里用
+    "icon-arcade": [
+        ".ooooooooo.",
+        "oTTTTTTTTTo",
+        "oTyyyyyyyTo",
+        "oTossbssoTo",
+        "oTosbbBsoTo",
+        "oTosBbbsoTo",
+        "oToooooooTo",
+        "oTtrtytTtTo",
+        "oTtttttttTo",
+        "okkkkkkkkko",
+        ".ooooooooo.",
+    ],
 }
 
 
 # ---------------------------------------------------------------- 肖像
 
-# 48×48 的头肩像，原创人物，不临摹任何角色。先铺色块，再补五官和阴影，最后自动描外轮廓。
+# 48×48 的星露谷对话风格头肩像：暖调分色轮廓（Sel-Out）、蓬松层次感短发、带高光的温和眼神、利落翻领工装外套。
 PORTRAIT_PAL = {
-    "o": "#2a1a1c",  # 轮廓
-    "k": "#24171a",  # 头发最暗
-    "h": "#3d2722",  # 头发
-    "H": "#5e3d31",  # 头发受光
-    "G": "#82573f",  # 头发高光
-    "f": "#f2bf98",  # 皮肤
-    "F": "#fcd8b8",  # 皮肤受光
-    "c": "#d9987a",  # 皮肤阴影
-    "C": "#b8765e",  # 深阴影
-    "w": "#fbf6ef",  # 眼白
-    "e": "#2c2224",  # 瞳孔
-    "E": "#5b4038",  # 虹膜受光
-    "b": "#2b1b1a",  # 眉毛
-    "m": "#a65a50",  # 嘴
-    "j": "#2f4a63",  # 外套
-    "J": "#4c6d8b",  # 外套受光
-    "d": "#1f3146",  # 外套暗部
-    "s": "#f4f1ea",  # T 恤
-    "S": "#cfc8bc",  # T 恤阴影
+    "o": "#261412",  # 深暖褐外轮廓（发丝/重结构）
+    "O": "#592c1d",  # 肤色暖棕外轮廓（脸颊/下颌/耳朵，避免死黑）
+    "u": "#1b2a3d",  # 外套深藏青外轮廓
+    "k": "#261412",  # 头发最暗（发缝/底影）
+    "h": "#3b211d",  # 头发主色（深栗棕）
+    "H": "#59332a",  # 头发受光（暖栗色）
+    "G": "#7d4b3b",  # 头发高光（焦糖棕）
+    "L": "#9e654e",  # 头发亮泽点缀
+    "f": "#fad1ae",  # 皮肤主色（暖杏色）
+    "F": "#ffe3c8",  # 皮肤高光（额头/鼻梁/颧骨）
+    "p": "#f0a88b",  # 面部暖色红晕（脸颊微醺感）
+    "c": "#e0a482",  # 皮肤柔和阴影（刘海下/侧脸/鼻底）
+    "C": "#bf7e60",  # 皮肤深阴影（下巴底/颈部投影/耳廓）
+    "W": "#ffffff",  # 眼神高光点
+    "w": "#fffaf2",  # 眼白
+    "e": "#261514",  # 瞳孔深部
+    "E": "#633a2c",  # 虹膜暖琥珀棕
+    "b": "#3b211d",  # 眉毛
+    "m": "#b86456",  # 嘴唇主色
+    "M": "#d48772",  # 嘴角柔和过渡
+    "j": "#32506d",  # 工装外套主色（灰蓝）
+    "J": "#4b7294",  # 外套受光面
+    "B": "#6892b5",  # 外套肩线/领口高光
+    "d": "#21364b",  # 外套暗部与衣褶
+    "s": "#f7f1e3",  # 内搭暖白针织衫
+    "S": "#dfd3be",  # 内搭阴影与领口罗纹
+    "y": "#e5a94c",  # 外套黄铜小纽扣
 }
 
 
 def portrait():
-    n = 48
-    g = [["."] * n for _ in range(n)]
-
-    def span(y, x0, x1, ch):
-        for x in range(x0, x1 + 1):
-            g[y][x] = ch
-
-    def dot(x, y, ch):
-        g[y][x] = ch
-
-    def line(x0, y0, length, slope, ch, only="hHk"):
-        for k in range(length):
-            x, y = x0 + k, y0 - round(k * slope)
-            if 0 <= y < n and g[y][x] in only:
-                g[y][x] = ch
-
-    # 外套和肩膀
-    for y in range(38, n):
-        x0 = {38: 13, 39: 9, 40: 7, 41: 5, 42: 4}.get(y, 3)
-        span(y, x0, n - 1 - x0, "j")
-    for y, (a, b) in {39: (10, 15), 40: (8, 12), 41: (6, 9), 42: (5, 7)}.items():
-        span(y, a, b, "J")
-        span(y, n - 1 - b, n - 1 - a, "J")
-    for y in range(43, n):
-        dot(4, y, "J"), dot(n - 5, y, "d"), dot(n - 6, y, "d")
-    # 立起来的领子和敞开的门襟，里面白 T 恤
-    for y in range(36, n):
-        k = y - 36
-        left, right = 20 - k // 2, 27 + k // 2
-        span(y, left, right, "s")
-        dot(left - 1, y, "d"), dot(right + 1, y, "d")
-        if y >= 40:
-            dot(left, y, "S"), dot(right, y, "S")
-    for y, (a, b) in {35: (17, 19), 36: (16, 18), 37: (15, 17)}.items():
-        span(y, a, b, "J")
-        span(y, n - 1 - b, n - 1 - a, "j")
-    span(36, 21, 26, "S")
-    # 脖子
-    for y in range(31, 37):
-        span(y, 21, 26, "f")
-    for y in range(31, 35):
-        span(y, 21, 26, "c")
-    for y in range(31, 37):
-        dot(26, y, "c")
-    # 脸：额头宽，下颌收成一个方一点的下巴
-    face = {9: (17, 30), 10: (15, 32), 24: (15, 32), 25: (15, 32), 26: (15, 32), 27: (16, 31),
-            28: (16, 31), 29: (17, 30), 30: (18, 29), 31: (19, 28), 32: (20, 27), 33: (21, 26)}
-    for y in range(9, 34):
-        a, b = face.get(y, (14, 33))
-        span(y, a, b, "f")
-    # 耳朵
-    for y in range(18, 25):
-        dot(12, y, "f"), dot(13, y, "c"), dot(35, y, "f"), dot(34, y, "c")
-    for x in (12, 35):
-        dot(x, 18, "."), dot(x, 24, ".")
-    # 光从左上来：右侧脸颊和下颌压暗，左侧下颌一条细阴影
-    for y in range(12, 34):
-        a, b = face.get(y, (14, 33))
-        dot(b, y, "c")
-        if 19 <= y <= 31:
-            dot(b - 1, y, "c")
-        if y >= 27:
-            dot(a, y, "c")
-    for y in range(12, 15):
-        dot(16, y, "F")
-    dot(23, 21, "F"), dot(23, 22, "F")
-    span(31, 22, 25, "f"), span(32, 22, 25, "c"), span(33, 22, 25, "C")
-    # 头发：左侧分缝，往右上梳起，两侧推短
-    hair = {0: (26, 30), 1: (21, 32), 2: (18, 33), 3: (16, 34), 4: (15, 35), 5: (14, 35), 6: (13, 35),
-            7: (12, 35), 8: (12, 35), 9: (12, 35), 10: (12, 35), 11: (12, 35)}
-    for y, (a, b) in hair.items():
-        span(y, a, b, "h")
-    dot(23, 0, "h"), dot(33, 0, "h"), dot(34, 1, "h"), dot(36, 4, "h"), dot(36, 5, "h")
-    span(12, 12, 14, "h"), span(12, 22, 35, "h")
-    span(13, 12, 14, "h"), span(13, 26, 35, "h")
-    span(14, 12, 13, "h"), span(14, 29, 34, "h")
-    span(15, 12, 13, "h"), span(15, 31, 34, "h")
-    for y in range(16, 18):
-        span(y, 12, 13, "k"), span(y, 33, 34, "k")
-    for y in range(10, 16):
-        dot(12, y, "k"), dot(35, y, "k")
-        if y > 12:
-            dot(13, y, "k"), dot(34, y, "k")
-    # 分缝
-    for y in range(4, 12):
-        dot(17, y, "k")
-    # 发丝：亮线和暗缝都朝右上斜
-    for x0, y0, length in ((18, 9, 9), (21, 11, 10), (25, 12, 9), (29, 13, 6), (14, 7, 3)):
-        line(x0, y0, length, 0.5, "H")
-    for x0, y0, length in ((19, 11, 7), (23, 12, 8), (27, 13, 7)):
-        line(x0, y0, length, 0.5, "k")
-    for x, y in ((22, 2), (23, 2), (24, 1), (25, 1), (20, 3), (21, 3), (27, 1), (28, 1), (29, 2),
-                 (16, 5), (17, 4), (31, 3), (32, 3), (26, 0), (27, 0)):
-        g[y][x] = "G"
-    line(14, 9, 6, 0.6, "H")
-    line(30, 8, 5, 0.8, "H")
-    # 刘海压在额头上的阴影
-    for y in range(9, 18):
-        for x in range(14, 34):
-            if g[y][x] == "f" and g[y - 1][x] in "hHkG":
-                g[y][x] = "c"
-    # 眉毛：粗、平，眉头略压
-    span(16, 16, 21, "b"), span(16, 26, 31, "b")
-    dot(21, 17, "b"), dot(26, 17, "b")
-    # 眼睛
-    span(18, 17, 21, "o"), span(18, 26, 30, "o")
-    for x, ch in zip(range(17, 22), "weewc"):
-        dot(x, 19, ch)
-    for x, ch in zip(range(26, 31), "cweew"):
-        dot(x, 19, ch)
-    dot(18, 20, "E"), dot(19, 20, "e"), dot(28, 20, "E"), dot(29, 20, "e")
-    dot(17, 20, "c"), dot(20, 20, "c"), dot(27, 20, "c"), dot(30, 20, "c")
-    # 鼻子：右侧一道影，鼻底一横
-    for y in range(20, 25):
-        dot(25, y, "c")
-    span(25, 23, 25, "c"), dot(24, 25, "C")
-    # 嘴：抿着，右边嘴角往上一点
-    span(28, 21, 25, "m"), dot(26, 27, "m"), span(29, 22, 24, "c")
-
-    # 外轮廓：透明格只要挨着实心格就描一圈
-    out = [row[:] for row in g]
-    for y in range(n):
-        for x in range(n):
-            if g[y][x] != ".":
-                continue
-            for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
-                xx, yy = x + dx, y + dy
-                if 0 <= xx < n and 0 <= yy < n and g[yy][xx] != ".":
-                    out[y][x] = "o"
-                    break
-    return sprite(["".join(r) for r in out], PORTRAIT_PAL)
+    rows = [
+        # 012345678901234567890123456789012345678901234567
+        "................................................",  # 0
+        ".................oooooooooooooo.................",  # 1
+        "..............ooohHHHHHHHHHHHHhooo..............",  # 2
+        "............oohHHHGGGGGGGGGGGGHHhhoo............",  # 3
+        "...........ohHHGGGLLLLLLLLGGGGHHHHhho...........",  # 4
+        "..........ohHGGLLLLGGGGGGGkHHHHHHHHhho..........",  # 5
+        ".........ohHGGLGGGGHHHHHkkhHHHHHHHHHhho.........",  # 6
+        ".........ohHGGGHHHHHHkkhhhHHHGGGGHHHHho.........",  # 7
+        "........ohHGGHHHHHkkhhhhhHHGGGGGGGHHHHho........",  # 8
+        "........ohHGHHHHkkhhhhhhHHGGGGGGHHHHHhho........",  # 9
+        "........ohHHHHkkhhhhhkhHHGGGHHHHGGHHHhko........",  # 10
+        "........ohHHHkhccchhhkkhHHGGHHHGGGHHHhko........",  # 11
+        "........ohHHkhFfffchhkkhHccchHHGGHHHhhko........",  # 12
+        "........ohHkhFFffffchhkcfFffchHHHHHhhhko........",  # 13
+        "........ohkkfFFFffffckcfFffffchHHHhhhhko........",  # 14
+        ".........ohkfFFfbbbbbcfffffcbbbbbchHhhko........",  # 15
+        ".........ohkcfFbbfffffffffffffffbbchhkko........",  # 16
+        ".........ohkcfFfbooobfffffffbooobfchhkko........",  # 17
+        "........OOokhcffweWewffFffffweWewffchkhoOO......",  # 18
+        "........OFckhcfFweEEwffFffffweEEwffchkhcFO......",  # 19
+        "........OfCkkcfFfffffffFffffffffffchkkCfO.......",  # 20
+        "........OfccOcffppfffffFffffffffppfcOccfO.......",  # 21
+        ".........OOOcffffffffffFffffffffffffcOOO........",  # 22
+        "...........OOcfffffffffFfffffffffffcOO..........",  # 23
+        "...........OOcfffffffffcCffffffffffcOO..........",  # 24
+        "............OcffffffffffffffffffffccO...........",  # 25
+        "............OcfffffffffffffMffffffccO...........",  # 26
+        ".............OcffffffmmmmmcffffffccO............",  # 27
+        ".............OOcffffffffffffffffccOO............",  # 28
+        "..............OOcfffffffccfffffccOO.............",  # 29
+        "...............OOccfffffffffffccOO..............",  # 30
+        ".................OOcccccccccccOO................",  # 31
+        "..................OOccCCCCCccOO.................",  # 32
+        ".................uJjccCCCCCccjJu................",  # 33
+        "...............uuBJJJcccccccJJBuu...............",  # 34
+        ".............uuBBJJJJJfffffJJJJBBuu.............",  # 35
+        "...........uuBBJJJJJJdsSSSsdJJJJJBBuu...........",  # 36
+        ".........uuBBBJJJJJJdsSSSSSsdJJJJJJBBuu.........",  # 37
+        "........uBBJJJJJJJJdssssssssdJJJJJJJJBBu........",  # 38
+        ".......uBBJJJJJJJJdssssssssssdJJJJJJJJJBu.......",  # 39
+        "......uBJJJJJJJJdddssssssssssdddJJJJJJJJBu......",  # 40
+        ".....uBJJJJJJJJJjjjdssssssssdjjjJJJJJJJJJBu.....",  # 41
+        "....uBJJJJJJJJJjjjjdssssssssdjjjjJJJJJJJJJBu....",  # 42
+        "....uJJJJJJJJdjjjjjdssssssssdjjjjjdjJJJJJJJu....",  # 43
+        "...uJJJJJJJJdjjjjjjdssssssssdjjjyjjdjJJJJJJJu...",  # 44
+        "...uJJJJJJJJdjjjjjjdssssssssdjjjjjjdjJJJJJJJu...",  # 45
+        "...uJJJJJJJdjjjjjjjdSSSSSSSSdjjjjjjjdJJJJJJJu...",  # 46
+        "...uuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuu...",  # 47
+    ]
+    return sprite(rows, PORTRAIT_PAL)
 
 
 # ---------------------------------------------------------------- 小人
@@ -1181,6 +1124,31 @@ def board_sign():
             "k": "#7c3611",
             "d": "#6e3b1b",
         },
+    )
+
+
+def arcade_cabinet():
+    # 谷仓边的复古木壳街机，亮着蓝屏和红摇杆。
+    return sprite(
+        [
+            "..oooooooooooo..",
+            ".oTTTTTTTTTTTTo.",
+            ".oTyyyyyyyyyyTo.",
+            ".oTooooooooooTo.",
+            ".oTosssssbssoTo.",
+            ".oTosbbBBbbsoTo.",
+            ".oTosbByyBbsoTo.",
+            ".oTosbbbbbbsoTo.",
+            ".oTooooooooooTo.",
+            ".oTttrtyytttTTo.",
+            ".oTttttttttttTo.",
+            "..oTTTTTTTTTTo..",
+            "..okkkkkkkkkko..",
+            "..okko....okko..",
+            "..ooo......ooo..",
+            "................",
+        ],
+        ICON_PAL,
     )
 
 
@@ -1663,6 +1631,8 @@ def build(season):
     )
     farm.put(barn, bc * T, br * T, "roof")
     farm.take(bc, br, 3, 6)
+    farm.put(arcade_cabinet(), (bc - 1) * T, (br + 5) * T)
+    farm.take(bc - 1, br + 5, 1, 1)
 
     # 谷仓旁的围栏和牲口。冬天牲口在棚里。
     def fence(c0, r0, w, h, gate=None):

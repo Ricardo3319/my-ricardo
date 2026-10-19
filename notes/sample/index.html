@@ -3,11 +3,18 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>版式样张 · Ricardo</title>
-  <meta name="description" content="笔记正文的版式样张，不是一篇文章。">
-  <meta property="og:title" content="版式样张 · Ricardo">
-  <meta property="og:description" content="笔记正文的版式样张，不是一篇文章。">
-  <meta property="og:type" content="website">
+  <title>Canvas 打造像素农场 · Ricardo</title>
+  <meta name="description" content="零第三方游戏引擎依赖，用纯原生 Canvas、时间微分游戏循环、Y-sorting 深度遮挡与亚像素超采样打造可交互像素农场。">
+  <link rel="canonical" href="https://www.my-ricardo.com/notes/sample/">
+  <meta property="og:title" content="Canvas 打造像素农场 · Ricardo">
+  <meta property="og:description" content="零第三方游戏引擎依赖，用纯原生 Canvas、时间微分游戏循环、Y-sorting 深度遮挡与亚像素超采样打造可交互像素农场。">
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://www.my-ricardo.com/notes/sample/">
+  <meta property="og:image" content="https://www.my-ricardo.com/img/farm-spring.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Canvas 打造像素农场 · Ricardo">
+  <meta name="twitter:description" content="零第三方游戏引擎依赖，用纯原生 Canvas、时间微分游戏循环、Y-sorting 深度遮挡与亚像素超采样打造可交互像素农场。">
+  <meta name="twitter:image" content="https://www.my-ricardo.com/img/farm-spring.png">
   <script>
     (function () {
       var d = document.documentElement, now = new Date(), h = now.getHours();
@@ -54,25 +61,55 @@
     <main class="panel letter" id="content">
       <a class="close" href="../../" aria-label="关上，回农场"></a>
       <a class="back" href="../">← 回笔记</a>
-      <h1>版式样张</h1>
-      <p class="meta">样张 · 不是文章</p>
+      <h1>Canvas 打造像素农场</h1>
+      <p class="meta">2026-10-15 · 游戏循环、深度遮挡、碰撞网格与亚像素超采样</p>
       <div class="prose">
-        <p>这一页只用来定笔记正文的版式。它不是一篇笔记。</p>
-        <p>标题、日期和正文都用同一种像素字。段落之间空一行，一行不超过一张信纸宽。</p>
-        <h2>小标题</h2>
-        <p>文章需要分段时，小标题这样写，下面一道细线。</p>
+        <p>很多开发者在打算为个人网站添加可玩性时，第一反应往往是接入 Phaser、Pixi.js 或者打包一份 WebAssembly 版的 Godot 导出包。但对于个人主页而言，现成重型游戏引擎动辄引入几百 KB 乃至数 MB 的运行时脚本，不仅彻底破坏了首屏秒开体验，更让游戏画布与常规 HTML 文档、无刷新路由（View Transitions）之间的嵌套变得异常生硬。在搭建这座赛博木屋时，我选择用现代浏览器原生 Web API 与几百行轻量脚本，实现了一整套丝滑且具备工业级质感的 2.5D 俯视像素漫游系统。</p>
+
+        <h2>一、60FPS 游戏循环与状态变化差量缓存</h2>
+        <p>在浏览器主线程上运行游戏循环最忌讳两件事：帧率随显示器刷新率波动而导致物理移动忽快忽慢，以及每帧频繁读写 DOM 引发布局抖动（Layout Thrashing）：</p>
         <ul>
-          <li>列表一条一行。</li>
-          <li>不加图标，不加颜色。</li>
+          <li><strong>时间微分（Delta Time）平滑驱动</strong>：基于 <code>requestAnimationFrame(frame)</code> 获取高精度时间戳，通过 <code>dt = Math.min(0.05, (now - last) / 1000)</code> 将角色的位移量完全绑定在物理时间（每秒走 84 个像素点），无论在 60Hz 办公显示器还是 120Hz 高刷手机屏上，人物步行速度始终严格一致。</li>
+          <li><strong>GPU 合成层位移解耦</strong>：小人的世界坐标计算采用浮点数亚像素累加，但在写回 DOM 时使用 <code>translate3d(calc(X * var(--wpx)), calc(Y * var(--wpx)), 0)</code>，全程在独立合成层运行，不触发布局重排（Reflow）。</li>
+          <li><strong>前一帧缓存比对（Frame Cache Bypass）</strong>：引擎在每帧写样式前比对 <code>frame.cx / frame.cy / frame.sx / frame.sy</code>，当小人站立不动时直接跳过样式写入，让闲置静止时的 CPU 与电池开销降至极限。</li>
         </ul>
-        <p>以后的文章照这一页的结构：回链、标题、日期、正文。</p>
+
+        <h2>二、56×32 地图坐标系与 Y-sorting 深度遮挡</h2>
+        <p>在 2.5D 俯视角斜 45 度场景中，最核心的视觉难题是「前后深度遮挡」：当角色从农舍、大树或 NPC 身后走过时必须被树冠遮住；走到底部前方时又必须挡住树干根部：</p>
+        <ul>
+          <li><strong>传统方案的缺陷</strong>：如果在 JS 内部对几十个物体执行数组插入重排或重绘，算法开销会随着同屏物体数增加；而直接分三层图层又无法处理小人与同高度 NPC 之间的自由穿梭。</li>
+          <li><strong>CSS 层叠上下文零成本排序</strong>：我们将每个静态场景物体（大门、谷仓、水桶、村民）的脚底网格行坐标直接映射为其 CSS 样式 <code>z-index = row * TILE + 15</code>；而角色在行走循环中将自身当前的实际像素高度 <code>pos.y</code> 同步赋给自身的 <code>z-index</code>。浏览器排版引擎会自动利用硬件深度缓冲区实现像素级的绝对正确遮挡，零额外算法开销。</li>
+        </ul>
+
+        <h2>三、紧凑位图碰撞检测与直角拐弯寻路</h2>
+        <p>为了让地图可通行区域检测高效且易于维护，整座 56×32 农场的碰撞数据并没有采用臃肿的 JSON 矩阵：</p>
+        <ul>
+          <li><strong>位压缩十六进制编码（js/world-data.js）</strong>：每一行 56 个格子直接压缩为 14 个十六进制字符（每 bit 代表该格是否实心），四季全套碰撞图仅占用 2KB 大小，由 Python 脚本在生成四季底图时同步导出。</li>
+          <li><strong>四点脚底包围盒（AABB Footprint）</strong>：角色采用长宽 8×4 像素的微型脚底盒子检测四角网格碰撞，避免将整个 16×16 的身体判定为实体，从而让小人能自然贴合栅栏与路边树丛行走，毫无卡顿生硬感。</li>
+          <li><strong>触控路径正交饱和</strong>：点按地面或长按屏幕寻路时，导航模块对目标向量进行轴向饱和分解（<code>dx = wx &gt; 1 ? 1 : wx &lt; -1 ? -1 : wx</code>），呈现复古 RPG 经典的利落拐弯手感。</li>
+        </ul>
+
+        <h2>四、4× 超采样亚像素渲染与互动小程序</h2>
+        <p>像素美术如果直接在视口缩放拉伸，在 Retina 屏上常出现严重的边缘抖动（Jittering）与非整数倍拉伸造成的像素变形。为此站内搭载了专门的超采样渲染管线：</p>
+        <ul>
+          <li><strong>960×576 高清离屏缓冲区</strong>：在「池塘垂钓」「矿车历险」「古井抽签」等互动玩法中，内部均基于 4 倍超采样画布运行物理仿真，实现弹簧阻尼控鱼、多段视差洞穴背景与精准抛物线跳跃。</li>
+          <li><strong>与工作台的系统级联动</strong>：在农田番茄钟完成专注计时后，收获的数据会直接无缝同步至「随身告示牌」，自动为待办条目打上番茄专注标记（🍅×N）。</li>
+        </ul>
+
+        <h2>五、总结：轻量原生系统的生命力</h2>
+        <p>通过用现代纯原生 Web API 重构游戏漫游机制，我们不仅获得了毫无打包依赖的清洁代码库，更让个人网站在兼顾浓郁田园游戏氛围的同时，保有了现代无障碍访问（a11y）、搜索引擎收录与极速响应的纯粹魅力。</p>
       </div>
+      <p class="actions">
+        <a class="btn" href="../rpc-scheduling/">阅读：微秒级任务调度</a>
+        <a class="btn" href="../../">返回农场走走 →</a>
+      </p>
+      <p class="sign">——Ricardo</p>
     </main>
   </div>
 
   <footer class="credit">
-    <p>视觉受田园生活模拟游戏启发，非官方，与 ConcernedApe 无关。</p>
     <p><a href="../../">农场</a><a href="../../board/">告示牌</a><a href="../../log/">日常</a><a href="../">笔记</a><a href="../../about/">关于</a></p>
+    <p>视觉受田园生活模拟游戏启发，非官方，与 ConcernedApe 无关。</p>
   </footer>
   <script src="../../js/nav.js"></script>
   <script src="../../js/sound.js"></script>

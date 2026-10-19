@@ -4,11 +4,18 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>告示牌 · Ricardo</title>
-  <meta name="description" content="Ricardo 自己记截止日期的告示牌。">
+  <meta name="description" content="Ricardo 的个人工作台与随身告示牌：支持自然语言日期解析待办、跨设备剪贴板暂存与云端双向同步。">
   <meta name="robots" content="noindex">
+  <link rel="canonical" href="https://www.my-ricardo.com/board/">
   <meta property="og:title" content="告示牌 · Ricardo">
-  <meta property="og:description" content="Ricardo 自己记截止日期的告示牌。">
+  <meta property="og:description" content="Ricardo 的个人工作台与随身告示牌：支持自然语言日期解析待办、跨设备剪贴板暂存与云端双向同步。">
   <meta property="og:type" content="website">
+  <meta property="og:url" content="https://www.my-ricardo.com/board/">
+  <meta property="og:image" content="https://www.my-ricardo.com/img/farm-spring.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="告示牌 · Ricardo">
+  <meta name="twitter:description" content="Ricardo 的个人工作台与随身告示牌：支持自然语言日期解析待办、跨设备剪贴板暂存与云端双向同步。">
+  <meta name="twitter:image" content="https://www.my-ricardo.com/img/farm-spring.png">
   <script>
     (function () {
       var d = document.documentElement, now = new Date(), h = now.getHours();
@@ -54,20 +61,34 @@
     </nav>
     <main class="panel board" id="content">
       <a class="close" href="../" aria-label="关上，回农场"></a>
-      <div class="page-head">
-        <h1>告示牌</h1>
-        <p class="stamp" role="status" data-sync>只存在这台设备</p>
+      <div class="page-head board-head">
+        <div class="board-head-main">
+          <h1>告示牌</h1>
+          <p class="stamp" role="status" data-sync>只存在这台设备</p>
+        </div>
+        <div class="board-head-tools">
+          <label class="board-check board-auto-open" for="board-auto-open" title="开启后，下次从浏览器访问首页时将直接展开此告示牌">
+            <input type="checkbox" id="board-auto-open">
+            <span>下次打开直达告示牌</span>
+          </label>
+        </div>
       </div>
-      <label class="board-check board-auto-open" for="board-auto-open"><input type="checkbox" id="board-auto-open"> 下次打开直达告示牌</label>
 
       <noscript><p class="sheet">告示牌要开脚本才能用。</p></noscript>
 
       <section class="sheet scratchpad" aria-labelledby="scratchpad-title">
-        <h2 id="scratchpad-title">📌 随手暂存贴（跨设备剪贴板）</h2>
-        <textarea class="field" id="scratchpad-input" rows="3" placeholder="在这里随手粘贴需要跨手机/电脑传递的链接、命令、代码片段或灵感..."></textarea>
+        <div class="page-head">
+          <h2 id="scratchpad-title">📌 随手暂存贴（跨设备剪贴板）</h2>
+          <p class="stamp" id="scratchpad-note">🔒 访客本地存储（未登录口令不公开）· Ctrl+S</p>
+        </div>
+        <textarea class="field" id="scratchpad-input" rows="3" placeholder="在这里随手粘贴需要跨手机/电脑传递的文字、链接、代码片段或灵感（仅保存在当前设备浏览器；登录主人口令可云端双向同步）..."></textarea>
+        <div class="scratchpad-history" id="scratchpad-history" hidden></div>
         <p class="scratchpad-actions">
-          <button class="btn" type="button" id="scratchpad-copy-btn">一键复制</button>
-          <button class="btn" type="button" id="scratchpad-save-btn">保存暂存</button>
+          <span class="scratchpad-tip">※ 仅当前浏览器本地可见，不会同步到全站</span>
+          <span class="scratchpad-btns">
+            <button class="btn" type="button" id="scratchpad-copy-btn">一键复制</button>
+            <button class="btn" type="button" id="scratchpad-save-btn">保存暂存</button>
+          </span>
         </p>
       </section>
 
@@ -144,8 +165,8 @@
   <p class="toast" role="status" data-toast hidden><span data-toast-text></span><button type="button" data-toast-undo>放回</button></p>
 
   <footer class="credit">
-    <p>视觉受田园生活模拟游戏启发，非官方，与 ConcernedApe 无关。</p>
     <p><a href="../">农场</a><a href="./">告示牌</a><a href="../log/">日常</a><a href="../notes/">笔记</a><a href="../about/">关于</a></p>
+    <p>视觉受田园生活模拟游戏启发，非官方，与 ConcernedApe 无关。</p>
   </footer>
   <script src="../js/nav.js"></script>
   <script src="../js/sound.js"></script>

@@ -440,12 +440,83 @@
     tone("triangle", 830, t + 0.07, 0.11, 0.06, ambienceBus, [0.005, 0.05, 0.5, 0.04]);
   }
 
+  function sfxCast() {
+    if (ctx.state !== "running") return;
+    var t = ctx.currentTime;
+    tone("sine", 540, t, 0.09, 0.07, ambienceBus, [0.005, 0.04, 0.4, 0.03]);
+    tone("sine", 240, t + 0.09, 0.14, 0.09, ambienceBus, [0.004, 0.06, 0.3, 0.05]);
+  }
+
+  function sfxBite() {
+    if (ctx.state !== "running") return;
+    var t = ctx.currentTime;
+    tone("square", 880, t, 0.07, 0.05, ambienceBus, [0.003, 0.03, 0.5, 0.02]);
+    tone("square", 1175, t + 0.08, 0.1, 0.06, ambienceBus, [0.003, 0.04, 0.5, 0.03]);
+  }
+
+  function sfxWin() {
+    if (ctx.state !== "running") return;
+    var t = ctx.currentTime;
+    var notes = [523.25, 659.25, 783.99, 1046.5];
+    for (var i = 0; i < notes.length; i += 1) {
+      tone("triangle", notes[i], t + i * 0.09, i === 3 ? 0.28 : 0.08, 0.09, ambienceBus, [0.005, 0.05, 0.6, 0.06]);
+    }
+  }
+
+  function sfxLose() {
+    if (ctx.state !== "running") return;
+    var t = ctx.currentTime;
+    tone("triangle", 330, t, 0.12, 0.07, ambienceBus, [0.005, 0.05, 0.5, 0.04]);
+    tone("triangle", 220, t + 0.13, 0.22, 0.07, ambienceBus, [0.005, 0.08, 0.4, 0.08]);
+  }
+
+  function sfxJump() {
+    if (ctx.state !== "running") return;
+    var t = ctx.currentTime;
+    var o = ctx.createOscillator();
+    var g = ctx.createGain();
+    o.type = "square";
+    o.frequency.setValueAtTime(220, t);
+    o.frequency.exponentialRampToValueAtTime(580, t + 0.11);
+    g.gain.setValueAtTime(0.045, t);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.13);
+    o.connect(g);
+    g.connect(ambienceBus);
+    o.start(t);
+    o.stop(t + 0.14);
+  }
+
+  function sfxCoin() {
+    if (ctx.state !== "running") return;
+    var t = ctx.currentTime;
+    tone("square", 987.77, t, 0.06, 0.045, ambienceBus, [0.003, 0.03, 0.5, 0.02]);
+    tone("square", 1318.5, t + 0.06, 0.14, 0.05, ambienceBus, [0.003, 0.06, 0.4, 0.04]);
+  }
+
   window.FARM_SOUND = {
     step: function () {
       if (settings.on && ctx) footstep();
     },
     talk: function () {
       if (settings.on && ctx) chatter();
+    },
+    cast: function () {
+      if (settings.on && ctx) sfxCast();
+    },
+    bite: function () {
+      if (settings.on && ctx) sfxBite();
+    },
+    win: function () {
+      if (settings.on && ctx) sfxWin();
+    },
+    lose: function () {
+      if (settings.on && ctx) sfxLose();
+    },
+    jump: function () {
+      if (settings.on && ctx) sfxJump();
+    },
+    coin: function () {
+      if (settings.on && ctx) sfxCoin();
     },
   };
 

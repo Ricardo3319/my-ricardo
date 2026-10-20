@@ -24,14 +24,14 @@
 
   // 场景点：画进世界图的东西，走近按空格搭一句；池塘、矿车街机、古井、菜地能打开像素小游戏与小程序。
   var SCENES = [
-    { name: "农舍大门", badge: "🚪 农舍", col: 24, row: 10, w: 1, h: 2, face: -1, icon: "img/item-crate.png", easterEgg: "door", bubbleText: "正在屋里跑 rpcsim 仿真实验，128 核纳秒调度中 🔬", line: "农舍木门关得严严实实，门前贴着便签：「正在屋里跑 rpcsim 仿真实验，纳秒计时中……」" },
+    { name: "农舍大门", badge: "🚪 农舍", col: 24, row: 10, w: 1, h: 2, face: -1, icon: "img/item-crate.png", easterEgg: "door", bubbleText: "正在屋里跑 rpcsim 仿真实验，128 核纳秒调度中 🔬", notePage: "notes/rpc-scheduling/", noteLabel: "微秒级任务调度研究笔记", line: "农舍木门关得严严实实，门前贴着便签：「正在屋里跑 rpcsim 仿真实验，纳秒计时中……」" },
     { name: "篝火", badge: "🔥 篝火", col: 28, row: 17, w: 1, h: 1, face: -1, easterEgg: "campfire", bubbleText: "篝火噼啪作响……（点击切换昼夜配色）", line: "石头围着一小堆柴火，火光暖烘烘的。点一下能切换白昼与夜间配色。" },
     { name: "小鸡", badge: "🐣 芦花小鸡", col: 37, row: 9, w: 2, h: 2, face: -1, icon: "img/item-hay.png", easterEgg: "chicken", bubbleText: "咕咕？小鸡歪着头啄了啄米粒，欢快地扑腾起小翅膀~ 🐣", line: "两只毛茸茸的芦花小鸡在圈里啄米，听见动静欢快地扑腾起小翅膀。" },
     { name: "信箱", badge: "信箱", lowTag: true, col: 23, row: 21, face: -1, icon: "img/icon-contact.png", tab: "笔记", page: "notes/", line: "信送到这儿，写出来的东西也收在这儿。" },
-    { name: "井", badge: "✦ 古井抽签", col: 20, row: 9, w: 1, h: 2, face: -1, icon: "img/item-bucket.png", game: "well", gameLabel: "摇动辘轳打水抽签（每日黄历）", gameTag: "小程序", line: "井水凉，打上来要慢一点。木桶里时常浮着竹签筒。" },
-    { name: "菜地", badge: "✦ 菜地番茄钟", col: 13, row: 14, w: 9, h: 6, face: -1, icon: "img/item-seeds.png", game: "crop", gameLabel: "播下种子（农田番茄钟）", gameTag: "小程序", line: "四垄黑土翻得松软，定下心来专注一阵，庄稼就能熟一茬。" },
-    { name: "矿车街机", badge: "✦ 矿车街机", col: 30, row: 10, w: 1, h: 1, face: -1, icon: "img/icon-arcade.png", game: "cart", gameLabel: "投币开局（矿车历险）", gameTag: "小游戏", line: "谷仓边立着一台复古木壳街机，屏幕还亮着。" },
-    { name: "池塘", badge: "✦ 池塘垂钓", col: 34, row: 13, w: 9, h: 5, face: -1, icon: "img/icon-pond.png", game: "fish", gameLabel: "抛竿垂钓", gameTag: "小游戏", line: "水面平的时候，能照见天。" },
+    { name: "井", badge: "✦ 古井抽签", col: 20, row: 9, w: 1, h: 2, face: -1, icon: "img/item-bucket.png", game: "well", gameLabel: "摇动辘轳打水抽签（每日黄历）", gameTag: "小程序", bubbleText: "✦ 古井在此！摇动辘轳即可打水抽今日签文 🪣", notePage: "notes/pixel-cabin/", noteLabel: "零依赖像素木屋架构笔记", line: "井水凉，打上来要慢一点。木桶里时常浮着竹签筒。" },
+    { name: "菜地", badge: "✦ 菜地番茄钟", col: 13, row: 14, w: 9, h: 6, face: -1, icon: "img/item-seeds.png", game: "crop", gameLabel: "播下种子（农田番茄钟）", gameTag: "小程序", bubbleText: "✦ 菜地在此！定个番茄钟专注生长庄稼 🍅", line: "四垄黑土翻得松软，定下心来专注一阵，庄稼就能熟一茬。" },
+    { name: "矿车街机", badge: "✦ 矿车街机", col: 30, row: 10, w: 1, h: 1, face: -1, icon: "img/icon-arcade.png", game: "cart", gameLabel: "投币开局（矿车历险）", gameTag: "小游戏", bubbleText: "✦ 矿车街机在此！投币即可进入洞穴历险 🕹️", line: "谷仓边立着一台复古木壳街机，屏幕还亮着。" },
+    { name: "池塘", badge: "✦ 池塘垂钓", col: 34, row: 13, w: 9, h: 5, face: -1, icon: "img/icon-pond.png", game: "fish", gameLabel: "抛竿垂钓", gameTag: "小游戏", bubbleText: "✦ 池塘在此！抛竿静候水波垂钓 🐟", notePage: "notes/sample/", noteLabel: "Canvas 打造像素农场复盘", line: "水面平的时候，能照见天。" },
     { name: "牲口", badge: "牲口棚", col: 36, row: 8, w: 5, h: 3, face: -1, icon: "img/item-hay.png", line: "牲口吃饱了就不理人，下雪天躲进棚里。" },
   ];
 
@@ -225,6 +225,15 @@
         window.FARM_GAMES.open(d.game);
       });
       options.push(play);
+    }
+    if (d.notePage) {
+      var note = document.createElement("a");
+      note.href = d.notePage;
+      note.textContent = "阅读：" + (d.noteLabel || "原理解析") + " →";
+      var nsmall = document.createElement("small");
+      nsmall.textContent = "原理解析";
+      note.appendChild(nsmall);
+      options.push(note);
     }
     var stay = document.createElement("button");
     stay.type = "button";
@@ -723,30 +732,6 @@
 
   var ARROWS = { ArrowLeft: "left", ArrowRight: "right", ArrowUp: "up", ArrowDown: "down", a: "left", d: "right", w: "up", s: "down" };
 
-  function onKeyDown(event) {
-    if (!layer || !farmMode() || leaving || (window.FARM_GAMES && window.FARM_GAMES.isOpen())) return;
-    var tag = event.target && event.target.tagName;
-    var onControl = tag === "A" || tag === "BUTTON" || tag === "INPUT" || tag === "SUMMARY";
-    if (talking) {
-      if (event.key === "Escape") {
-        event.preventDefault();
-        closeTalk();
-      } else if (event.key === "w" || event.key === "W" || event.key === "ArrowUp") {
-        // 对话里 W/S（和上下方向键）在选项间挪焦点，Enter/空格确认当前那条。
-        event.preventDefault();
-        stepChoice(-1);
-      } else if (event.key === "s" || event.key === "S" || event.key === "ArrowDown") {
-        event.preventDefault();
-        stepChoice(1);
-      } else if (event.key === " " && onControl) {
-        event.preventDefault();
-        event.target.click();
-      }
-      return;
-    }
-    var dir = ARROWS[event.key];
-    if (dir && !onControl) {
-      event.preventDefault();
   var activeBubble = null;
   var activeBubbleTimer = 0;
 
@@ -885,6 +870,70 @@
   function onHoldEnd(event) {
     if (held === null || event.pointerId !== held) return;
     held = null;
+  }
+
+  function getRequestedSpot() {
+    try {
+      var p = new URLSearchParams(window.location.search);
+      var spot = p.get("spot") || p.get("focus") || p.get("facility");
+      if (spot) return spot.toLowerCase().trim();
+    } catch (e) {}
+    if (window.location.hash) {
+      var h = window.location.hash.replace(/^#/, "").toLowerCase().trim();
+      if (h && !document.getElementById(h)) return h;
+    }
+    return null;
+  }
+
+  function findActorBySpot(spotKey) {
+    if (!spotKey) return null;
+    spotKey = String(spotKey).toLowerCase().trim();
+    var facilityMap = {
+      well: "井", "古井": "井", "井": "井",
+      pond: "池塘", fish: "池塘", "池塘": "池塘", "钓鱼": "池塘",
+      crop: "菜地", tomato: "菜地", "菜地": "菜地", "番茄": "菜地",
+      cart: "矿车街机", arcade: "矿车街机", "矿车": "矿车街机", "街机": "矿车街机",
+      door: "农舍大门", cabin: "农舍大门", house: "农舍大门", "农舍": "农舍大门", "大门": "农舍大门",
+      campfire: "篝火", fire: "篝火", "篝火": "篝火",
+      chicken: "小鸡", chick: "小鸡", "小鸡": "小鸡",
+      board: "告示牌", "告示牌": "告示牌"
+    };
+    if (facilityMap[spotKey]) {
+      var targetName = facilityMap[spotKey];
+      for (var f = 0; f < actors.length; f++) {
+        if (actors[f].data.name === targetName) return actors[f];
+      }
+    }
+    for (var i = 0; i < actors.length; i++) {
+      if (actors[i].data.name && actors[i].data.name.toLowerCase() === spotKey) return actors[i];
+    }
+    for (var k = 0; k < actors.length; k++) {
+      if (actors[k].data.easterEgg && actors[k].data.easterEgg.toLowerCase() === spotKey) return actors[k];
+    }
+    for (var j = 0; j < actors.length; j++) {
+      if (actors[j].data.game && actors[j].data.game.toLowerCase() === spotKey) return actors[j];
+    }
+    return null;
+  }
+
+  function focusSpot(spotKey, autoOpen) {
+    var actor = findActorBySpot(spotKey);
+    if (!actor) return false;
+    setHomeMode("farm", true);
+    setWalking(true);
+    var spot = standSpot(actor);
+    if (spot) {
+      pos.x = spot.x;
+      pos.y = spot.y;
+      pos.dir = actor.fy > pos.y ? 0 : actor.fy < pos.y ? 1 : actor.fx > pos.x ? 2 : 3;
+    }
+    cam.set = false;
+    save();
+    if (autoOpen !== false) {
+      triggerEasterEgg(actor);
+      openTalk(actor);
+    }
+    return true;
   }
 
   function mount() {
@@ -1033,6 +1082,10 @@
     restore();
     if (walking()) savedMode = "farm";
     setHomeMode(savedMode, false);
+    var spotParam = getRequestedSpot();
+    if (spotParam) {
+      focusSpot(spotParam, true);
+    }
     cam.set = false;
     frame.last = 0;
     // 上一帧写过的值：换页重建过元素，得从头写一遍。
@@ -1069,7 +1122,7 @@
     mount();
   }
 
-  window.FARM_WALK = { leave: leave };
+  window.FARM_WALK = { leave: leave, focus: focusSpot };
 
   // 窗口切走（换标签、切应用）时收不到 keyup：一律当松手，别回来发现小人自己走个不停。
   function release() {
@@ -1080,6 +1133,11 @@
   document.addEventListener("keydown", onKeyDown);
   document.addEventListener("keyup", onKeyUp);
   document.addEventListener("farm:page", page);
+  window.addEventListener("hashchange", function () {
+    if (!document.body.classList.contains("home")) return;
+    var spotParam = getRequestedSpot();
+    if (spotParam) focusSpot(spotParam, true);
+  });
   window.addEventListener("blur", release);
   document.addEventListener("visibilitychange", function () {
     if (document.hidden) release();

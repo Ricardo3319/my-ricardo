@@ -22,8 +22,10 @@
   }
 
   // 勾了「下次打开直达告示牌」且是整页打开首页时，跳到 /board/。站内从告示牌回农场不跳。
+  // 但若带了指定聚焦设施的参数（如 ?spot=well），则优先进入农场设施，不拦截。
   function autoBoard() {
     if (!document.body.classList.contains("home")) return;
+    if (/[?&](spot|focus|facility)=/.test(location.search) || /#(well|pond|fish|crop|cart|arcade|campfire|chicken|door)/.test(location.hash)) return;
     try {
       if (localStorage.getItem("ricardo_auto_board") !== "1") return;
       if (sessionStorage.getItem("farm.board") === "seen") return;
@@ -193,6 +195,16 @@
     if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
     var url = linkOf(event);
     if (!url) return;
+    // 如果已经在首页，且点击的是聚焦设施链接（?spot=... 或 #...）
+    if (document.body.classList.contains("home") && normPath(url.pathname) === normPath(location.pathname)) {
+      var spot = (url.searchParams && (url.searchParams.get("spot") || url.searchParams.get("focus") || url.searchParams.get("facility"))) || (url.hash && !document.getElementById(url.hash.slice(1)) ? url.hash.slice(1) : null);
+      if (spot && window.FARM_WALK && window.FARM_WALK.focus) {
+        event.preventDefault();
+        history.pushState({ y: 0 }, "", url.href);
+        window.FARM_WALK.focus(spot, true);
+        return;
+      }
+    }
     // 同一页里的锚点（作品页的项目、跳到内容）交给浏览器。
     if (key(url.href) === key(location.href)) {
       if (url.hash) return;

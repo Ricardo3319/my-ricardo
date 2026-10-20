@@ -86,7 +86,7 @@
         <ul>
           <li>无刷新导航（js/nav.js）：拦截站内链接并仅替换中央木框或信纸 DOM，结合浏览器原生 View Transitions API 实现平滑升降，底层四季农场画布与背景音乐全程不断流。</li>
           <li>实时音频合成（js/sound.js）：不加载外部 MP3，直接用 Web Audio API 的振荡器与滤波器实时合成五声音阶田园八音盒，并根据昼夜相位叠加白昼鸟鸣或夜晚虫鸣。</li>
-          <li>4× 超采样互动小程序（js/games.js）：在 960×576 内部画布上实现亚像素平滑运动的池塘垂钓、矿车历险、古井祈愿签与农田番茄钟，并将番茄钟收获直接关联到告示牌待办。</li>
+          <li>4× 超采样互动小程序（js/games.js）：在 960×576 内部画布上实现亚像素平滑运动的<a href="../../?spot=pond">池塘垂钓</a>、<a href="../../?spot=cart">矿车历险</a>、<a href="../../?spot=well">古井祈愿签</a>与<a href="../../?spot=crop">农田番茄钟</a>，并将番茄钟收获直接关联到告示牌待办。</li>
           <li>双通道同步告示牌（js/board.js 与 server/app.py）：后端仅用 Python 标准库 http.server 与 SQLite 即可通过 Docker 一键部署，支持中文自然语言解析截止时间（「周五 晚上8点」）、最近 5 条跨端剪贴板历史，且在纯静态托管时自动降级至 GitHub REST API 与本机存储。</li>
         </ul>
 
@@ -94,7 +94,8 @@
       </div>
       <p class="actions">
         <a class="btn" href="../../work/">查看作品箱</a>
-        <a class="btn" href="../../board/">去试试告示牌 →</a>
+        <a class="btn" href="../../board/">去试试告示牌</a>
+        <a class="btn" href="../../?spot=well">去农场实地体验 →</a>
       </p>
       <p class="sign">——Ricardo</p>
     </main>

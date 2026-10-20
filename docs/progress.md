@@ -60,3 +60,13 @@
   - 完善 `sitemap.xml`，补齐所有子路由与技术笔记；
   - 为全站所有 HTML 页面配置规范独立的 `<title>`、`<meta name="description">`、`<link rel="canonical">`、Open Graph 与 Twitter Card 社交分享卡片（以像素农场为高清封面）。
 
+## 2026-10-20 里程碑 V5：设施笔记双向跳转与科研复现闭环
+- [x] **Task 19（建立笔记正文与农场设施的双向跳转）**：
+  - 在《零依赖像素木屋》（`notes/pixel-cabin/`）和《Canvas 打造像素农场》（`notes/sample/`）正文与文末动作栏中加入「去农场实地体验 →」锚点按钮（分别带参数 `?spot=well` 和 `?spot=pond`）；
+  - `js/walk.js` 与 `js/nav.js` 支持解析 `?spot=` 与 `?focus=` 参数，自动切换农场漫游模式、瞬时定焦镜头并唤起设施专属对话与试玩按钮；
+  - 农场古井、池塘、农舍大门等场景实体交互选项中内嵌「阅读原理解析」反向链接，形成闭环。
+- [x] **Task 20（为 rpcsim 仿真器补充代码与复现入口）**：
+  - 在《微秒级任务调度》技术笔记正文与操作栏挂载 `https://github.com/Ricardo3319/rpcsim` 开源复现仓库分支链接；
+  - 在关于页（`about/`）随身物品栏提示、在研课题履历项与外部联系栏挂载复现入口；
+  - 在作品箱（`work/`）、笔记列表（`notes/`）与首页精选代表作卡片中统一补全 GitHub 源码复现按钮。
+

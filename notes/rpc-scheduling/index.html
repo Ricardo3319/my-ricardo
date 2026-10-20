@@ -68,7 +68,7 @@
         <p>围绕这一核心矛盾，学术界演化出两条截然不同的路线：一是以 R2P2、Draconis、JBSQ 为代表的「入口晚绑定（Late Binding）」，请求先在网关暂存，由空闲工作节点通过提货券（Credit）按需拉取，从源头避免节点队列失衡；二是以 ZygOS、Capybara、SBB 为代表的「早绑定加事后跨机纠偏（Early Binding + Movement）」，请求到达时直接按连接或哈希派发，出现局部积压后再通过工作窃取（Work Stealing）或盲推转发重调度。</p>
 
         <h2>一、全链路纳秒级显式计费仿真（rpcsim）</h2>
-        <p>为了脱离两派各自偏好的理想化假设，我用 C++17 构建了 128 核机架规模的离散事件仿真引擎 rpcsim，把每一次控制交互都折算为真实的物理耗时，并严格遵循非预知（Non-clairvoyant）原则：</p>
+        <p>为了脱离两派各自偏好的理想化假设，我用 C++17 构建了 128 核机架规模的离散事件仿真引擎 rpcsim，把每一次控制交互都折算为真实的物理耗时，并严格遵循非预知（Non-clairvoyant）原则。仿真器的核心调度实现、E0 阶段解析校验脚本与多维相图复现配置已整理至 GitHub 仓库分支：<a href="https://github.com/Ricardo3319/rpcsim">github.com/Ricardo3319/rpcsim</a>，方便同行复现、校准与引用：</p>
         <ul>
           <li>控制帧与数据帧网卡串行化耗时分别按 64B（20.48 纳秒）与 256B（81.92 纳秒）显式计入链路。</li>
           <li>单机多核共享队列的核间原子窃取（L3 Cache / CAS）计费 100 纳秒，软件网关单次调度决策计费 200 至 500 纳秒。</li>
@@ -94,11 +94,12 @@
 
         <h2>四、工程架构选型结论</h2>
         <p>微秒级 RPC 调度的工程选型可以归结为两条清晰准则：当机架具备可编程交换机（P4 Switch）或智能网卡（SmartNIC）硬件卸载条件时，应优先采用带 TTL 保护的入口晚绑定（JBSQ / Credit Pull），从源头消灭排队失衡；而在纯软件部署且单机核数不少于 8 核的常规机房中，「强入口派发（JSW）配合单机多核本地池化」即可逼近理论最优边界，跨机搬迁只需作为整机停顿时的兜底容灾机制。</p>
-        <p>这项研究的完整实验图表、数学公式与十页汇报文稿整理在站内的 <a href="../../rpc-slides/">微秒级 RPC 调度组会演示幻灯片</a> 中，可直接在线翻阅。</p>
+        <p>这项研究的完整实验图表、数学公式与十页汇报文稿整理在站内的 <a href="../../rpc-slides/">微秒级 RPC 调度组会演示幻灯片</a> 中，可直接在线翻阅；仿真代码与复现基准亦可访问 <a href="https://github.com/Ricardo3319/rpcsim">rpcsim GitHub 仓库</a>。</p>
       </div>
       <p class="actions">
         <a class="btn" href="../pixel-cabin/">下一篇：零依赖像素木屋</a>
-        <a class="btn" href="../../rpc-slides/">打开 10 页组会幻灯片 →</a>
+        <a class="btn" href="../../rpc-slides/">打开 10 页组会幻灯片</a>
+        <a class="btn" href="https://github.com/Ricardo3319/rpcsim">GitHub 源码与复现 →</a>
       </p>
       <p class="sign">——Ricardo</p>
     </main>

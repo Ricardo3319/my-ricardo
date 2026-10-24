@@ -1770,6 +1770,200 @@ def build(season):
     return farm
 
 
+# ---------------------------------------------------------------- OG 社交分享封面（1200×630 夜间木屋暖光全景）
+
+
+def og_cover():
+    """1200×630 的 Open Graph 封面：深蓝夜空、星月、远山、松林，中央一座亮着暖灯、
+    冒着炊烟的像素木屋，两侧是菜地、映月池塘与将熄的篝火。逐像素手绘，不依赖
+    Kenney 图块，避免与农场底图雷同。"""
+    W, H = 1200, 630
+    img = Img(W, H)
+    horizon = 380  # 天地分界线
+    cx = 600       # 场景水平中心
+
+    # ---- 夜空：从上到下的竖向渐变，缀星与弯月 ----
+    for y in range(horizon):
+        t = y / horizon
+        r = int(8 + (20 - 8) * t)
+        g = int(12 + (32 - 12) * t)
+        b = int(32 + (72 - 32) * t)
+        for x in range(W):
+            img.set(x, y, (r, g, b, 255))
+
+    rng = random.Random(20261025)
+    for _ in range(140):
+        x, y = rng.randrange(W), rng.randrange(horizon - 40)
+        bright = rng.random()
+        c = (255, 244, 200, 255) if bright > 0.85 else (210, 220, 245, 255) if bright > 0.5 else (150, 165, 210, 255)
+        img.set(x, y, c)
+        if bright > 0.93:  # 少数亮星带十字光芒
+            img.set(x - 1, y, c)
+            img.set(x + 1, y, c)
+            img.set(x, y - 1, c)
+            img.set(x, y + 1, c)
+
+    # 弯月：右上方，月晕一层
+    mx, my, mr = 905, 96, 34
+    for y in range(my - mr - 14, my + mr + 14):
+        for x in range(mx - mr - 14, mx + mr + 14):
+            d2 = (x - mx) ** 2 + (y - my) ** 2
+            if d2 <= mr * mr:
+                img.set(x, y, (250, 240, 200, 255))
+            elif d2 <= (mr + 12) ** 2 and img.get(x, y)[3] and img.get(x, y)[2] < 120:
+                img.set(x, y, (60, 70, 115, 255))
+    for y in range(my - mr, my + mr):  # 咬掉一块成月牙
+        for x in range(mx - mr, mx + mr):
+            if (x - (mx - 12)) ** 2 + (y - (my - 4)) ** 2 <= (mr - 6) ** 2:
+                t = y / horizon
+                img.set(x, y, (int(8 + 12 * t), int(12 + 20 * t), int(32 + 40 * t), 255))
+
+    # ---- 远山两叠：远处淡影、近处青黛剪影 ----
+    def ridge(base, amp, step, col):
+        pts = []
+        x = 0
+        while x <= W:
+            pts.append((x, base - rng.randrange(amp)))
+            x += rng.randrange(step // 2, step)
+        for i in range(len(pts) - 1):
+            (x0, y0), (x1, y1) = pts[i], pts[i + 1]
+            for x in range(x0, x1):
+                y = y0 + (y1 - y0) * (x - x0) // max(1, x1 - x0)
+                for yy in range(y, horizon):
+                    img.set(x, yy, col)
+
+    ridge(300, 90, 190, (30, 40, 80, 255))
+    ridge(352, 60, 130, (22, 30, 58, 255))
+
+    # ---- 松林线：近山脚下的三角剪影 ----
+    for x in range(-20, W + 20, 26):
+        h = 30 + (x * 7 % 23)
+        for k in range(h):
+            w = 2 + k // 3
+            for dx in range(-w, w + 1):
+                img.set(x + dx, horizon - 12 - k, (14, 26, 40, 255))
+
+    # ---- 地面：夜色草甸，中央一条暖土小径 ----
+    for y in range(horizon, H):
+        t = (y - horizon) / (H - horizon)
+        for x in range(W):
+            img.set(x, y, (int(16 + 8 * t), int(34 + 14 * t), int(30 + 10 * t), 255))
+    for y in range(horizon + 40, H):
+        t = (y - horizon - 40) / (H - horizon - 40)
+        half = int(26 + 90 * t)
+        for x in range(cx - half, cx + half):
+            img.set(x, y, (int(72 + 30 * t), int(52 + 22 * t), int(34 + 12 * t), 255))
+
+    # ---- 木屋：墙体、屋顶、烟囱、暖窗、门 ----
+    hx, hy, hw, hh = cx - 110, horizon - 96, 220, 120  # 墙左/墙顶/宽/高
+    roof_h = 74
+    # 屋顶三角（深木色，带一道雪线受光）
+    for k in range(roof_h):
+        w = int(hw / 2 * (1 - k / roof_h)) + 8
+        for x in range(cx - w, cx + w):
+            img.set(x, hy - k, (74, 38, 16, 255))
+        img.set(cx - w, hy - k, (110, 60, 26, 255))
+    # 墙体：竖纹木板，底部压一道深基座
+    for y in range(hy, hy + hh):
+        for x in range(hx, hx + hw):
+            seam = 1 if (x - hx) % 18 == 0 else 0
+            base = (122, 74, 40) if (y // 6) % 2 == 0 else (112, 66, 36)
+            img.set(x, y, (base[0] - 34 * seam, base[1] - 22 * seam, base[2] - 12 * seam, 255))
+    img.rect(hx - 4, hy + hh - 10, hw + 8, 12, (54, 30, 16, 255))
+    # 烟囱与炊烟
+    img.rect(hx + hw - 62, hy - roof_h + 18, 20, 42, (84, 48, 26, 255))
+    img.rect(hx + hw - 64, hy - roof_h + 14, 24, 6, (104, 62, 36, 255))
+    for i in range(46):  # 炊烟：逐渐变淡的灰蓝圆点，蜿蜒上升
+        t = i / 45
+        sx = hx + hw - 52 + int(26 * (t ** 1.4) * (1 if i % 2 else -1) * 0.6) + rng.randrange(-4, 5)
+        sy = hy - roof_h + 8 - i * 3
+        r = int(150 - 70 * t)
+        img.set(sx, sy, (r, r + 6, int(r * 1.25), 255))
+        img.set(sx + 1, sy, (r, r + 6, int(r * 1.25), 255))
+    # 两扇暖窗：外框 + 暖黄玻璃 + 十字窗棂，四周淡淡光晕
+    for wx in (hx + 34, hx + hw - 34 - 46):
+        for y in range(hy + 30 - 8, hy + 30 + 44 + 8):
+            for x in range(wx - 8, wx + 46 + 8):
+                img.set(x, y, (96, 66, 30, 255))
+        img.rect(wx, hy + 30, 46, 44, (255, 196, 92, 255))
+        img.rect(wx + 3, hy + 33, 40, 38, (255, 222, 140, 255))
+        img.rect(wx + 21, hy + 30, 4, 44, (96, 54, 24, 255))
+        img.rect(wx, hy + 50, 46, 4, (96, 54, 24, 255))
+    # 门与门缝暖光
+    img.rect(cx - 22, hy + 44, 44, 76, (70, 40, 20, 255))
+    img.rect(cx - 18, hy + 48, 36, 72, (84, 50, 26, 255))
+    img.rect(cx - 2, hy + 48, 4, 72, (255, 208, 110, 255))
+    img.set(cx + 10, hy + 86, (255, 226, 150, 255))  # 门把手
+
+    # ---- 左侧菜地：四垄青苗，夜色里泛微光 ----
+    fx, fy = cx - 420, horizon + 120
+    for k in range(4):
+        for i in range(9):
+            x, y = fx + i * 26, fy + k * 22
+            img.rect(x - 10, y + 8, 22, 4, (40, 30, 20, 255))
+            for dx, dy, c in ((0, 0, (70, 140, 70)), (-4, 4, (54, 116, 58)), (4, 4, (62, 128, 64)), (0, 6, (46, 100, 50))):
+                img.set(x + dx, y + dy, (*c, 255))
+
+    # ---- 右侧池塘：椭圆水面映着月与星 ----
+    px0, py0, pw, ph = cx + 260, horizon + 118, 200, 96
+    pxx, pyy = px0 + pw / 2, py0 + ph / 2
+    for y in range(py0 - 6, py0 + ph + 6):
+        for x in range(px0 - 6, px0 + pw + 6):
+            nx, ny = (x - pxx) / (pw / 2), (y - pyy) / (ph / 2)
+            if abs(nx) ** 2.4 + abs(ny) ** 2.4 <= 1:
+                img.set(x, y, (26, 44, 88, 255) if abs(nx) ** 2.4 + abs(ny) ** 2.4 > 0.55 else (38, 62, 116, 255))
+    for x in range(px0 + 40, px0 + 110):  # 月光长倒影
+        img.set(x, py0 + 30, (180, 190, 225, 255))
+        if x % 3:
+            img.set(x, py0 + 34, (140, 155, 205, 255))
+    for x, y in ((px0 + 30, py0 + 60), (px0 + 150, py0 + 52), (px0 + 80, py0 + 74)):
+        img.set(x, y, (150, 165, 210, 255))
+
+    # ---- 屋前篝火：石圈、余烬、上升的光点 ----
+    bx, by = cx - 6, horizon + 210
+    for dx, dy in ((-26, 4), (-14, 12), (2, 14), (18, 10), (26, 0), (16, -8), (-2, -12), (-20, -6)):
+        img.rect(bx + dx - 4, by + dy - 3, 9, 7, (74, 66, 60, 255))
+    for i in range(26):  # 余烬
+        t = i / 25
+        ex = bx + rng.randrange(-14, 15)
+        ey = by + rng.randrange(-8, 9)
+        c = (255, int(140 + 80 * (1 - t)), int(40 + 40 * (1 - t)), 255)
+        img.set(ex, ey, c)
+    for i in range(10):  # 火星
+        img.set(bx + rng.randrange(-10, 11), by - 6 - i * 6, (255, 200 - i * 8, 90, 255))
+
+    # ---- 标题牌：屋檐下挂一块小木牌 ----
+    tx, ty, tw, th = cx - 150, hy - roof_h - 30, 300, 40
+    img.rect(tx - 4, ty - 4, tw + 8, th + 8, (46, 24, 12, 255))
+    img.rect(tx, ty, tw, th, (124, 76, 42, 255))
+    img.rect(tx, ty, tw, 3, (158, 104, 58, 255))
+    img.rect(tx, ty + th - 3, tw, 3, (84, 48, 24, 255))
+    # 用逐像素笔画写 RICARDO'S CYBER CABIN：3×5 点阵大写
+    FONT5 = {
+        "A": ["010", "101", "111", "101", "101"], "B": ["110", "101", "110", "101", "110"],
+        "C": ["011", "100", "100", "100", "011"], "D": ["110", "101", "101", "101", "110"],
+        "E": ["111", "100", "110", "100", "111"], "H": ["101", "101", "111", "101", "101"],
+        "I": ["111", "010", "010", "010", "111"], "N": ["101", "111", "111", "111", "101"],
+        "O": ["010", "101", "101", "101", "010"], "R": ["110", "101", "110", "101", "101"],
+        "S": ["011", "100", "010", "001", "110"], "Y": ["101", "101", "010", "010", "010"],
+        "'": ["010", "010", "000", "000", "000"], " ": ["000", "000", "000", "000", "000"],
+    }
+    text = "RICARDO'S CYBER CABIN"
+    scale = 4
+    tw_px = len(text) * 4 * scale - scale
+    ox = cx - tw_px // 2
+    oy = ty + (th - 5 * scale) // 2
+    for ch in text:
+        glyph = FONT5[ch]
+        for gy, row in enumerate(glyph):
+            for gx, bit in enumerate(row):
+                if bit == "1":
+                    img.rect(ox + gx * scale, oy + gy * scale, scale, scale, (255, 232, 176, 255))
+        ox += 4 * scale
+
+    return img
+
+
 # ---------------------------------------------------------------- 出图
 
 TOWN = FARM = None
@@ -1802,6 +1996,7 @@ def main(argv):
         farm = build(season)
         made[f"farm-{season}"] = farm.render()
         world[season] = farm.collision()
+    made["cabin-og-cover"] = og_cover()
 
     lines = [
         "/* tools/art.py 生成，不手改。每季一份 56×32 碰撞位图：每行 56 bit，1 是走不进的格。",
@@ -1825,6 +2020,9 @@ def main(argv):
         where = Path(argv[argv.index("--preview") + 1])
         where.mkdir(parents=True, exist_ok=True)
         for name, img in made.items():
+            if name == "cabin-og-cover":
+                write_png(where / f"{name}.png", img)  # 1200×630 不再放大，直接出原图
+                continue
             k = 2 if name.startswith("farm") else 8
             write_png(where / f"{name}.png", img.scaled(k, bg=rgb("#808080")) if not name.startswith("farm") else img.scaled(k))
         print(f"放大预览在 {where}")

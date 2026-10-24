@@ -134,7 +134,9 @@ def check_page(rel, html):
     if not re.match(r'<head>\s*<meta charset="utf-8">', head):
         bad(f"{rel} 的 <meta charset> 不在 <head> 最前")
     title = re.search(r"<title>([^<]*)</title>", html)
-    want = NAME if home else f"{title_word} · {NAME}"
+    # 首页允许品牌化标题（Task 35 OG 规格），其余页面仍为「栏目 · Ricardo」。
+    home_title = f"{NAME}'s Cyber Cabin · 田园赛博木屋与随身工作台"
+    want = home_title if home else f"{title_word} · {NAME}"
     if not title or title.group(1) != want:
         bad(f"{rel} 的 title 应为「{want}」")
     if not re.search(r'<meta name="description" content="[^"]+">', html):

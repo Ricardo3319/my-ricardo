@@ -145,9 +145,11 @@
   - `/log/` 流水时间线支持心情/天气微标签；
   - 编写 Canvas 图片像素化滤镜小工具，支持生活照一键原图/像素风格无缝切换。
 
-- [ ] **Task 35（Open Graph 社交分享精美预览卡片）** · 规格：SPEC §11 / DESIGN §9
-  - 配备定制的 1200×630 夜间像素木屋暖光全景封面图（`img/cabin-og-cover.png`）；
-  - 优化全站 `og:title` 与 `og:description` 走心文案，打通微信、飞书、Telegram 精美预览。
+- [x] **Task 35（Open Graph 社交分享精美预览卡片）** · 规格：SPEC §11 / DESIGN §9
+  - 在 `tools/art.py` 新增 `og_cover()` 逐像素绘制 1200×630 夜间像素木屋暖光全景（星月、远山、松林、炊烟、暖窗、菜地、映月池塘、篝火、标题牌），生成 `img/cabin-og-cover.png`；
+  - 全站 13 个 HTML 页面的 `og:image` 与 `twitter:image` 统一替换为新封面，补齐 `og:site_name`；
+  - 首页 `<title>`/`og:title`/`description` 升级为「Ricardo's Cyber Cabin · 田园赛博木屋与随身工作台」品牌化文案，放宽 `tools/check.py` 首页标题校验例外；
+  - `tools/art.py --preview` 对 OG 封面按原尺寸输出，不再放大 8 倍。
 
 - [ ] **Task 36（首屏信息架构收敛与视觉层级降噪）** · 规格：待补充至 DESIGN §10
   - 来源：作者体验反馈——V7 生活化内容叠加后，首屏卡片并列过多、缺少轻重主线，访客找不到重点；

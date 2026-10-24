@@ -180,6 +180,24 @@
               </div>
               <p class="clean-lead">目前就读于南京航空航天大学计算机科学与技术专业，专注于数据中心同机架微秒级 RPC 任务调度、多核排队论建模与长尾延迟（P99）抑制。闲暇时喜欢像素独立游戏与音乐，并亲手搭建了这座零前端框架依赖的个人小站。</p>
               <p class="clean-status" data-now-status>🍁 2026 秋 · 在南航读研，日常和微秒级任务调度打交道，空下来打磨这座像素小农场。</p>
+              <ul class="now-grid" aria-label="木屋此刻的生活动态">
+                <li class="now-cell">
+                  <span class="now-key" aria-hidden="true">🎵</span>
+                  <div class="now-body"><b>最近在听</b><span>八音盒小调与坂本龙一《Merry Christmas Mr. Lawrence》，写代码时循环雨声白噪音。</span></div>
+                </li>
+                <li class="now-cell">
+                  <span class="now-key" aria-hidden="true">🎮</span>
+                  <div class="now-body"><b>正在玩</b><span>田园生活模拟游戏第 4 年春季，顺手在《蔚蓝 Celeste》里补草莓收集。</span></div>
+                </li>
+                <li class="now-cell">
+                  <span class="now-key" aria-hidden="true">🛠️</span>
+                  <div class="now-body"><b>正在折腾</b><span>用 Web Audio 合成松木篝火噼啪声，优化 128 核排队论离散仿真器吞吐。</span></div>
+                </li>
+                <li class="now-cell">
+                  <span class="now-key" aria-hidden="true">☕</span>
+                  <div class="now-body"><b>今日状态</b><span>耶加雪菲日晒浅烘手冲。晴空万里，代码编译零警告，今日宜深耕。</span></div>
+                </li>
+              </ul>
               <div class="clean-actions">
                 <a class="clean-btn is-solid" href="about/">完整学术履历</a>
                 <a class="clean-btn" href="https://github.com/Ricardo3319">GitHub · @Ricardo3319</a>
@@ -193,17 +211,19 @@
 
         <section class="clean-section" id="home-works" aria-labelledby="home-works-title">
           <div class="clean-section-head">
-            <h2 id="home-works-title">代表研究与项目</h2>
+            <h2 id="home-works-title">木屋工坊 · 锻造代表作</h2>
             <a class="clean-more" href="work/">查看全部作品箱 →</a>
           </div>
           <div class="clean-grid-2">
             <article class="clean-card clean-project">
               <div class="clean-card-top">
-                <span class="clean-tag">在研核心课题 · C++17</span>
+                <span class="clean-tag">锻造代表作 · C++17</span>
                 <span class="clean-meta">128 核纳秒级离散事件仿真</span>
               </div>
-              <h3>同机架微秒级 RPC 调度研究（rpcsim）</h3>
-              <p>面向 1–10 μs 极短任务与 50 μs 尾延迟约束的数据中心 RPC 调度研究。构建全链路纳秒显式计费仿真引擎 rpcsim（与 M/M/k、M/G/1、M/H2/k 解析解 100% 置信对齐），系统量化入口晚绑定（JBSQ / Credit Pull）与早绑定跨机纠偏（Work Stealing / Forwarding）的性能相图、多核池化挤压效应与资源可行域红线。</p>
+              <h3>rpcsim 纳秒显式计费调度仿真器</h3>
+              <p class="craft-motto">「128 核高并发世界的瑞士钟表。」</p>
+              <p class="craft-why"><b>为什么造这个轮子：</b>现有的网络级仿真器太重（跑一次几小时），单机多线程测试又受内核调度抖动干扰。我需要一台能把纳秒时间轴当尺子量、与排队论解析解 100% 对齐的显式计费引擎。</p>
+              <p class="craft-note"><b>好玩的技术突破：</b>在无锁多队列环境下精确捕捉微秒任务窃取纠偏的时钟损耗，找到了 20% 算力预算下的最优调度相图。</p>
               <div class="clean-actions">
                 <a class="clean-btn is-solid" href="rpc-slides/index.html">看组会汇报 PPT（10 页）</a>
                 <a class="clean-btn" href="notes/rpc-scheduling/">阅读研究笔记</a>
@@ -213,11 +233,13 @@
 
             <article class="clean-card clean-project">
               <div class="clean-card-top">
-                <span class="clean-tag is-green">开源工程 · 原生 Web / Python</span>
+                <span class="clean-tag is-green">锻造代表作 · 原生 Web / Python</span>
                 <span class="clean-meta">零外部依赖 · 双通道云同步</span>
               </div>
-              <h3>my-ricardo · 田园赛博木屋与跨端工作台</h3>
-              <p>兼顾「清爽个人落地页」与「互动像素农场」的个人网站与随身效率工作台。由 Python 脚本逐像素生成四季地图与碰撞数据，配备按需字库分片、Web Audio 实时八音盒合成器，以及支持自建 SQLite 云端与 GitHub 仓库双通道同步的告示牌、待办日历与跨设备剪贴板。</p>
+              <h3>my-ricardo · 田园赛博木屋与随身工作台</h3>
+              <p class="craft-motto">「一座零前端构建依赖的四季像素天地。」</p>
+              <p class="craft-why"><b>为什么造这个轮子：</b>厌倦了动辄成百上千兆 node_modules 和臃肿的打包工具，想给互联网留一间点开秒开、断网能看、连背景音乐都是浏览器即时算出来的干净小木屋。</p>
+              <p class="craft-note"><b>好玩的技术突破：</b>Python 逐像素生成 56×32 地图与碰撞网格，Web Audio 手算正弦与方波合成 4 首四季交响曲，4 倍超采样让像素在 120Hz 高刷屏上丝滑漫游。</p>
               <div class="clean-actions">
                 <a class="clean-btn is-solid" href="board/">打开随身告示牌</a>
                 <a class="clean-btn" href="notes/pixel-cabin/">阅读架构笔记</a>

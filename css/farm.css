@@ -2043,6 +2043,68 @@ html[data-phase="night"] .forest-line { fill: #0d1f1b; }
   font-size: 14px;
 }
 
+/* 首屏生活化状态挂件：四格“木屋里此刻在做什么”（V7 Task 28 / DESIGN §5） */
+.now-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.now-cell {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 9px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(212, 143, 76, 0.26);
+  background: rgba(255, 244, 222, 0.6);
+}
+
+.now-key {
+  flex: none;
+  font-size: 18px;
+  line-height: 1.4;
+}
+
+.now-body {
+  min-width: 0;
+  font-size: 13px;
+  line-height: 1.55;
+  color: #683516;
+}
+
+.now-body b {
+  display: block;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #4a200b;
+}
+
+/* 木屋工坊代表作卡片：寄语与造轮子叙事（V7 Task 28 / DESIGN §5 / CONTENT §4） */
+.craft-motto {
+  margin: 0 0 10px;
+  font-size: 14.5px;
+  font-weight: 700;
+  color: #7c421c;
+  letter-spacing: 0.01em;
+}
+
+.craft-why,
+.craft-note {
+  margin: 0 0 8px;
+  color: #633418;
+  font-size: 14px;
+  line-height: 1.68;
+}
+
+.craft-why b,
+.craft-note b {
+  color: #4a200b;
+}
+
 .clean-actions,
 .clean-mini-bar {
   display: flex;
@@ -2501,6 +2563,15 @@ a.row:hover { background-color: var(--menu-deep); }
   display: block;
   color: var(--ink-soft);
   font-size: inherit;
+}
+
+/* EDC 装备 RPG 属性词条（V7 Task 28 / CONTENT §3）：羊皮纸上的一行小字加成 */
+.tip-stats {
+  display: block;
+  margin: calc(1 * var(--px)) 0;
+  color: #a4551c;
+  font-size: inherit;
+  line-height: 1.5;
 }
 
 .slot:hover .tip,
@@ -3616,6 +3687,11 @@ html[data-phase="night"] .clean-section > .clean-section-head .clean-more {
   }
 
   .clean-status {
+    text-align: left;
+  }
+
+  .now-grid {
+    grid-template-columns: minmax(0, 1fr);
     text-align: left;
   }
 

@@ -7,7 +7,7 @@
   - **落地页模式（默认）**：进入子页面（`/notes/`、`/about/`、`/work/`、`/board/` 等）承袭现代简约卡片与干净渐变背景；右上角 HUD 采用现代无衬线药丸胶囊风格；切页零延迟秒开。
   - **农场漫游模式**：底层四季农场画布、Web Audio API 实时合成背景乐，子页面展示为木框弹窗配暖黑半透明遮罩（`rgba(18, 14, 10, 0.42)`）。
   - **所有页面级交互脚本必须同时监听 `DOMContentLoaded` 与 `document` 上的 `farm:page` 自定义事件**，确保切页后功能正常初始化。
-- **轻量级云端同步后端**：允许在 `server/app.py` 中使用 Python 3 标准库（`http.server` + `sqlite3`）提供轻量级 REST API（`/api/board` 与 `/api/logs`），并在前端不可达时自动降级回 `localStorage` 与 GitHub REST API。
+- **轻量级云端同步后端**：允许在 `server/app.py` 中使用 Python 3 标准库（`http.server` + `sqlite3`）提供轻量级 REST API（已实现 `/api/board` 与 `/api/logs`；`/api/messages` 访客留痕为 V7 规划，详见 `docs/SPEC.md` §7），并在前端不可达时自动降级回 `localStorage` 与 GitHub REST API。
 
 ## 2. 视觉与双轨制字体规范（重要修订）
 - **严禁手动修改生成素材**：`img/` 目录下的所有像素图块、UI 木框（`img/ui-frame.png`）、人物精灵图以及 `js/world-data.js` 地图碰撞数据均由 `tools/art.py` 逐像素生成，**严禁手动编辑 `img/*` 或 `js/world-data.js`**。
@@ -17,6 +17,6 @@
 - **地图交互极简提示**：农场中可交互设施及 NPC 头顶默认仅展示像素感叹号（`!`）轻量浮标，靠近（`is-near`）或鼠标悬浮时才展开名称与身份说明，避免文字堆叠杂乱。
 
 ## 3. 安全与质量红线
-- **严防 XSS**：在 `js/board.js` 与日常流水动态渲染中，所有用户输入或远程拉取的文本**必须严格使用 `textContent` 或 `value` 赋值**，严禁对非受控数据使用 `innerHTML`。
+- **严防 XSS**：在 `js/board.js`、日常流水与访客留痕/漂流瓶动态渲染中，所有用户输入或远程拉取的文本**必须严格使用 `textContent` 或 `value` 赋值**，严禁对非受控数据使用 `innerHTML`。
 - **路由向后兼容**：底部主导航栏收敛为 4 个高频核心入口（`/board/`、`/log/`、`/notes/`、`/about/`），但**必须保留 `/now/`、`/work/`、`/contact/` 的物理目录与 `index.html`**，确保 `js/walk.js` 中 5 个 NPC 的对话跳转与旧书签不出现 404。
 - **静态检查必跑**：每次完成任务后，必须运行 `python3 tools/check.py` 确保零报错。

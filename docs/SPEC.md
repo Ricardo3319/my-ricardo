@@ -1,6 +1,8 @@
 # SPEC.md — 页面规格、路由与接口说明
 
-## 1. 路由结构与版块收敛方案
+> **状态约定**：各节标题后缀标注实现状态——`（已实现）` 为线上既有契约，`（部分实现 · Vn Task X）` 或 `（待实现 · Vn Task X）` 为规划规格，对应任务详见 `docs/progress.md`。待实现章节描述的是目标契约，落地前以代码现状为准。
+
+## 1. 路由结构与版块收敛方案（已实现）
 全站共包含 8 个物理路由目录，其中 **4 个为核心主导航入口**，另外 **3 个为聚合兼容路由**（保留物理页面以兼容农场 NPC 对话与历史链接）：
 
 | 路由路径 | 导航栏显示 | 核心功能与内容规格 |
@@ -14,19 +16,20 @@
 | `/work/` | 隐藏 (高亮归属“笔记”) | 展示像素宝箱及两个核心代表作（`my-ricardo` 与 `/rpc-slides/`），引导前往 `/notes/` |
 | `/contact/` | 隐藏 (高亮归属“关于”) | 展示联系邮箱与一键复制按钮，并引导前往 `/about/` 查看完整介绍 |
 
-## 2. 告示牌（`/board/`）数据结构与同步规格
+## 2. 告示牌（`/board/`）数据结构与同步规格（已实现）
 `js/board.js` 维护统一的状态结构（向后兼容旧版纯数组格式）：
 - `version`: `2`
 - `updatedAt`: 毫秒级时间戳
-- `scratchpad`: `{"text": "跨设备临时粘贴的链接、命令或灵感片段...", "updatedAt": 1792044000000}`
-- `tasks`: 数组，每项包含 `id`、`text`、`due`、`done`、`private`（布尔值，是否仅主人可见）、`updatedAt`
+- `scratchpad`: `{"text": "跨设备临时粘贴的链接、命令或灵感片段...", "updatedAt": 1792044000000, "history": []}`
+- `tasks`: 数组，每项包含 `id`、`title`、`due`、`time`、`done`、`made`、`private`（布尔值，是否仅主人可见）、`pin`（由到期紧迫度自动推导的图钉色：`"red" | "orange" | "gold" | "green" | "gray"`，见 `js/board.js` 的 `PIN` 映射）、`updatedAt`。四色手动分类为 V7 Task 33 规划，见 §9。
 
 三级存储与同步降级机制：
 1. **自建云服务器模式（优先）**：当配置了主人口令（Passkey）且 `/api/board` 可达时，通过 `GET /api/board` 与 `PUT /api/board` 实时同步。
 2. **GitHub API 模式（次选）**：在纯静态托管（GitHub Pages）且配置了 GitHub PAT 时，读写仓库中的 `board.json`。
-3. **本地沙盒模式（默认）**：未解锁口令的访客读写浏览器本地 `localStorage`，界面明确提示「本地暂存（未登录口令不对外公开）」，初次进入且为空时自动预置 2 条欢迎指引便签供访客测试，且服务端自动过滤掉 `private: true` 的私密条目。
+3. **本地沙盒模式（默认）**：未解锁口令的访客读写浏览器本地 `localStorage`，界面明确提示「本地暂存（未登录口令不对外公开）」，初次进入且为空时自动预置欢迎指引便签供访客测试，且服务端自动过滤掉 `private: true` 的私密条目。
 
 ## 3. 云端后端 API 契约（`server/app.py`）
+**已实现**：
 - `POST /api/auth/verify`：校验请求头 `X-Passkey` 是否与服务端环境变量 `RICARDO_PASSKEY` 匹配，返回 `{"ok": true}`。
 - `GET /api/board`：已鉴权返回完整 `board` 数据（含私密任务与 `scratchpad`）；未鉴权仅返回公开任务且隐藏私密暂存贴。
 - `PUT /api/board`：需 `X-Passkey` 鉴权。按任务 `id` 与 `updatedAt` 时间戳合并客户端与服务端 SQLite 中的数据后落盘。
@@ -34,7 +37,12 @@
 - `POST /api/logs`：需 `X-Passkey` 鉴权。支持新增日常流水或更新 `nowStatus`。
 - `DELETE /api/logs?id=<id>`：需 `X-Passkey` 鉴权。删除指定日常条目。
 
-## 4. 场景微交互、移动端竖屏与传播卡片规格
+**待实现（V7 规划）**：
+- `GET /api/logs` 扩展 `mood`、`weather` 字段（Task 34，对应 DESIGN §8）：`{"id": 1, "date": "2026-10-15", "text": "...", "mood": "☕", "weather": "☀️"}`。
+- `GET /api/messages`：公开返回最新留言/漂流瓶列表 `{"messages": [{"id": 1, "text": "...", "author": "路过的农夫", "badge": "🌾", "created_at": 1792044000}]}`（Task 29）。
+- `POST /api/messages`：公开提交简短访客打卡/漂流瓶。单条限长 60 字，IP 速率限制（每 IP 10 分钟最多 2 条），防 XSS 强制纯文本存储（Task 29）。
+
+## 4. 场景微交互、移动端竖屏与传播卡片规格（已实现）
 - **场景微交互与彩蛋反馈**：
   - 农舍大门：点击弹出气泡「正在屋里跑 rpcsim 仿真实验……」；
   - 篝火堆：点击弹出气泡并切换白昼/夜晚配色（`data-phase` 昼夜光影与环境音效联动）；
@@ -47,7 +55,7 @@
   - 全站静态页面具备独立 `<title>`、`<meta name="description">`、`<meta property="og:...">` 与 `<meta name="twitter:...">`；
   - `sitemap.xml` 完整涵盖所有核心路由与公开技术笔记。
 
-## 5. 笔记设施双向跳转与开源复现入口
+## 5. 笔记设施双向跳转与开源复现入口（已实现）
 - **笔记与农场设施双向跳转**：
   - 支持 `/?spot=<facility>` 或 `/#<facility>`（如 `?spot=well` 古井、`?spot=pond` 池塘、`?spot=crop` 菜地、`?spot=cart` 矿车街机、`?spot=door` 农舍等）直达成农场设施；
   - 自动切换漫游农场模式、瞬时定焦镜头、角色站位贴靠，并弹出交互对话面板与玩法按钮；
@@ -55,7 +63,7 @@
 - **rpcsim 开源复现规范**：
   - 在《微秒级任务调度》笔记正文与文末动作栏、关于页（物品栏提示、履历课题与外部链接）、作品箱以及首页代表作卡片中统一挂载 GitHub 仓库链接 `https://github.com/Ricardo3319/rpcsim`，供同行复现与引用。
 
-## 6. 落地页 / 农场双主题与架构解耦规格（V6，已实现）
+## 6. 落地页 / 农场双主题与架构解耦规格（已实现 · V6）
 - **移动端响应式与视图降级（REQ-01）**：在移动端（视口 < 768px）落地页模式下完全停用全屏 Canvas 渲染循环（`cancelAnimationFrame`），默认直接加载单列流式布局的标准落地页，调整卡片间距与 44×44px 最小触控热区，移除旧有的横屏提示遮罩，约束 `body { overflow-x: hidden; }` 根治横向滚动与溢出。
 - **像素农场创意彩蛋入口（REQ-02）**：将像素农场解耦为独立彩蛋视图，提供首屏木牌下方微动效小农舍图标按钮（`.farm-cabin-entrance-btn`）与滑到底端（Footer 上方）的农场小径传送门插画卡片（`.farm-trail-card`）两种轻量级触发入口。
 - **右上角状态组件双主题解耦（REQ-03）**：定义为上下文感知组件（Context-Aware Widget）——在标准落地页模式下使用极简毛玻璃药丸胶囊（`.hud-box`、`--font-sans`、微光圆球天色指示），切入像素农场后再恢复复古木纹边框（`img/ui-tab.png`、`--font-pixel`）与切回主页按钮。
@@ -63,3 +71,54 @@
 - **农场 HUD 视觉降噪与符号化（REQ-05）**：清除农场画布内的常驻文字名牌（`.nametag`），改为在可交互设施与 NPC 头顶渲染带正弦起伏浮动动画的像素感叹号（`!` 信标），仅在角色走近触发半径（Proximity）或鼠标悬停时才局部展示交互名牌。
 - **移除底部冗余免责声明（REQ-06）**：全局删除全部 11 个 HTML 页面 `<footer class="credit">` 中“受田园生活模拟游戏启发，非官方，与 ConcernedApe 无关”的 DOM 节点，并从 `tools/check.py` 中移除该免责声明的校验逻辑。
 - **小游戏可用性与切页流畅度（REQ-07）**：修复矿车街机被老木触控区域遮挡的问题，延长初始轨道缓冲；全站子页面预加载 `js/games.js`；落地页模式切页零延迟秒开（不走回屋门动画），已预取页面切换 ≤ 100ms。
+
+## 7. 轻量级社交留痕：木屋留言簿与池塘漂流瓶规格（待实现 · V7 Task 29）
+- **双通道留痕机制**：
+  - **池塘漂流瓶（Fishing Drift Bottle）**：在池塘垂钓结算时，设定 15% 概率触发捞起漂流瓶动画，随机展示近期访客留言或木屋生活语录；
+  - **篝火打卡册（Campfire Guestbook）**：角色靠近篝火按空格或点击时，弹出便携式羊皮纸留言板，允许访客挑选预设像素头像并提交不超过 60 字的暖心寄语；
+  - **降级与防刷策略**：服务端不可达（纯 GitHub Pages 静态模式）时自动降级回内置静态语录池与 LocalStorage 本地写存；严格限制字数与高频提交，渲染时全链路使用 `textContent` 规避 XSS 注入。
+
+## 8. 随身工作台 PWA 独立窗口化规格（`/board/`）（待实现 · V7 Task 32）
+- **Web App Manifest 规范（`manifest.json`）**：
+  - `name`: `Ricardo's Workbench · 随身告示牌`
+  - `short_name`: `告示牌`
+  - `start_url`: `/board/?source=pwa`
+  - `display`: `standalone`（移除浏览器 URL 地址栏与导航底栏，窗口全屏沉浸）
+  - `background_color`: `#e8d8b8`（复古羊皮纸底色）
+  - `theme_color`: `#8c4a27`（原木深棕色）
+  - `icons`: 提供 192×192 与 512×512 像素木图钉图标，支持手机主屏幕与桌面快捷启动。
+- **Service Worker（`sw.js`）缓存策略**：
+  - **Stale-While-Revalidate** 策略缓存核心静态资源（HTML 框架、CSS 样式、分片字库 `shard-common.woff2`、像素图块）；
+  - 弱网与无网环境下保证秒开告示牌本地待办与剪贴板，联网后后台静默同步 SQLite / GitHub。
+
+## 9. 告示牌全局快捷键与无感暂存便签（Ctrl+V / Cmd+V）（待实现 · V7 Task 33）
+- **剪贴板瞬发便签（Instant Pin via Paste）**：
+  - 在 `/board/` 页面全局监听 `paste` 事件（当焦点不在文本框内时触发）；
+  - 自动读取剪贴板纯文本、URL 链接或文字片段，直接在最前列插入一张新便签纸；
+  - 若剪贴板内容符合日历/时间模式（如“明天下午开会”），自动执行自然语言日期解析提取截止期。
+- **四色像素图钉分类系统**：
+  - 🔴 **红图钉（Late / Urgent）**：紧急待办、临近 Deadline；
+  - 🔵 **蓝图钉（Idea / Spark）**：灵感碎片、阅读感悟；
+  - 🟢 **绿图钉（Snippet / Link）**：临时代码段、参考网页链接；
+  - 🟡 **金图钉（Milestone）**：关键节点、重要日常。
+  - 用户点击便签图钉即可轮转切换颜色分类。
+- **一键归档至日常流水（Archive to Log）**：
+  - 便签动作栏增加「归档入流水」按钮，点击自动将便签标题与完成时间写入 `/log/` 流水条目，并从当前活跃木板移入已做完列表。
+
+## 10. 移动端虚拟十字键（Virtual D-Pad）与环境音引导气泡（待实现 · V7 Task 31）
+- **虚拟十字键（Virtual D-Pad）**：
+  - 仅在触屏设备且处于农场漫游模式（`is-farm-mode`）时浮现于左下角；
+  - 采用半透明像素方向键四向布局，绑定 `PointerEvent`，支持按住拖拽连续移动；
+  - 不侵入 PC 端键盘操控，不遮挡左下角信箱与村民 NPC。
+- **声音呼吸气泡组件**：
+  - 检测到 `sound.settings.on === false` 时，在右上角 HUD 音量喇叭旁边悬浮微动效小气泡；
+  - 引导文案：“🎵 点击开启田园白噪音与八音盒”，访客主动点击开启音频或点击小气泡后自动隐藏且记住状态。
+
+## 11. 社交分享 Open Graph 元数据与多端预览规格（部分实现 · V7 Task 35 收尾）
+- **Open Graph 标准卡片配置**：
+  - `og:site_name`: `Ricardo's Cyber Cabin`
+  - `og:title`: `Ricardo's Cyber Cabin · 田园赛博木屋与随身工作台`
+  - `og:description`: `一座零前端框架、程序化像素绘图与实时音频合成的手搓田园赛博木屋。收录微秒级任务调度研究、生活日常与跨设备随身工作台。`
+  - `og:image`: 当前全站为 `https://www.my-ricardo.com/img/farm-spring.png`；目标产物为 1200×630 夜间像素木屋暖光全景 `img/cabin-og-cover.png`（待 `tools/art.py` 生成，Task 35）。
+  - `twitter:card`: `summary_large_image`
+- **支持主流即时通讯工具卡片解析**：微信分享缩略图、飞书卡片展开、Telegram 链接预览、Discord 及 X/Twitter 完整适配。

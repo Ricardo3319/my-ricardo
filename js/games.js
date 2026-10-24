@@ -363,6 +363,19 @@
     if (overlayEl) overlayEl.hidden = true;
   }
 
+  // 钓结算后的瓶中信（V7 Task 29）：15% 概率捞起漂流瓶，随机展示一条访客留痕。
+  function maybeShowBottle() {
+    if (!window.FARM_MSG || !window.FARM_MSG.bottle || !cardEl) return;
+    if (Math.random() >= 0.15) return;
+    window.FARM_MSG.bottle(function (msg) {
+      if (!msg || !overlayEl || overlayEl.hidden) return;
+      var note = document.createElement("p");
+      note.className = "game-card-bottle";
+      note.textContent = "🍾 瓶中信 · " + (msg.author || "路过的农夫") + "：" + msg.text;
+      cardEl.appendChild(note);
+    });
+  }
+
   function makeFishIcon(fish, unlocked) {
     var c = document.createElement("canvas");
     c.width = 16;
@@ -1040,6 +1053,7 @@
         "体长 " + cm + " cm（" + f.tag + "）",
         badge
       );
+      maybeShowBottle();
     } else {
       fishGame.result = { won: false };
       if (window.FARM_SOUND && window.FARM_SOUND.lose) window.FARM_SOUND.lose();
@@ -1049,6 +1063,7 @@
         "按住让绿色浮标条罩住小鱼，右侧进度满即可钓起",
         "点画面或按空格再抛一竿"
       );
+      maybeShowBottle();
     }
     updateFishControls();
   }

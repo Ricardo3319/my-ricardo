@@ -118,10 +118,12 @@
   - 首页代表作卡片改为“木屋工坊 · 锻造代表作”叙事：`.craft-motto` 工坊寄语 + `.craft-why` 造轮子动机 + `.craft-note` 技术突破，替代纯论文摘要式描述；
   - 文案规避 `tools/check.py` 游戏专名规则（“星露谷物语”→“田园生活模拟游戏”），重跑 `tools/font-shards.py` 更新 common 字库分片。
 
-- [ ] **Task 29（像素 RPG 农场互动深度与访客留痕）** · 规格：SPEC §7 / CONTENT §5
-  - 篝火留言簿与池塘漂流瓶：利用 SQLite / GitHub 后端提供轻量级访客留言与漂流瓶捞起机制；
-  - 严格 XSS 过滤防护（纯文本存储与 `textContent` 渲染）；
-  - 离线/静态降级保障（GitHub Pages 纯静态下回退内置寄语池）。
+- [x] **Task 29（像素 RPG 农场互动深度与访客留痕）** · 规格：SPEC §7 / CONTENT §5
+  - 后端 `server/app.py` 新增 `messages` 表与 `GET/POST /api/messages`：60 字限长、每 IP 10 分钟最多 2 条限流、服务端去控制字符压平空白；
+  - 新增 `js/messages.js`（全站 11 页在 `games.js` 前引入）：`FARM_MSG.bottle()` 漂流瓶随机取信、`FARM_MSG.openGuestbook()` 篝火打卡册弹窗（8 个像素头像 + ≤60 字寄语 + 近期留言列表）；
+  - 钓鱼结算（`js/games.js` `finishFish`）15% 概率在结果卡追加「🍾 瓶中信」一行；篝火对话（`js/walk.js`）新增「翻开篝火打卡册」选项；
+  - 防 XSS 全链路 `textContent` 渲染；纯静态（GitHub Pages）下自动降级：读取回退内置 7 条寄语池，写存 localStorage（`farm.messages.v1`）并标注「本机暂存」；
+  - 重跑 `tools/font-shards.py` 把新文案汉字收进 common 分片。
 
 - [ ] **Task 30（环境音效与昼夜白噪音沉浸感增强）** · 规格：DESIGN §6
   - 夜晚模式混入松木篝火噼啪爆裂声（Poisson 随机脉冲算法）与虫鸣；

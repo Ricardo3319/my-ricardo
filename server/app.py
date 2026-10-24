@@ -31,6 +31,9 @@ def init_db():
         conn.execute(
             "CREATE TABLE IF NOT EXISTS logs (id INTEGER PRIMARY KEY AUTOINCREMENT, date TEXT NOT NULL, text TEXT NOT NULL, created_at INTEGER NOT NULL)"
         )
+        conn.execute(
+            "CREATE TABLE IF NOT EXISTS messages (id INTEGER PRIMARY KEY AUTOINCREMENT, text TEXT NOT NULL, author TEXT NOT NULL, badge TEXT NOT NULL, created_at INTEGER NOT NULL)"
+        )
         conn.commit()
 
 
@@ -51,6 +54,29 @@ def load_board_state():
 FAILED_AUTH = {}
 AUTH_WINDOW_SEC = 60
 AUTH_MAX_FAILS = 8
+
+# 访客留痕（漂流瓶/打卡册）：每 IP 10 分钟最多 2 条，防刷屏。
+MSG_POSTS = {}
+MSG_WINDOW_SEC = 600
+MSG_MAX_POSTS = 2
+MSG_MAX_LEN = 60
+
+
+def msg_rate_ok(ip):
+    now = time.time()
+    recent = [ts for ts in MSG_POSTS.get(ip, []) if now - ts < MSG_WINDOW_SEC]
+    MSG_POSTS[ip] = recent
+    if len(recent) >= MSG_MAX_POSTS:
+        return False
+    recent.append(now)
+    return True
+
+
+def clean_msg_text(value, limit=MSG_MAX_LEN):
+    """强制纯文本：去控制字符、压平空白、限长。渲染侧另有 textContent 兜底。"""
+    text = "".join(ch for ch in str(value or "") if ch == "\n" or (ord(ch) >= 32 and ord(ch) != 0x7F))
+    text = " ".join(text.split())
+    return text[:limit]
 
 
 def merge_board_state(current, incoming):
@@ -167,6 +193,12 @@ class RicardoRequestHandler(SimpleHTTPRequestHandler):
                     "logs": [dict(r) for r in rows],
                 },
             )
+        if parsed.path == "/api/messages":
+            with get_db() as conn:
+                rows = conn.execute(
+                    "SELECT id, text, author, badge, created_at FROM messages ORDER BY id DESC LIMIT 50"
+                ).fetchall()
+            return self._send_json(200, {"messages": [dict(r) for r in rows]})
         return super().do_GET()
 
     def do_POST(self):
@@ -195,6 +227,25 @@ class RicardoRequestHandler(SimpleHTTPRequestHandler):
                     )
                 conn.commit()
             return self._send_json(200, {"ok": True})
+        if parsed.path == "/api/messages":
+            if not msg_rate_ok(self._client_ip()):
+                return self._send_json(429, {"ok": False, "error": "歇一会儿再写吧，10 分钟内最多留 2 条"})
+            body = self._read_json()
+            text = clean_msg_text(body.get("text"))
+            author = clean_msg_text(body.get("author"), 12) or "路过的农夫"
+            badge = str(body.get("badge") or "🌾")[:8]
+            if not text:
+                return self._send_json(400, {"ok": False, "error": "空便签钉不上木板"})
+            with get_db() as conn:
+                cur = conn.execute(
+                    "INSERT INTO messages (text, author, badge, created_at) VALUES (?, ?, ?, ?)",
+                    (text, author, badge, int(time.time())),
+                )
+                conn.commit()
+                row = conn.execute(
+                    "SELECT id, text, author, badge, created_at FROM messages WHERE id = ?", (cur.lastrowid,)
+                ).fetchone()
+            return self._send_json(200, {"ok": True, "message": dict(row)})
         return self._send_json(404, {"error": "Not found"})
 
     def do_PUT(self):

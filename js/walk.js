@@ -234,6 +234,19 @@
       note.appendChild(nsmall);
       options.push(note);
     }
+    if (d.easterEgg === "campfire" && window.FARM_MSG && window.FARM_MSG.openGuestbook) {
+      var gb = document.createElement("button");
+      gb.type = "button";
+      gb.textContent = "翻开篝火打卡册 →";
+      var gbsmall = document.createElement("small");
+      gbsmall.textContent = "访客留痕";
+      gb.appendChild(gbsmall);
+      gb.addEventListener("click", function () {
+        closeTalk();
+        window.FARM_MSG.openGuestbook();
+      });
+      options.push(gb);
+    }
     var stay = document.createElement("button");
     stay.type = "button";
     stay.textContent = "再逛逛";

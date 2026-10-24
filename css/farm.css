@@ -81,9 +81,11 @@ html[data-phase="night"] .world::before { background: rgb(14 22 62 / 0.45); }
   pointer-events: none;
 }
 
-.inner .world::after,
+html[data-theme="farm"] .inner .world::after,
 .is-gaming .world::after { opacity: 1; }
 
+/* 落地页模式（首页及所有内页默认态）：铺一层《星露谷》开始菜单风格的蓝天白云与田园天际线，去掉黑幕 */
+html:not([data-theme="farm"]) .world::after,
 .home:not(.is-farm-mode):not(.is-gaming) .world::after {
   opacity: 1;
   background:
@@ -95,6 +97,7 @@ html[data-phase="night"] .world::before { background: rgb(14 22 62 / 0.45); }
     linear-gradient(180deg, #4b9be1 0%, #7ec4ef 26%, #bfe6fa 52%, #e5f2d5 74%, #f6ebd4 100%);
 }
 
+html[data-phase="dawn"]:not([data-theme="farm"]) .world::after,
 html[data-phase="dawn"] .home:not(.is-farm-mode):not(.is-gaming) .world::after {
   background:
     radial-gradient(ellipse 200px 46px at 20% 18%, rgba(255, 240, 224, 0.58) 0 65%, transparent 70%),
@@ -102,6 +105,7 @@ html[data-phase="dawn"] .home:not(.is-farm-mode):not(.is-gaming) .world::after {
     linear-gradient(180deg, #698cc7 0%, #c898a8 30%, #f5c69c 58%, #f7ebd4 100%);
 }
 
+html[data-phase="dusk"]:not([data-theme="farm"]) .world::after,
 html[data-phase="dusk"] .home:not(.is-farm-mode):not(.is-gaming) .world::after {
   background:
     radial-gradient(ellipse 210px 46px at 22% 18%, rgba(255, 214, 186, 0.42) 0 65%, transparent 70%),
@@ -109,6 +113,7 @@ html[data-phase="dusk"] .home:not(.is-farm-mode):not(.is-gaming) .world::after {
     linear-gradient(180deg, #484a83 0%, #a86475 30%, #e4976b 58%, #f3e2c7 100%);
 }
 
+html[data-phase="night"]:not([data-theme="farm"]) .world::after,
 html[data-phase="night"] .home:not(.is-farm-mode):not(.is-gaming) .world::after {
   background:
     radial-gradient(circle 2px at 15% 14%, rgba(255, 248, 214, 0.85) 0 60%, transparent 100%),
@@ -171,45 +176,78 @@ html[data-phase="night"] .home:not(.is-farm-mode):not(.is-gaming) .world::after 
   pointer-events: auto;
 }
 
-/* 所有可交互对象常驻悬浮像素名牌提示，走近或悬停时高亮并弹出叹号。 */
+/* 地图交互极简指示：无背景色，仅在头顶正中悬浮一枚温润原木象牙白像素感叹号（!） */
 .bubble {
   position: absolute;
   left: 50%;
-  bottom: calc(100% + var(--fs) + 6 * var(--px));
+  bottom: calc(100% + 4 * var(--px));
   z-index: 3;
-  padding: 0 calc(2 * var(--px));
-  background: #ffd34d;
-  border: var(--px) solid var(--focus);
-  color: var(--focus);
-  line-height: 1.15;
+  width: calc(6 * var(--px));
+  height: calc(14 * var(--px));
+  background: transparent url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 6 14'%3E%3Cpath d='M1 0.8h4v7.6H1zM1 10.4h4v2.8H1z' fill='%23fff4d4' stroke='%233a1c0d' stroke-width='1.2' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat center center / contain !important;
+  border: none !important;
+  box-shadow: none !important;
+  filter: drop-shadow(0 calc(1.5 * var(--px)) calc(2 * var(--px)) rgba(35, 18, 8, 0.45));
   transform: translateX(-50%);
   pointer-events: none;
-  animation: bubble-pop 220ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: bubble-beacon 2s ease-in-out infinite;
+  transition: opacity 160ms ease, transform 160ms ease;
+}
+
+@keyframes bubble-beacon {
+  0%, 100% { transform: translateX(-50%) translateY(0); }
+  50% { transform: translateX(-50%) translateY(calc(-4 * var(--px))); }
+}
+
+.actor.is-near .bubble,
+.actor:hover .bubble {
+  opacity: 0;
+  transform: translateX(-50%) translateY(calc(-6 * var(--px)));
+}
+
+/* 大面积区域（池塘、菜地、牲口棚）：感叹号居中悬浮在区域正上方中心 */
+.actor-zone > .bubble {
+  bottom: auto;
+  top: 38%;
 }
 
 .nametag {
   position: absolute;
   left: 50%;
   bottom: calc(100% + 2 * var(--px));
-  z-index: 2;
+  z-index: 4;
   padding: var(--px) calc(2.5 * var(--px));
-  background: rgba(24, 15, 10, 0.78);
-  border: var(--px) solid rgba(255, 234, 190, 0.55);
+  background: rgba(24, 15, 10, 0.88);
+  border: var(--px) solid rgba(255, 234, 190, 0.65);
   box-shadow: 0 var(--px) 0 rgba(12, 7, 4, 0.65);
   color: var(--cream);
   line-height: 1.2;
   text-shadow: var(--px) var(--px) 0 var(--shadow);
   white-space: nowrap;
-  transform: translateX(-50%);
-  transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease;
-  animation: nametag-float 2.6s ease-in-out infinite;
+  transform: translateX(-50%) translateY(4px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 180ms ease, transform 180ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.actor.is-near .nametag,
+.actor:hover .nametag {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateX(-50%) translateY(0);
 }
 
 /* 小游戏与小程序入口（池塘、矿车街机、菜地、古井）：金框暖底更醒目 */
-.actor-game > .nametag {
-  background: rgba(44, 24, 10, 0.88);
+.actor-game > .nametag,
+.actor-arcade > .nametag {
+  background: rgba(44, 24, 10, 0.94);
   border-color: #ffd34d;
   color: #ffe891;
+}
+
+.actor-arcade {
+  z-index: 250 !important;
+  cursor: pointer;
 }
 
 /* 大面积区域（池塘、菜地、牲口棚）：提示牌居中悬浮在区域正上方 */
@@ -526,6 +564,13 @@ img { display: block; }
   padding: calc(4 * var(--px)) calc(4 * var(--px)) 0;
 }
 
+/* 落地页模式下：时间胶囊水平居中，位于大标题木牌上方，形成对称典雅的主视觉轴 */
+.home:not(.is-farm-mode) .hud {
+  justify-content: center;
+  padding: 18px 16px 4px;
+  width: 100%;
+}
+
 .inner .hud-mode-switch {
   display: none;
 }
@@ -539,6 +584,158 @@ img { display: block; }
   border-width: calc(5 * var(--px));
   border-image: url("../img/ui-tab.png") 5 fill / calc(5 * var(--px)) stretch;
   image-rendering: pixelated;
+}
+
+/* 落地页模式下的现代毛玻璃药丸胶囊 HUD：轻巧雅致，无像素厚框 */
+html:not([data-theme="farm"]) .hud-box,
+html[data-theme="landing"] .hud-box {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 14px 4px 6px;
+  border: 1px solid rgba(255, 255, 255, 0.75);
+  border-image: none;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.78);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  box-shadow: 0 4px 16px rgba(35, 18, 8, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 500;
+  color: #4a200b;
+  letter-spacing: 0.02em;
+}
+
+html[data-phase="night"]:not([data-theme="farm"]) .hud-box,
+html[data-phase="night"][data-theme="landing"] .hud-box {
+  background: rgba(24, 34, 62, 0.82);
+  border-color: rgba(255, 255, 255, 0.16);
+  color: #f0f4ff;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+}
+
+html:not([data-theme="farm"]) .hud-sky,
+html[data-theme="landing"] .hud-sky {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(255, 255, 255, 0.9);
+  border-image: none;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+}
+
+html:not([data-theme="farm"]) .hud-sky::after,
+html[data-theme="landing"] .hud-sky::after {
+  display: none;
+}
+
+html:not([data-theme="farm"]) .hud-lines,
+html[data-theme="landing"] .hud-lines {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-sans);
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+html:not([data-theme="farm"]) .hud-lines p,
+html[data-theme="landing"] .hud-lines p {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+}
+
+html:not([data-theme="farm"]) .hud-lines p:first-child::after,
+html[data-theme="landing"] .hud-lines p:first-child::after {
+  content: "·";
+  margin: 0 2px;
+  opacity: 0.45;
+}
+
+html:not([data-theme="farm"]) .hud-season,
+html[data-theme="landing"] .hud-season {
+  background: rgba(140, 90, 50, 0.08);
+  border: 1px solid rgba(140, 90, 50, 0.14);
+  border-radius: 999px;
+  padding: 1px 7px;
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 600;
+  color: inherit;
+  box-shadow: none;
+}
+
+html[data-phase="night"]:not([data-theme="farm"]) .hud-season,
+html[data-phase="night"][data-theme="landing"] .hud-season {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.2);
+  color: #f0f4ff;
+}
+
+/* 农场漫游态下的退出/返回主页按钮：左上角温润金琥珀药丸，带微反光与 Esc 提示 */
+.is-farm-mode .hud-mode-switch {
+  position: fixed;
+  top: 14px;
+  left: 16px;
+  z-index: 10;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: 2px solid #5b2a12;
+  border-image: none;
+  background: linear-gradient(180deg, #ffe0a3 0%, #f6ba60 100%);
+  box-shadow: 0 4px 14px rgba(35, 18, 8, 0.28), inset 0 1px 0 #fff7e0;
+  color: #4a200b;
+  font-family: var(--font-sans);
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.18s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.18s ease;
+}
+
+.is-farm-mode .hud-mode-switch:hover {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 6px 18px rgba(35, 18, 8, 0.38), inset 0 1px 0 #fff7e0;
+}
+
+.is-farm-mode .hud-mode-switch:active {
+  transform: translateY(1px);
+}
+
+.is-farm-mode .hud-mode-switch .switch-arrow {
+  font-weight: 700;
+  font-size: 14px;
+  line-height: 1;
+}
+
+.is-farm-mode .hud-mode-switch .switch-kbd {
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: rgba(74, 32, 11, 0.14);
+  color: #5b2a12;
+  border: 1px solid rgba(74, 32, 11, 0.2);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.5);
+  line-height: 1.2;
+}
+
+@media (max-width: 640px) {
+  .is-farm-mode .hud-mode-switch {
+    top: 8px;
+    left: 10px;
+    padding: 5px 12px;
+    font-size: 12px;
+  }
+  .is-farm-mode .hud-mode-switch .switch-kbd {
+    display: none;
+  }
 }
 
 /* 一小块天：颜色跟着钟点走，太阳或月亮沿弧线挪，底下一条当季的草。 */
@@ -808,8 +1005,7 @@ html[data-season="winter"] .hud-season-name::before { content: "冬"; }
 }
 
 .home:not(.is-farm-mode) .dialogue,
-.home:not(.is-farm-mode) .walk-peep,
-.home:not(.is-farm-mode) .rotate-hint {
+.home:not(.is-farm-mode) .walk-peep {
   display: none !important;
 }
 
@@ -1081,6 +1277,92 @@ html[data-season="winter"] .hud-season-name::before { content: "冬"; }
 .tabs a:focus-visible {
   position: relative;
   z-index: 3;
+}
+
+/* ---------------------------------------------------------------- 落地页模式：内页清爽卡片化 */
+
+html:not([data-theme="farm"]) .menu-wrap {
+  width: min(100% - 32px, 860px);
+  margin: 16px auto 36px;
+}
+
+html:not([data-theme="farm"]) .panel.menu,
+html:not([data-theme="farm"]) .panel.letter,
+html:not([data-theme="farm"]) .panel.board {
+  border: 1px solid rgba(140, 90, 50, 0.18);
+  border-image: none;
+  border-radius: 20px;
+  background: rgba(255, 254, 250, 0.96);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  box-shadow: 0 16px 48px rgba(35, 18, 8, 0.12), 0 2px 6px rgba(35, 18, 8, 0.05);
+  padding: clamp(20px, 4vw, 36px);
+  font-family: var(--font-sans);
+  color: var(--ink);
+  filter: none;
+}
+
+html[data-phase="night"]:not([data-theme="farm"]) .panel.menu,
+html[data-phase="night"]:not([data-theme="farm"]) .panel.letter,
+html[data-phase="night"]:not([data-theme="farm"]) .panel.board {
+  background: rgba(24, 32, 54, 0.94);
+  border-color: rgba(255, 255, 255, 0.14);
+  color: #e6eef5;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.45);
+}
+
+html:not([data-theme="farm"]) .close {
+  border-image: none;
+  border-radius: 50%;
+  background: rgba(140, 90, 50, 0.12);
+  border: 1px solid rgba(140, 90, 50, 0.2);
+  width: 32px;
+  height: 32px;
+  top: 14px;
+  right: 14px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  transition: transform 0.2s cubic-bezier(0.22, 1, 0.36, 1), background-color 0.2s ease;
+}
+
+html:not([data-theme="farm"]) .close:hover {
+  background: rgba(140, 90, 50, 0.22);
+  transform: scale(1.1);
+  filter: none;
+}
+
+html:not([data-theme="farm"]) .tabs {
+  border-image: none;
+  background: rgba(255, 254, 250, 0.88);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(140, 90, 50, 0.18);
+  border-radius: 999px;
+  box-shadow: 0 8px 24px rgba(35, 18, 8, 0.1);
+  padding: 4px 10px;
+  margin: 0 auto 12px;
+  width: fit-content;
+  max-width: calc(100% - 24px);
+  display: flex;
+  justify-content: center;
+  gap: 4px;
+}
+
+html:not([data-theme="farm"]) .tabs a {
+  border-image: none;
+  border-radius: 999px;
+  font-family: var(--font-sans);
+  font-size: 13.5px;
+  font-weight: 500;
+  padding: 6px 14px;
+  color: var(--ink);
+  transition: background-color 0.18s ease, color 0.18s ease;
+}
+
+html:not([data-theme="farm"]) .tabs a[aria-current="page"] {
+  background: #ecd4ad;
+  color: #4a200b;
+  font-weight: 600;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
 }
 
 .tabs img {
@@ -1389,6 +1671,10 @@ html[data-phase="night"] .forest-line { fill: #0d1f1b; }
   position: relative;
   margin-top: 10px;
   padding: 8px 24px;
+  max-width: min(100%, calc(100vw - 32px));
+  box-sizing: border-box;
+  overflow-wrap: break-word;
+  word-break: break-word;
   border-radius: 10px;
   border: 3px solid #4a200b;
   background: linear-gradient(180deg, #ffe6b0 0%, #f2b863 100%);
@@ -1396,10 +1682,47 @@ html[data-phase="night"] .forest-line { fill: #0d1f1b; }
     inset 0 1px 0 #fff8e6,
     0 8px 20px rgba(24, 12, 5, 0.2);
   color: #4a200b;
-  font-size: clamp(13.5px, 1rem, 15.5px);
+  font-size: clamp(12.5px, 3.6vw, 15.5px);
   font-weight: 700;
   animation: sign-sway 5.5s ease-in-out infinite;
   transform-origin: 50% -10px;
+}
+
+/* 标题木牌下方的悬浮像素农舍漫游按钮 */
+.farm-cabin-entrance-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  padding: 7px 18px;
+  border-radius: 999px;
+  border: 2px solid #5b2a12;
+  background: linear-gradient(180deg, #ffe0a3 0%, #f6ba60 100%);
+  box-shadow: 0 4px 14px rgba(42, 20, 10, 0.18), inset 0 1px 0 #fff5d8;
+  color: #4a200b;
+  font-family: var(--font-sans);
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.2s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.2s ease;
+}
+
+.farm-cabin-entrance-btn:hover {
+  transform: translateY(-2px) scale(1.03);
+  box-shadow: 0 8px 20px rgba(42, 20, 10, 0.25), inset 0 1px 0 #fff5d8;
+}
+
+.farm-cabin-entrance-btn .cabin-icon {
+  font-size: 16px;
+  line-height: 1;
+}
+
+.farm-cabin-entrance-btn .cabin-tag {
+  background: rgba(74, 32, 11, 0.12);
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  color: #5b2a12;
 }
 
 .title-chain {
@@ -1594,6 +1917,62 @@ html[data-phase="night"] .forest-line { fill: #0d1f1b; }
   box-shadow:
     0 8px 28px rgba(68, 34, 14, 0.08),
     0 1px 3px rgba(68, 34, 14, 0.05);
+}
+
+/* 落地页底端漫游农场小径卡片 */
+.farm-trail-card {
+  margin-top: 14px;
+  background: linear-gradient(135deg, rgba(255, 248, 230, 0.96) 0%, rgba(254, 238, 205, 0.92) 100%);
+  border: 1.5px solid rgba(160, 100, 40, 0.28);
+  box-shadow: 0 10px 32px rgba(42, 20, 10, 0.1);
+}
+
+.farm-trail-content {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.farm-trail-icon {
+  flex: none;
+  width: 54px;
+  height: 54px;
+  border-radius: 14px;
+  background: #f6c87e;
+  border: 2px solid #5b2a12;
+  box-shadow: 0 4px 10px rgba(42, 20, 10, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.farm-trail-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.farm-trail-heading {
+  font-family: var(--font-sans);
+  font-size: 17.5px;
+  font-weight: 700;
+  color: #4a200b;
+  margin-bottom: 4px;
+}
+
+.farm-trail-desc {
+  font-size: 13.5px;
+  color: #6e3b1b;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.farm-trail-action {
+  flex: none;
+  padding: 10px 20px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
 }
 
 .clean-profile-main {
@@ -3145,13 +3524,71 @@ html[data-phase="night"] .clean-section > .clean-section-head .clean-more {
 /* ---------------------------------------------------------------- 窄屏 */
 
 @media (max-width: 640px) {
+  html, body {
+    overflow-x: hidden;
+  }
+
   .landing-wrap {
-    width: calc(100% - 20px);
-    margin: 6px auto 18px;
+    width: calc(100% - 16px);
+    margin: 4px auto 16px;
   }
 
   .title-plaque {
-    padding: 18px 20px 16px;
+    padding: 16px 14px 14px;
+    max-width: calc(100vw - 20px);
+  }
+
+  .title-main {
+    font-size: clamp(34px, 9.5vw, 56px);
+  }
+
+  .title-sub-plaque {
+    padding: 6px 12px;
+    font-size: clamp(11.5px, 3.4vw, 13.5px);
+    max-width: calc(100vw - 24px);
+  }
+
+  .farm-cabin-entrance-btn {
+    padding: 6px 14px;
+    font-size: 13px;
+  }
+
+  .hud {
+    padding: 6px 10px 0;
+  }
+
+  html:not([data-theme="farm"]) .hud-box,
+  html[data-theme="landing"] .hud-box {
+    padding: 2px 10px 2px 4px;
+    font-size: 12px;
+    gap: 6px;
+  }
+
+  html:not([data-theme="farm"]) .hud-lines,
+  html[data-theme="landing"] .hud-lines {
+    font-size: 12px;
+  }
+
+  html:not([data-theme="farm"]) .menu-wrap {
+    width: calc(100% - 16px);
+    margin: 10px auto 24px;
+  }
+
+  html:not([data-theme="farm"]) .panel.menu,
+  html:not([data-theme="farm"]) .panel.letter,
+  html:not([data-theme="farm"]) .panel.board {
+    padding: 18px 14px;
+    border-radius: 16px;
+  }
+
+  html:not([data-theme="farm"]) .tabs {
+    padding: 3px 6px;
+    max-width: calc(100% - 16px);
+  }
+
+  html:not([data-theme="farm"]) .tabs a {
+    font-size: 12.5px;
+    padding: 5px 10px;
   }
 
   .title-menu {
@@ -3282,23 +3719,6 @@ html[data-phase="night"] .clean-section > .clean-section-head .clean-more {
   }
 }
 
-/* ---------------------------------------------------------------- 手机横过来 */
-
-/* 竖着拿手机时劝一句：这张农场是横的。点一下收起，记在这次浏览里。 */
-.rotate-hint {
-  display: none;
-  position: fixed;
-  top: calc(4 * var(--px));
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 6;
-}
-
-@media (max-width: 640px) and (orientation: portrait) {
-  .rotate-hint { display: inline-flex; }
-
-  body.hint-off .rotate-hint { display: none; }
-}
 
 /* 横过来的手机、或者很矮的窗口：选项排两栏、边距收一点，一屏放得下不用滚。 */
 @media (max-height: 540px) {

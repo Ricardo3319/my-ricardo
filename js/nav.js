@@ -152,9 +152,13 @@
   // 没有走动脚本、不在首页、或减少动效时，leave 会立刻回调，换页和以前一样快。
   function leaveHome(url) {
     grab(url.href); // 过场这段路正好把下一页取回来
+    var isFarm = document.body.classList.contains("is-farm-mode");
     var walk = window.FARM_WALK;
-    if (walk && walk.leave) walk.leave(function () { go(url, true, 0); });
-    else go(url, true, 0);
+    if (isFarm && walk && walk.leave) {
+      walk.leave(function () { go(url, true, 0); });
+    } else {
+      go(url, true, 0);
+    }
   }
 
   function go(url, push, y) {
@@ -236,4 +240,47 @@
   document.addEventListener("mouseover", early, { passive: true });
   document.addEventListener("touchstart", early, { passive: true });
   document.addEventListener("focusin", early);
+
+  // 全局 ESC 快捷键：绝大多数界面均支持按 Esc 快速回退上一页或回落地页
+  document.addEventListener("keydown", function (event) {
+    if (event.key !== "Escape" || event.defaultPrevented) return;
+
+    // 1. 如果正在输入，先退出编辑（失焦）
+    var active = document.activeElement;
+    if (active && (active.tagName === "INPUT" || active.tagName === "TEXTAREA" || active.isContentEditable)) {
+      active.blur();
+      return;
+    }
+
+    // 2. 如果小游戏打开着，交给 games.js 关闭
+    if (window.FARM_GAMES && window.FARM_GAMES.isOpen && window.FARM_GAMES.isOpen()) {
+      return;
+    }
+
+    // 3. 如果农场对话打开着，交给 walk.js 关闭
+    if (document.body.classList.contains("is-talking")) {
+      return;
+    }
+
+    // 4. 如果在首页农场漫游态（无对话），按 Esc 一键切回标准落地页
+    if (document.body.classList.contains("home") && document.body.classList.contains("is-farm-mode")) {
+      event.preventDefault();
+      var toggle = document.querySelector("[data-home-mode-toggle]");
+      if (toggle) toggle.click();
+      return;
+    }
+
+    // 5. 如果在子页面（/notes/、/about/、/board/、/log/ 等），按 Esc 一键返回上一页/回首页
+    if (document.body.classList.contains("inner")) {
+      event.preventDefault();
+      var closeBtn = document.querySelector("a.close");
+      if (closeBtn) {
+        closeBtn.click();
+      } else if (window.history.length > 1) {
+        window.history.back();
+      } else {
+        go(new URL(base.href), true, 0);
+      }
+    }
+  });
 })();

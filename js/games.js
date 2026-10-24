@@ -1409,10 +1409,10 @@
     cartGame.sparks = [];
     cartGame.pops = [];
 
-    cartGame.segments.push({ x: 0, w: 200, y: 108, upper: false });
-    cartGame.mainEnd = 200;
+    cartGame.segments.push({ x: 0, w: 320, y: 108, upper: false });
+    cartGame.mainEnd = 320;
     cartGame.mainY = 108;
-    while (cartGame.mainEnd < 520) {
+    while (cartGame.mainEnd < 640) {
       appendTrackSegment();
     }
     updateCartControls();

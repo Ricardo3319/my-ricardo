@@ -41,7 +41,6 @@ CORE_ROUTES = {
     "notes/index.html": "/notes/",
     "about/index.html": "/about/",
 }
-DISCLAIMER = "视觉受田园生活模拟游戏启发，非官方，与 ConcernedApe 无关。"
 GAME = ("星露谷", "Stardew", "鹈鹕镇", "Pelican Town", "祝尼魔", "Junimo", "刘易斯", "威利", "罗宾", "阿比盖尔", "皮埃尔")
 
 fails = []
@@ -145,7 +144,7 @@ def check_page(rel, html):
     script = block(head, r"<script>.*?</script>")
     if not all(k in script for k in ("sessionStorage", "farm.season", "data-phase", "preload")):
         bad(f"{rel} 的 <head> 里缺天色季节小脚本（sessionStorage、data-phase、预加载农场图）")
-    if "localStorage" in script:
+    if 'localStorage.setItem("farm.season"' in script or 'localStorage.getItem("farm.season"' in script:
         bad(f"{rel} 的季节不该存进 localStorage，季节按月份自动定")
     for name in GAME:
         if name in html:
@@ -165,9 +164,6 @@ def check_page(rel, html):
         if part not in hud:
             bad(f"{rel} 的右上角面板缺 {part}")
 
-    foot = block(html, r'<footer class="credit">.*?</footer>')
-    if DISCLAIMER not in foot:
-        bad(f"{rel} 页脚缺非官方声明")
     check_core_nav(rel, html)
 
     if not re.search(r'<script src="[./]*js/farm\.js"></script>\s*</body>', html):

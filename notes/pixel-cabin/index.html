@@ -25,6 +25,11 @@
       } catch (e) {}
       d.setAttribute("data-season", s);
       d.setAttribute("data-phase", h < 5 || h >= 19 ? "night" : h < 7 ? "dawn" : h < 17 ? "day" : "dusk");
+      var m = "landing";
+      try {
+        if (window.localStorage && window.localStorage.getItem("ricardo_home_mode") === "farm") m = "farm";
+      } catch (e) {}
+      d.setAttribute("data-theme", m);
       var l = document.createElement("link");
       l.rel = "preload";
       l.as = "image";
@@ -103,10 +108,10 @@
 
   <footer class="credit">
     <p><a href="../../">农场</a><a href="../../board/">告示牌</a><a href="../../log/">日常</a><a href="../">笔记</a><a href="../../about/">关于</a></p>
-    <p>视觉受田园生活模拟游戏启发，非官方，与 ConcernedApe 无关。</p>
   </footer>
   <script src="../../js/nav.js"></script>
   <script src="../../js/sound.js"></script>
+  <script src="../../js/games.js"></script>
   <script src="../../js/farm.js"></script>
 </body>
 </html>

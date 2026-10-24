@@ -25,6 +25,11 @@
       } catch (e) {}
       d.setAttribute("data-season", s);
       d.setAttribute("data-phase", h < 5 || h >= 19 ? "night" : h < 7 ? "dawn" : h < 17 ? "day" : "dusk");
+      var m = "landing";
+      try {
+        if (window.localStorage && window.localStorage.getItem("ricardo_home_mode") === "farm") m = "farm";
+      } catch (e) {}
+      d.setAttribute("data-theme", m);
       var l = document.createElement("link");
       l.rel = "preload";
       l.as = "image";
@@ -42,7 +47,6 @@
   <div class="world" aria-hidden="true"></div>
 
   <header class="hud">
-    <button class="btn hud-mode-switch" type="button" data-home-mode-toggle aria-label="切换到互动像素农场漫游模式">🌾 进入像素农场</button>
     <div class="hud-box">
       <div class="hud-sky" aria-hidden="true"><span class="hud-sun"></span></div>
       <div class="hud-lines">
@@ -106,6 +110,13 @@
             <span class="title-chain chain-right" aria-hidden="true"></span>
             <p>南京航空航天大学硕士研究生 · 微秒级 RPC 任务调度</p>
           </div>
+
+          <!-- 悬浮微动效农场漫游小入口 -->
+          <button class="farm-cabin-entrance-btn" type="button" data-enter-farm aria-label="漫步像素农场" title="点击进入沉浸式像素农场漫游与互动街机">
+            <span class="cabin-icon" aria-hidden="true">🏡</span>
+            <span class="cabin-label">漫步像素农场</span>
+            <small class="cabin-tag">RPG 漫游</small>
+          </button>
         </div>
 
         <!-- 开始菜单经典竖向木牌按钮组（New / Load / Co-op / Exit 比例） -->
@@ -269,6 +280,22 @@
               <button class="clean-btn" type="button" data-open-game="well">🪣 古井祈愿签</button>
             </div>
           </section>
+
+          <!-- 底端创意农场漫游入口卡片 -->
+          <section class="clean-card farm-trail-card" aria-label="漫步像素农场小径">
+            <div class="farm-trail-content">
+              <div class="farm-trail-icon" aria-hidden="true">
+                <img class="pixel" src="img/season-spring.png" width="48" height="48" alt="">
+              </div>
+              <div class="farm-trail-text">
+                <h3 class="farm-trail-heading">🌿 漫步 Ricardo 的像素农场</h3>
+                <p class="farm-trail-desc">探索四季田园风光、古井抽签、篝火夜话、矿车历险街机与 5 位个性独特的村民 NPC。</p>
+              </div>
+              <button class="btn farm-trail-action" type="button" data-enter-farm>
+                <span>🌾 进入农场漫游</span>
+              </button>
+            </div>
+          </section>
         </div>
       </div>
     </div>
@@ -292,11 +319,8 @@
     <button class="btn walk-peep" type="button" hidden>和 Ricardo 说话</button>
   </main>
 
-  <button class="btn rotate-hint" type="button" hidden>把手机横过来，农场看得更全。</button>
-
   <footer class="credit">
     <p><a href="./">农场</a><a href="board/">告示牌</a><a href="log/">日常</a><a href="notes/">笔记</a><a href="about/">关于</a></p>
-    <p>视觉受田园生活模拟游戏启发，非官方，与 ConcernedApe 无关。</p>
   </footer>
   <script src="js/nav.js"></script>
   <script src="js/sound.js"></script>

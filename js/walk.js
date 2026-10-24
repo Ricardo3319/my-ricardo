@@ -16,7 +16,7 @@
   var NPCS = [
     { name: "陈伯", col: 26, row: 15, face: 0, tab: "关于", page: "about/", game: "well", gameLabel: "去古井摇一支今日黄历签", gameTag: "小程序", line: "我在这农场边上住了几十年啦。你是做什么的？——哦，是你问 Ricardo。" },
     { name: "阿荞", col: 23, row: 16, face: 1, tab: "日常 · 近况", page: "now/", game: "crop", gameLabel: "定个番茄钟在菜地专注种菜", gameTag: "小程序", line: "节气不等人，苗一天一个样。最近在忙什么？" },
-    { name: "老木", col: 32, row: 12, face: 2, tab: "笔记 · 作品", page: "work/", game: "cart", gameLabel: "玩一把谷仓边的矿车街机", gameTag: "小游戏", line: "好木头要慢慢刨。做过些什么？" },
+    { name: "老木", col: 33, row: 12, face: 2, tab: "笔记 · 作品", page: "work/", game: "cart", gameLabel: "玩一把谷仓边的矿车街机", gameTag: "小游戏", line: "好木头要慢慢刨。做过些什么？" },
     { name: "小满", col: 22, row: 21, face: 3, tab: "笔记", page: "notes/", line: "信我都收得好好的。有写东西吗？" },
     { name: "阿涟", col: 33, row: 15, face: 4, tab: "关于 · 联系", page: "contact/", game: "fish", gameLabel: "在池塘边钓会儿鱼", gameTag: "小游戏", easterEgg: "fish", bubbleText: "嘘……别出声，水底好像有大鱼在试探咬钩呢！🐟", line: "鱼不上钩的时候，最适合想事情。怎么联系你？" },
   ];
@@ -52,7 +52,6 @@
   var bg = null; // 农场背景那层。镜头变量写在它和地图上，不写在 <html> 上：根上一改，整页样式都要重算
   var hitArea = null;
   var peep = null;
-  var rotate = null;
   var actors = []; // {data, el, bubble, fx, fy}
   var keys = Object.create(null);
   var pos = { x: START.x, y: START.y, dir: 0, step: 0 };
@@ -316,6 +315,7 @@
     var isFarm = mode === "farm";
     farmModeOn = isFarm;
     document.body.classList.toggle("is-farm-mode", isFarm);
+    document.documentElement.setAttribute("data-theme", isFarm ? "farm" : "landing");
     if (persist) {
       try {
         if (window.localStorage) window.localStorage.setItem(HOME_MODE_KEY, isFarm ? "farm" : "landing");
@@ -323,13 +323,18 @@
     }
     var toggleBtn = ensureHudToggle();
     if (toggleBtn) {
-      toggleBtn.textContent = isFarm ? "📋 返回标准主页" : "🌾 进入像素农场";
-      toggleBtn.setAttribute("aria-label", isFarm ? "切回标准像素风个人概览主页" : "切换到互动像素农场漫游模式");
+      toggleBtn.hidden = !isFarm;
+      toggleBtn.innerHTML = '<span class="switch-arrow">←</span> <span>返回落地页</span> <kbd class="switch-kbd">Esc</kbd>';
+      toggleBtn.setAttribute("aria-label", "切回标准个人主页，按 Esc 键亦可返回");
     }
     if (!isFarm) {
       closeTalk();
       setWalking(false);
       save();
+      if (raf) {
+        window.cancelAnimationFrame(raf);
+        raf = 0;
+      }
       if (persist) window.scrollTo(0, 0);
     } else {
       cam.set = false;
@@ -337,6 +342,10 @@
         setWalking(true);
         save();
         window.scrollTo(0, 0);
+      }
+      if (!raf) {
+        frame.last = 0;
+        raf = window.requestAnimationFrame(frame);
       }
     }
   }
@@ -501,32 +510,8 @@
      立刻回调，换页和以前一样快。路是碰撞格上 BFS 找出来的，绕得开告示牌和栅栏；
      实在没有路（人卡在圈里）或跑得比 LEAVE_CAP 久，就地淡出换页。 */
   function leave(done) {
-    if (!layer || !farmMode() || !walking() || still) {
-      done();
-      return;
-    }
-    if (talking) {
-      // 对话里点链接是在选去处，不是逛完了回家：关掉对话立刻换页，不跑过场。
-      closeTalk();
-      done();
-      return;
-    }
-    if (leaving) {
-      leaveDone = done; // 过场里又点了别的链接：走到门口以后换那页
-      return;
-    }
     closeTalk();
-    leaving = true;
-    leaveDone = done;
-    enter = -1;
-    held = null;
-    keys = Object.create(null);
-    target = null;
-    leaveRoute = pathToDoor() || [{ x: DOOR.x, y: START.y }, { x: DOOR.x, y: DOOR.y }];
-    stuck = { x: pos.x, y: pos.y, t: performance.now() };
-    document.body.classList.add("is-leaving");
-    if (peep) peep.hidden = true;
-    leaveCap = window.setTimeout(finishLeave, LEAVE_CAP);
+    done();
   }
 
   function finishLeave() {
@@ -540,11 +525,12 @@
   }
 
   function frame(now) {
-    raf = window.requestAnimationFrame(frame);
     if (!farmMode()) {
+      raf = 0;
       frame.last = now;
       return;
     }
+    raf = window.requestAnimationFrame(frame);
     var dt = Math.min(0.05, (now - (frame.last || now)) / 1000);
     frame.last = now;
 
@@ -724,7 +710,6 @@
     if (near !== frame.near) {
       frame.near = near;
       actors.forEach(function (a) {
-        a.bubble.hidden = a !== near;
         a.el.classList.toggle("is-near", a === near);
       });
     }
@@ -1029,12 +1014,16 @@
       el.style.width = "calc(" + 16 * (d.w || 1) + " * var(--wpx))";
       el.style.height = "calc(" + 16 * (d.h || 1) + " * var(--wpx))";
       el.style.zIndex = d.row * TILE + 15;
+      if (d.name === "矿车街机") {
+        el.classList.add("actor-arcade");
+        el.style.zIndex = "250";
+      }
       if (d.face >= 0) el.style.backgroundPosition = "calc(" + -16 * d.face + " * var(--wpx)) 0";
       else el.style.pointerEvents = "auto";
       var bubble = document.createElement("span");
       bubble.className = "bubble";
-      bubble.textContent = "！";
-      bubble.hidden = true;
+      bubble.setAttribute("aria-hidden", "true");
+      bubble.hidden = false;
       el.appendChild(bubble);
       var tag = document.createElement("span");
       tag.className = "nametag";
@@ -1063,16 +1052,6 @@
       peep.hidden = true;
       peep.addEventListener("click", greet);
     }
-    rotate = document.querySelector(".rotate-hint");
-    if (rotate) {
-      rotate.hidden = false; // 没有脚本时不出现这块牌
-      if (session && session.getItem("farm.hint") === "off") document.body.classList.add("hint-off");
-      rotate.addEventListener("click", function () {
-        document.body.classList.add("hint-off");
-        if (session) session.setItem("farm.hint", "off");
-      });
-    }
-
     var savedMode = "landing";
     try {
       if (window.localStorage && window.localStorage.getItem(HOME_MODE_KEY) === "farm") {
@@ -1080,29 +1059,31 @@
       }
     } catch (error) {}
     restore();
-    if (walking()) savedMode = "farm";
     setHomeMode(savedMode, false);
     var spotParam = getRequestedSpot();
     if (spotParam) {
       focusSpot(spotParam, true);
     }
-    cam.set = false;
-    frame.last = 0;
-    // 上一帧写过的值：换页重建过元素，得从头写一遍。
-    frame.cx = frame.cy = frame.sx = frame.sy = frame.sz = frame.sp = frame.near = null;
-    raf = window.requestAnimationFrame(frame);
+    if (farmMode()) {
+      cam.set = false;
+      frame.last = 0;
+      frame.cx = frame.cy = frame.sx = frame.sy = frame.sz = frame.sp = frame.near = null;
+      raf = window.requestAnimationFrame(frame);
+    }
   }
   function unmount() {
     if (!layer) return;
     save();
-    window.cancelAnimationFrame(raf);
+    if (raf) {
+      window.cancelAnimationFrame(raf);
+      raf = 0;
+    }
     layer.remove();
     layer = null;
     map = null;
     me = null;
     bg = null;
     peep = null;
-    rotate = null;
     hitArea = null;
     actors = [];
     keys = Object.create(null);

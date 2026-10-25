@@ -75,6 +75,7 @@
   var grid = null;
   var gridSeason = "";
   var HOME_MODE_KEY = "ricardo_home_mode";
+  var HOME_TIP_KEY = "ricardo_farm_tip_seen";
   var farmModeOn = false;
   var hudToggleBound = null;
   // 「在走路」自己记一份：站内换页时 body.className 先被换掉，再发 farm:page，到时候读 class 就晚了。
@@ -330,6 +331,67 @@
     return btn;
   }
 
+  // 农场漫游态的显眼出口：右上角常驻胶囊，和左上角的 HUD 开关一个功能，
+  // 给习惯盯着画面中间或往下滚的访客一个一眼能看到的退回入口。
+  function ensureFarmExit() {
+    var btn = document.querySelector("[data-farm-exit]");
+    if (!btn) {
+      btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "farm-exit-pill";
+      btn.setAttribute("data-farm-exit", "");
+      btn.setAttribute("aria-label", "返回个人主页视图，按 Esc 键亦可返回");
+      btn.innerHTML =
+        '<span>返回个人主页</span> <kbd class="switch-kbd">Esc</kbd>';
+      btn.addEventListener("click", function () {
+        setHomeMode("landing", true);
+      });
+      document.body.appendChild(btn);
+      window.addEventListener("resize", function () {
+        if (!btn.hidden) placeFarmExit(btn);
+      });
+    }
+    return btn;
+  }
+
+  // 顶行高度随时辰和屏宽变：按钮永远贴在 HUD 面板正下方，别压住日期框。
+  function placeFarmExit(btn) {
+    var hud = document.querySelector(".hud");
+    if (!hud) return;
+    var top = hud.getBoundingClientRect().bottom + 8;
+    btn.style.top = Math.max(8, top) + "px";
+  }
+
+  function hideFarmTip() {
+    var tip = document.querySelector(".farm-exit-tip");
+    if (tip) tip.remove();
+  }
+
+  // 头一回进农场：给一条简短的浮层引导，告诉访客怎么回去。每台设备只提示一次。
+  function showFarmTip() {
+    var seen = null;
+    try {
+      seen = window.localStorage && window.localStorage.getItem(HOME_TIP_KEY);
+    } catch (error) {}
+    if (seen) return;
+    try {
+      if (window.localStorage) window.localStorage.setItem(HOME_TIP_KEY, "1");
+    } catch (error) {}
+    hideFarmTip();
+    var tip = document.createElement("p");
+    tip.className = "farm-exit-tip";
+    tip.setAttribute("role", "status");
+    tip.textContent = "你正漫步在像素农场：点右上角的「返回个人主页」按钮或按 Esc 键，随时回到一页式个人主页。";
+    tip.addEventListener("click", hideFarmTip);
+    document.body.appendChild(tip);
+    var pill = document.querySelector("[data-farm-exit]");
+    if (pill) {
+      var top = pill.getBoundingClientRect().bottom + 10;
+      tip.style.top = Math.max(8, top) + "px";
+    }
+    window.setTimeout(hideFarmTip, 10000);
+  }
+
   function setHomeMode(mode, persist) {
     var isFarm = mode === "farm";
     farmModeOn = isFarm;
@@ -345,6 +407,14 @@
       toggleBtn.hidden = !isFarm;
       toggleBtn.innerHTML = '<span class="switch-arrow">←</span> <span>返回落地页</span> <kbd class="switch-kbd">Esc</kbd>';
       toggleBtn.setAttribute("aria-label", "切回标准个人主页，按 Esc 键亦可返回");
+    }
+    var exitBtn = ensureFarmExit();
+    exitBtn.hidden = !isFarm;
+    if (isFarm) {
+      placeFarmExit(exitBtn);
+      showFarmTip();
+    } else {
+      hideFarmTip();
     }
     if (!isFarm) {
       closeTalk();

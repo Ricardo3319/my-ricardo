@@ -1,0 +1,85 @@
+% Ricardo 的一页简历。XeLaTeX 编译：
+%   xelatex -output-directory=../about Ricardo-CV.tex
+% 内容与网站 /about/ 的网页版履历保持一致；更新时两边同步改。
+\documentclass[11pt,a4paper]{article}
+\usepackage[left=1.7cm,right=1.7cm,top=1.6cm,bottom=1.6cm]{geometry}
+\usepackage{xeCJK}
+\usepackage{xcolor}
+\usepackage{titlesec}
+\usepackage{enumitem}
+\usepackage{hyperref}
+
+\setCJKmainfont[BoldFont={Noto Sans CJK SC Bold}]{Noto Sans CJK SC}
+\setmainfont[BoldFont={Noto Sans CJK SC Bold}]{Noto Sans CJK SC}
+
+\definecolor{ink}{HTML}{3B2314}
+\definecolor{accent}{HTML}{8C4A27}
+\definecolor{soft}{HTML}{6E5B4A}
+
+\color{ink}
+\pagestyle{empty}
+\setlength{\parindent}{0pt}
+\renewcommand{\baselinestretch}{1.18}
+
+\titleformat{\section}
+  {\large\bfseries\color{accent}}{}{0em}{}[{\vspace{2pt}\color{accent}\titlerule[0.6pt]}]
+\titlespacing{\section}{0pt}{10pt}{6pt}
+
+\setlist[itemize]{leftmargin=1.15em, itemsep=1.5pt, parsep=0pt, topsep=2pt, label=\textcolor{accent}{\small$\bullet$}}
+
+\hypersetup{
+  pdftitle={Ricardo 简历（学术履历）},
+  pdfauthor={Ricardo},
+  pdfsubject={数据中心微秒级 RPC 任务调度 / 系统仿真 / 原生 Web 工程},
+  pdfkeywords={RPC 调度, 排队论, 离散事件仿真, C++, Python, Web},
+  colorlinks=true, urlcolor=accent, linkcolor=accent,
+  pdfcreator={XeLaTeX}
+}
+
+\newcommand{\entry}[2]{{\textbf{#1}\quad{\small\color{soft}#2}\par}}
+
+\begin{document}
+
+{\Huge\bfseries Ricardo}\\[5pt]
+{\large 南京航空航天大学 · 计算机科学与技术 · 硕士在读（本科同校推免）}\\[4pt]
+{\small\color{soft}
+  邮箱：\href{mailto:Renmingyang3319@outlook.com}{Renmingyang3319@outlook.com} \quad
+  GitHub：\href{https://github.com/Ricardo3319}{github.com/Ricardo3319} \quad
+  个人网站：\href{https://www.my-ricardo.com}{www.my-ricardo.com}
+}
+
+\section{研究方向}
+数据中心同机架微秒级 RPC 任务调度、多核排队论建模与长尾延迟（P99）抑制；关注极短任务在高速网络末端的调度边界与资源可行域。
+
+\section{在研课题：rpcsim 微秒级调度仿真器（C++17，开源）}
+\begin{itemize}
+  \item 面向 1--10 微秒极短任务与 50 微秒尾延迟约束的数据中心 RPC 调度研究，自研 128 核机架级全链路纳秒显式计费离散事件仿真引擎。
+  \item 引擎与 M/M/k、M/G/1、M/H2/k 等排队论解析解 100\% 置信对齐，把纳秒时间轴作为可直接度量的实验基准。
+  \item 系统量化入口晚绑定（JBSQ / Credit Pull）与早绑定跨机纠偏（Work Stealing / Forwarding / 连接迁移）的性能相图。
+  \item 刻画多核池化挤压效应与资源红线：给出 20\% 算力预算下的最优调度相图与可行域边界。
+  \item 仓库与复现步骤：\href{https://github.com/Ricardo3319/rpcsim}{github.com/Ricardo3319/rpcsim}；研究笔记与组会幻灯片见个人网站。
+\end{itemize}
+
+\section{工程项目：my-ricardo 田园赛博木屋与随身工作台（原生 Web + Python，开源）}
+\begin{itemize}
+  \item 零前端构建依赖的个人站点：四季像素农场漫游、Web Audio 实时合成的背景音乐、PWA 离线工作台，断网仍可记事。
+  \item 使用 Python 3 标准库（http.server + SQLite）实现轻量云端同步后端，前端在服务不可达时自动降级 localStorage 与 GitHub REST API 双通道同步。
+  \item Python 脚本逐像素生成地图素材与碰撞网格，前端无外部 CDN、无第三方脚本，静态页面在无 JS 环境下仍可访问。
+  \item 源码：\href{https://github.com/Ricardo3319/my-ricardo}{github.com/Ricardo3319/my-ricardo}。
+\end{itemize}
+
+\section{技能}
+\begin{itemize}
+  \item \textbf{系统与仿真}：C++17、离散事件仿真、排队论建模（M/M/k、M/G/1、M/H2/k）、多核并发与无锁多队列。
+  \item \textbf{后端与数据}：Python 3 标准库、SQLite、REST API 设计、跨设备数据同步与冲突合并。
+  \item \textbf{Web 前端}：原生 HTML / CSS / JavaScript、Web Audio API、Canvas 像素渲染、PWA 与 Service Worker。
+  \item \textbf{学术素养}：实验设计与量化分析、技术写作、组会汇报（站点内附十页组会幻灯片）。
+\end{itemize}
+
+\section{教育经历}
+\entry{南京航空航天大学 · 硕士在读}{计算机科学与技术 · 系统方向}
+\begin{itemize}
+  \item 聚焦微秒级任务调度与网络末端排队优化；本科同校毕业并获推免资格继续攻读硕士学位。
+\end{itemize}
+
+\end{document}

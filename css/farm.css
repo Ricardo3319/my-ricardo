@@ -495,6 +495,13 @@ button,
   font-smooth: auto;
 }
 
+/* 行内代码跟着正文走（不然会继承像素字的 24px，混在 16px 正文里突兀）；
+   等宽字符没有断行点，requestAnimationFrame 这类长 API 名在窄屏要允许断开。 */
+code {
+  font-size: clamp(13px, 0.92rem, 14px);
+  overflow-wrap: anywhere;
+}
+
 /* 标题、按钮就算落在正文容器里，也仍用像素字。 */
 .panel h1,
 .panel h2,
@@ -741,6 +748,120 @@ html[data-phase="night"][data-theme="landing"] .hud-season {
     display: none;
   }
 }
+
+/* 农场漫游态右上角的显眼出口：和左上角开关同款式但更醒目，头三下轻轻搏动引人注意。 */
+.farm-exit-pill {
+  position: fixed;
+  top: 64px;
+  right: 16px;
+  z-index: 10;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 999px;
+  border: 2px solid #5b2a12;
+  background: linear-gradient(180deg, #ffe0a3 0%, #f6ba60 100%);
+  box-shadow: 0 4px 14px rgba(35, 18, 8, 0.32), inset 0 1px 0 #fff7e0;
+  color: #4a200b;
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.18s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.18s ease;
+}
+
+.farm-exit-pill[hidden] { display: none; }
+
+.farm-exit-pill:hover {
+  transform: translateY(-2px) scale(1.03);
+  box-shadow: 0 7px 20px rgba(35, 18, 8, 0.42), inset 0 1px 0 #fff7e0;
+}
+
+.farm-exit-pill:active { transform: translateY(1px); }
+
+.farm-exit-pill:focus-visible {
+  outline: 2px solid #3b1d0e;
+  outline-offset: 2px;
+}
+
+.farm-exit-pill .switch-kbd {
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: rgba(74, 32, 11, 0.14);
+  color: #5b2a12;
+  border: 1px solid rgba(74, 32, 11, 0.2);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.5);
+  line-height: 1.2;
+}
+
+.is-farm-mode .farm-exit-pill { animation: farm-exit-pulse 2.4s ease-in-out 3; }
+
+@keyframes farm-exit-pulse {
+  0%, 100% { box-shadow: 0 4px 14px rgba(35, 18, 8, 0.32), inset 0 1px 0 #fff7e0; }
+  50% { box-shadow: 0 4px 22px rgba(246, 186, 96, 0.85), inset 0 1px 0 #fff7e0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .is-farm-mode .farm-exit-pill { animation: none; }
+}
+
+/* 头一回进农场的浮层引导：钉在右上角按钮下方，点一下或 10 秒后自己收起。 */
+.farm-exit-tip {
+  position: fixed;
+  top: 112px;
+  right: 16px;
+  z-index: 10;
+  width: max-content;
+  max-width: min(300px, calc(100vw - 24px));
+  margin: 0;
+  padding: 10px 14px;
+  border: 2px solid #5b2a12;
+  border-radius: 10px;
+  background: #ffefc9;
+  color: #4a200b;
+  font-family: var(--font-sans);
+  font-size: 13px;
+  line-height: 1.65;
+  box-shadow: 0 6px 18px rgba(35, 18, 8, 0.35);
+  cursor: pointer;
+  animation: game-fade-in 200ms ease-out both;
+}
+
+.farm-exit-tip::before {
+  content: "";
+  position: absolute;
+  top: -8px;
+  right: 26px;
+  width: 12px;
+  height: 12px;
+  background: #ffefc9;
+  border-left: 2px solid #5b2a12;
+  border-top: 2px solid #5b2a12;
+  transform: rotate(45deg);
+}
+
+@media (max-width: 640px) {
+  .farm-exit-pill {
+    top: 78px;
+    right: 10px;
+    padding: 7px 13px;
+    font-size: 12.5px;
+  }
+  .farm-exit-pill .switch-kbd { display: none; }
+  .farm-exit-tip {
+    top: 122px;
+    right: 10px;
+    font-size: 12.5px;
+  }
+}
+
+/* 內页木框弹窗有自己的红叉返回，农场出口只在首页漫游态出现。 */
+.inner .farm-exit-pill,
+.inner .farm-exit-tip { display: none; }
 
 /* 一小块天：颜色跟着钟点走，太阳或月亮沿弧线挪，底下一条当季的草。 */
 .hud-sky {
@@ -1072,7 +1193,7 @@ html:not([data-theme="farm"]) .sound-cue { display: none; }
 
 .dialogue {
   display: grid;
-  grid-template-columns: 1fr auto;
+  grid-template-columns: minmax(0, 1fr) auto;
   gap: calc(6 * var(--px));
   width: min(100%, calc(460 * var(--px)));
   margin: 0 auto;
@@ -1164,6 +1285,26 @@ html:not([data-theme="farm"]) .sound-cue { display: none; }
 
 /* 打字时先不给选项，像游戏里一样。没有脚本时这个类不会出现。 */
 .is-typing .choices { visibility: hidden; }
+
+/* 选项放开折行：宽屏上放得下时仍是单行，不受影响；
+   手机与分屏等窄视口里，nowrap 的长选项（比如「在农场里走走（钓鱼 · 矿车 · 种菜 · 抽签）」）
+   会以六百多像素的最小内容宽度把对话木框撑出屏幕，必须能折。 */
+.choices a,
+.choices button { white-space: normal; }
+
+.choices small { flex: none; }
+
+/* 手机上对话框只有两三百像素宽：页脚栏目收窄字号保持一行。
+   像素字界面层（对话、选项、HUD、页签、按钮、内页标题）整体从 24px 收到 20px：
+   阅读正文本来就是 14-16px 不动，只有游戏外壳跟着小一档；
+   20px 在 3x 屏（多数手机）上是 12px 网格字体的整数倍，像素依然干净。 */
+@media (max-width: 640px) {
+  :root { --fs: 20px; }
+
+  .credit { font-size: calc(9 * var(--px)); }
+
+  .credit a { padding: 0 0.3em; }
+}
 
 /* 走起来以后招呼对话藏起来，从左下角的小按钮再打开；键盘和读屏走这个按钮。 */
 .is-walking .stage .dialogue { visibility: hidden; }
@@ -1302,6 +1443,8 @@ html:not([data-theme="farm"]) .sound-cue { display: none; }
   border-width: 0 calc(4 * var(--px));
   border-image: url("../img/ui-scroll.png") 0 4 fill / 0 calc(4 * var(--px)) stretch;
   line-height: calc(16 * var(--px));
+  /* 名牌纸卷永远是奶油底，深墨字在昼夜两种面板上都成立。 */
+  color: var(--ink);
   white-space: nowrap;
   image-rendering: pixelated;
 }
@@ -1368,6 +1511,14 @@ html:not([data-theme="farm"]) .sound-cue { display: none; }
   height: calc(13 * var(--px));
   background: url("../img/ui-close.png") 0 0 / 100% 100%;
   image-rendering: pixelated;
+}
+
+/* 平板与手机宽度：面板几乎贴住屏幕边，红叉收进木框角上，别挂出去被裁掉。 */
+@media (max-width: 960px) {
+  html[data-theme="farm"] .close {
+    top: calc(2 * var(--px));
+    right: calc(2 * var(--px));
+  }
 }
 
 .close:hover { filter: brightness(1.15); }
@@ -1437,6 +1588,14 @@ html[data-phase="night"]:not([data-theme="farm"]) .panel.board {
   border-color: rgba(255, 255, 255, 0.14);
   color: #e6eef5;
   box-shadow: 0 16px 48px rgba(0, 0, 0, 0.45);
+}
+
+/* 夜间深卡片里，槽位行、招呼语与纸张仍然是暖琥珀底：文字要回到深墨，
+   别继承面板的浅夜色，不然浅字压浅底看不清。 */
+html[data-phase="night"]:not([data-theme="farm"]) .panel .row,
+html[data-phase="night"]:not([data-theme="farm"]) .panel .sheet,
+html[data-phase="night"]:not([data-theme="farm"]) .panel .greet {
+  color: var(--ink);
 }
 
 html:not([data-theme="farm"]) .close {
@@ -1559,6 +1718,8 @@ html:not([data-theme="farm"]) .tabs a[aria-current="page"] {
   border-width: 0 calc(4 * var(--px));
   border-image: url("../img/ui-scroll.png") 0 4 fill / 0 calc(4 * var(--px)) stretch;
   line-height: calc(16 * var(--px));
+  /* 纸卷底永远是奶油色，深墨字在昼夜两种面板上都成立。 */
+  color: var(--ink);
   white-space: nowrap;
   image-rendering: pixelated;
 }
@@ -2277,6 +2438,40 @@ html[data-phase="night"] .forest-line { fill: #0d1f1b; }
   background: #ffca7a;
 }
 
+/* 简历（CV）下载：首页简介卡与关于页顶部共用，一眼可见的一键取用。 */
+.clean-btn.is-cv {
+  border-color: #7c3f18;
+  background: linear-gradient(180deg, #ffd98f 0%, #f5b864 100%);
+  color: #3d1907;
+  font-weight: 700;
+}
+
+.clean-btn.is-cv:hover,
+.clean-btn.is-cv:focus-visible {
+  background: #ffca7a;
+}
+
+/* 关于页顶部的简历行：木框按钮放大加粗，说明字随面板配色自动适应昼夜。 */
+.cv-download-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--px) calc(4 * var(--px));
+  margin-bottom: calc(4 * var(--px));
+}
+
+.cv-download-row .btn.is-cv {
+  padding: calc(2 * var(--px)) calc(6 * var(--px));
+  font-weight: 700;
+}
+
+.cv-note {
+  margin: 0;
+  opacity: 0.75;
+  font-family: var(--font-sans);
+  font-size: clamp(13px, 0.92rem, 14px);
+}
+
 .clean-section {
   display: grid;
   gap: 12px;
@@ -2411,7 +2606,9 @@ a.clean-list-item:hover {
 
 .stamp {
   color: var(--ink-soft);
-  white-space: nowrap;
+  /* 状态戳可能很长（比如跨设备剪贴板的说明），必须能折行：
+     否则 nowrap 的最小内容宽度会把 grid 列撑出纸外，整页横向晃。 */
+  white-space: normal;
 }
 
 .back {
@@ -2494,6 +2691,9 @@ a.clean-list-item:hover {
   justify-content: space-between;
   gap: calc(2 * var(--px)) calc(6 * var(--px));
 }
+
+/* 邮箱一整串 27 个字符没有断行机会，窄屏要允许在字符间断开，不然整行被撑出卡片。 */
+.copy-row a[data-copy-text] { overflow-wrap: anywhere; }
 
 /* 关于页：左边人像，右边名牌一样的几行。 */
 .character {
@@ -2738,6 +2938,20 @@ a.row:hover { background-color: var(--menu-deep); }
 .drawer > summary {
   color: var(--cream);
   text-shadow: var(--px) var(--px) 0 var(--shadow);
+}
+
+/* 木板上不垫纸的说明字（钉便签引导语、离线工作台状态）：
+   农场木板用奶油色，落地页夜间深卡片用夜色，别让纸墨色压进深底里。 */
+html[data-theme="farm"] .board .board-pin-guide,
+html[data-theme="farm"] .board .pwa-tools .hint {
+  color: var(--cream);
+  text-shadow: var(--px) var(--px) 0 var(--shadow);
+}
+
+html[data-phase="night"]:not([data-theme="farm"]) .board .board-pin-guide,
+html[data-phase="night"]:not([data-theme="farm"]) .board .pwa-tools .hint {
+  color: rgba(230, 238, 245, 0.78);
+  text-shadow: none;
 }
 
 .board .page-head { margin-bottom: calc(3 * var(--px)); }
@@ -3887,8 +4101,10 @@ a.row:hover { background-color: var(--menu-deep); }
   .cal { position: relative; }
 }
 
-html[data-phase="night"] .clean-section > .clean-section-head h2,
-html[data-phase="night"] .clean-section > .clean-section-head .clean-more {
+/* 夜间落地页：深蓝天幕上的栏目标题与「全部 →」链接提亮为奶油色。
+   不限定 .clean-section 直系：首页的笔记/日常区块没有这个类，夜间同样要亮。 */
+html[data-phase="night"] .clean-section-head h2,
+html[data-phase="night"] .clean-section-head .clean-more {
   color: var(--cream);
   text-shadow: 0 1px 3px rgba(10, 14, 28, 0.75);
 }

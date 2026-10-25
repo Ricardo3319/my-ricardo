@@ -2,6 +2,10 @@
    顺序：令牌、世界、基础、HUD、对话框、肖像、菜单、页签、物品栏、内容、告示牌、页脚、焦点、换页、中屏、窄屏、减少动效。
    字体不在这里：css/fonts.css（tools/font-shards.py 生成的 unicode-range 分片），每页先于本文件引入。 */
 
+@import url("ambience.css");
+@import url("board-pins.css");
+@import url("life.css");
+
 /* ---------------------------------------------------------------- 令牌 */
 
 :root {
@@ -865,6 +869,56 @@ html[data-season="winter"] .hud-season-name::before { content: "冬"; }
 .hud-sound[data-state="on"] .hud-sound-icon,
 .hud-sound[data-state="wait"] .hud-sound-icon { background-image: url("../img/sound-on.png"); }
 
+/* 首访声音小木签：只在农场出现，尾巴指向小喇叭。 */
+.hud-lines p:last-child { position: relative; }
+
+.sound-cue {
+  position: absolute;
+  top: calc(100% + 12px);
+  right: 0;
+  width: max-content;
+  max-width: calc(100vw - 32px);
+  min-height: 44px;
+  padding: 8px 12px;
+  border: var(--px) solid var(--ink);
+  background: var(--cream);
+  color: var(--ink);
+  box-shadow: 0 calc(2 * var(--px)) 0 var(--shadow);
+  font-family: var(--font-pixel);
+  font-size: var(--fs);
+  line-height: 1.5;
+  white-space: normal;
+  cursor: pointer;
+  animation: sound-cue-breathe 2.8s ease-in-out infinite;
+  transition: opacity 220ms ease;
+}
+
+.sound-cue::before {
+  content: "";
+  position: absolute;
+  right: calc(3 * var(--px));
+  top: -8px;
+  width: 10px;
+  height: 10px;
+  border-top: var(--px) solid var(--ink);
+  border-left: var(--px) solid var(--ink);
+  background: var(--cream);
+  transform: rotate(45deg);
+}
+
+.sound-cue.is-dismissed {
+  opacity: 0;
+  pointer-events: none;
+  animation: none;
+}
+
+html:not([data-theme="farm"]) .sound-cue { display: none; }
+
+@keyframes sound-cue-breathe {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(3px); }
+}
+
 /* 开着但浏览器还不让出声：喇叭淡一点，等访客点一下页面。 */
 .hud-sound[data-state="wait"] .hud-sound-icon { opacity: 0.5; }
 
@@ -1126,6 +1180,80 @@ html[data-season="winter"] .hud-season-name::before { content: "冬"; }
   bottom: calc(6 * var(--px));
   z-index: 2;
   pointer-events: auto;
+}
+
+/* 漫游时不让隐藏的宽对话框撑大手机横屏的布局视口。 */
+.home.is-farm-mode.is-walking:not(.is-talking) .stage .dialogue { display: none; }
+
+/* 触屏十字键只占四个方向格，留空处仍能点到农场。 */
+.walk-pad {
+  position: fixed;
+  left: max(16px, env(safe-area-inset-left));
+  bottom: calc(152px + env(safe-area-inset-bottom));
+  z-index: 3;
+  display: none;
+  grid-template: repeat(3, 44px) / repeat(3, 44px);
+  gap: 2px;
+  opacity: 0.45;
+  pointer-events: none;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  transition: opacity 120ms ease;
+}
+
+.walk-pad.is-held, .walk-pad:focus-within { opacity: 0.8; }
+
+.walk-pad-key {
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: var(--px) solid var(--ink);
+  background: var(--slot);
+  box-shadow: inset 0 -4px var(--line), 0 2px var(--shadow);
+  color: var(--ink);
+  cursor: pointer;
+  pointer-events: auto;
+  touch-action: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.walk-pad-key::before {
+  content: "";
+  width: 12px;
+  height: 12px;
+  background: currentColor;
+  clip-path: polygon(0 35%, 50% 0, 100% 35%, 70% 35%, 70% 100%, 30% 100%, 30% 35%);
+}
+
+.walk-pad-key[data-direction="up"] { grid-area: 1 / 2; }
+.walk-pad-key[data-direction="left"] { grid-area: 2 / 1; }
+.walk-pad-key[data-direction="right"] { grid-area: 2 / 3; }
+.walk-pad-key[data-direction="down"] { grid-area: 3 / 2; }
+.walk-pad-key[data-direction="left"]::before { transform: rotate(-90deg); }
+.walk-pad-key[data-direction="right"]::before { transform: rotate(90deg); }
+.walk-pad-key[data-direction="down"]::before { transform: rotate(180deg); }
+
+.walk-pad[data-direction="up"] [data-direction="up"],
+.walk-pad[data-direction="left"] [data-direction="left"],
+.walk-pad[data-direction="right"] [data-direction="right"],
+.walk-pad[data-direction="down"] [data-direction="down"] {
+  background: var(--menu-deep);
+  box-shadow: inset 0 3px var(--line);
+}
+
+.walk-pad-key:focus-visible, .sound-cue:focus-visible {
+  outline: var(--px) solid var(--focus);
+  outline-offset: calc(2 * var(--px));
+}
+
+@media (any-pointer: coarse) {
+  .home.is-farm-mode.is-walking:not(.is-talking):not(.is-gaming) .walk-pad { display: grid; }
+  .home.is-farm-mode .walk-peep {
+    position: fixed;
+    left: max(16px, env(safe-area-inset-left));
+    bottom: calc(92px + env(safe-area-inset-bottom));
+  }
 }
 
 /* 走动提示：一行小字，颜色压浅。 */

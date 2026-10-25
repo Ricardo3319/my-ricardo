@@ -1,0 +1,65 @@
+/* 图钉分类沿用像素纸张；到期提醒仍由 .due 独立表达。 */
+.board .board-pin-guide {
+  margin: 12px 0 22px;
+  color: var(--ink-soft);
+  font-family: var(--font-sans);
+  font-size: clamp(14px, 1.02rem, 16px);
+  line-height: 1.75;
+}
+
+.board .note:not(.is-editing) {
+  grid-template-columns: auto minmax(0, 1fr);
+  padding-top: 24px;
+}
+
+.board .note::before { display: none; }
+
+.board .note-pin {
+  position: absolute;
+  top: -16px;
+  left: calc(50% - 22px);
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.board .note-pin::before {
+  content: "";
+  width: calc(9 * var(--px));
+  height: calc(9 * var(--px));
+  background: url("../img/pin-gray.png") center / contain no-repeat;
+  image-rendering: pixelated;
+}
+
+.board .note-pin[data-pin="red"]::before { background-image: url("../img/pin-red.png"); }
+.board .note-pin[data-pin="orange"]::before { background-image: url("../img/pin-orange.png"); }
+.board .note-pin[data-pin="green"]::before { background-image: url("../img/pin-green.png"); }
+.board .note-pin[data-pin="gold"]::before { background-image: url("../img/pin-gold.png"); }
+.board .note-pin[data-pin="blue"]::before,
+.board .day-pins [data-pin="blue"] {
+  background-image: url("../img/pin-red.png");
+  filter: hue-rotate(190deg);
+}
+
+.board .note-pin:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 1px;
+}
+
+.board .note > .note-tools {
+  grid-column: 2;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+
+.board .note-tools button { min-height: 44px; }
+.board .note-title { white-space: pre-wrap; }
+.board .note-category { font-size: 0.9em; }
+.board .note-archive-status { color: var(--ink-soft); }
+.board .note button:disabled { opacity: 0.6; cursor: wait; }

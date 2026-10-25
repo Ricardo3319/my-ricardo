@@ -42,6 +42,9 @@
   <link rel="stylesheet" href="../css/fonts.css">
   <link rel="stylesheet" href="../css/farm.css">
   <link rel="icon" href="../img/favicon.png">
+  <link rel="manifest" href="../manifest.json">
+  <meta name="theme-color" content="#8c4a27">
+  <link rel="apple-touch-icon" href="../img/pwa-192.png">
 </head>
 <body class="inner">
   <a class="skip" href="#content">跳到内容</a>
@@ -68,7 +71,7 @@
       <a class="close" href="../" aria-label="关上，回农场"></a>
       <h1>日常</h1>
       <details class="drawer" data-log-publish hidden>
-        <summary>发布新日常 / 更新近况</summary>
+        <summary>记一笔日常 / 更新近况</summary>
         <form class="sheet" data-log-form>
           <label for="log-now">近况</label>
           <textarea class="field" id="log-now" name="nowStatus" rows="2" placeholder="一句话近况，可留空"></textarea>
@@ -76,7 +79,18 @@
           <textarea class="field" id="log-text" name="text" rows="3" placeholder="今天想记下的事，可留空"></textarea>
           <label for="log-date">日期</label>
           <input class="field" id="log-date" name="date" type="date">
-          <p class="key-actions"><button class="btn" type="submit">发布</button></p>
+          <div class="log-fields">
+            <label>心情<select class="field" name="mood"><option value="">不标注</option><option>☕</option><option>🌱</option><option>✨</option><option>😌</option><option>🛠️</option><option>💭</option></select></label>
+            <label>天气<select class="field" name="weather"><option value="">不标注</option><option>☀️</option><option>🌤️</option><option>☁️</option><option>🌧️</option><option>❄️</option><option>🌙</option></select></label>
+          </div>
+          <label for="log-image">一张照片（可选）</label>
+          <input class="field" id="log-image" name="image" type="file" accept="image/jpeg,image/png,image/webp">
+          <label for="log-image-alt">照片说明</label>
+          <input class="field" id="log-image-alt" name="imageAlt" maxlength="200" placeholder="描述照片里的事物，方便读屏与回忆">
+          <p class="hint">图片在本机缩小后保存；读者可切换原图与像素画。仅本机的记录不会自动公开。</p>
+          <label for="log-destination">保存到</label>
+          <select class="field" id="log-destination" name="destination"><option value="local">仅本机</option><option value="public">公开日常（需在告示牌验证口令）</option></select>
+          <p class="key-actions"><button class="btn" type="submit">保存日常</button></p>
           <p class="hint" role="status" data-log-note></p>
         </form>
       </details>

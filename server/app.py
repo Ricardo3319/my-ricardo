@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 """my-ricardo lightweight backend server (Python stdlib + SQLite)."""
+import base64
+import binascii
 import hmac
 import json
 import os
@@ -31,6 +33,11 @@ def init_db():
         conn.execute(
             "CREATE TABLE IF NOT EXISTS logs (id INTEGER PRIMARY KEY AUTOINCREMENT, date TEXT NOT NULL, text TEXT NOT NULL, created_at INTEGER NOT NULL)"
         )
+        columns = {row["name"] for row in conn.execute("PRAGMA table_info(logs)")}
+        for name in ("mood", "weather", "image", "imageAlt", "sourceId"):
+            if name not in columns:
+                conn.execute(f'ALTER TABLE logs ADD COLUMN "{name}" TEXT NOT NULL DEFAULT \'\'')
+        conn.execute("CREATE UNIQUE INDEX IF NOT EXISTS logs_source ON logs(sourceId) WHERE sourceId != ''")
         conn.execute(
             "CREATE TABLE IF NOT EXISTS messages (id INTEGER PRIMARY KEY AUTOINCREMENT, text TEXT NOT NULL, author TEXT NOT NULL, badge TEXT NOT NULL, created_at INTEGER NOT NULL)"
         )
@@ -77,6 +84,25 @@ def clean_msg_text(value, limit=MSG_MAX_LEN):
     text = "".join(ch for ch in str(value or "") if ch == "\n" or (ord(ch) >= 32 and ord(ch) != 0x7F))
     text = " ".join(text.split())
     return text[:limit]
+
+
+def valid_log_image(value):
+    if not value:
+        return True
+    if not isinstance(value, str) or len(value) > 550000:
+        return False
+    try:
+        header, encoded = value.split(",", 1)
+        if header not in ("data:image/jpeg;base64", "data:image/png;base64", "data:image/webp;base64"):
+            return False
+        raw = base64.b64decode(encoded, validate=True)
+        if len(raw) > 400000:
+            return False
+        return (header == "data:image/jpeg;base64" and raw.startswith(b"\xff\xd8\xff")) or (
+            header == "data:image/png;base64" and raw.startswith(b"\x89PNG\r\n\x1a\n")
+        ) or (header == "data:image/webp;base64" and raw.startswith(b"RIFF") and raw[8:12] == b"WEBP")
+    except (ValueError, binascii.Error):
+        return False
 
 
 def merge_board_state(current, incoming):
@@ -185,7 +211,7 @@ class RicardoRequestHandler(SimpleHTTPRequestHandler):
         if parsed.path == "/api/logs":
             with get_db() as conn:
                 now_row = conn.execute("SELECT value FROM kv_store WHERE key = 'now_status'").fetchone()
-                rows = conn.execute("SELECT id, date, text, created_at FROM logs ORDER BY id DESC LIMIT 100").fetchall()
+                rows = conn.execute("SELECT id, date, text, mood, weather, image, imageAlt, sourceId, created_at FROM logs ORDER BY id DESC LIMIT 100").fetchall()
             return self._send_json(
                 200,
                 {
@@ -211,22 +237,40 @@ class RicardoRequestHandler(SimpleHTTPRequestHandler):
         if parsed.path == "/api/logs":
             if not self._is_authed(record_fail=True):
                 return self._send_json(401, {"error": "Unauthorized"})
-            body = self._read_json()
+            try:
+                body = self._read_json()
+            except (ValueError, UnicodeError):
+                return self._send_json(400, {"error": "Invalid JSON"})
+            if not isinstance(body, dict):
+                return self._send_json(400, {"error": "Expected an object"})
+            image = body.get("image") or ""
+            if not valid_log_image(image):
+                return self._send_json(400, {"error": "Image must be a JPEG, PNG or WebP data URL under 400 KB"})
+            text = str(body.get("text") or "").strip()[:10000]
+            if image and not text:
+                return self._send_json(400, {"error": "Add a caption to the image"})
+            mood = body.get("mood") if body.get("mood") in ("☕", "🌱", "✨", "😌", "🛠️", "💭") else ""
+            weather = body.get("weather") if body.get("weather") in ("☀️", "🌤️", "☁️", "🌧️", "❄️", "🌙") else ""
+            source_id = str(body.get("sourceId") or "")[:160]
             now_ms = int(time.time() * 1000)
+            log_id = None
             with get_db() as conn:
                 if "nowStatus" in body and isinstance(body["nowStatus"], str):
                     conn.execute(
                         "INSERT INTO kv_store (key, value, updated_at) VALUES ('now_status', ?, ?) ON CONFLICT(key) DO UPDATE SET value=excluded.value, updated_at=excluded.updated_at",
                         (body["nowStatus"].strip(), now_ms),
                     )
-                if body.get("text"):
-                    date_str = body.get("date") or time.strftime("%Y-%m-%d")
-                    conn.execute(
-                        "INSERT INTO logs (date, text, created_at) VALUES (?, ?, ?)",
-                        (date_str, str(body["text"]).strip(), now_ms),
+                if text:
+                    date_str = str(body.get("date") or time.strftime("%Y-%m-%d"))[:10]
+                    cur = conn.execute(
+                        "INSERT OR IGNORE INTO logs (date, text, mood, weather, image, imageAlt, sourceId, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                        (date_str, text, mood, weather, image, str(body.get("imageAlt") or "")[:200], source_id, now_ms),
                     )
+                    log_id = cur.lastrowid if cur.rowcount else conn.execute(
+                        "SELECT id FROM logs WHERE sourceId = ?", (source_id,)
+                    ).fetchone()["id"]
                 conn.commit()
-            return self._send_json(200, {"ok": True})
+            return self._send_json(200, {"ok": True, "id": log_id})
         if parsed.path == "/api/messages":
             if not msg_rate_ok(self._client_ip()):
                 return self._send_json(429, {"ok": False, "error": "歇一会儿再写吧，10 分钟内最多留 2 条"})

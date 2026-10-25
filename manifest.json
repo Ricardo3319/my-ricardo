@@ -1,0 +1,16 @@
+{
+  "id": "./board/",
+  "name": "Ricardo's Workbench · 随身告示牌",
+  "short_name": "告示牌",
+  "lang": "zh-CN",
+  "start_url": "./board/?source=pwa",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#e8d8b8",
+  "theme_color": "#8c4a27",
+  "description": "随身待办、剪贴板与田园日常，离线也能记一笔。",
+  "icons": [
+    { "src": "img/pwa-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "img/pwa-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

@@ -1,0 +1,26 @@
+/* 白噪音控件沿用现有木框、按钮与现代正文排印。 */
+.sound-panel {
+  max-height: min(72svh, 640px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.sound-focus {
+  justify-self: start;
+  white-space: normal;
+}
+
+.sound-focus[aria-pressed="true"],
+.game-focus[aria-pressed="true"] {
+  background-color: var(--slot);
+}
+
+.game-focus-note {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: clamp(14px, 1.02rem, 16px);
+  line-height: 1.75;
+  color: var(--ink-soft);
+}
+
+.game-btns { flex-wrap: wrap; }

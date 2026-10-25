@@ -1,0 +1,43 @@
+/* V7：日常阅读与首屏留白，沿用站点的木色与双轨字体。 */
+.log-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 12px 0; }
+.log-fields label { display: grid; gap: 6px; }
+.panel .log-entry { align-items: start; }
+.panel .log-entry-body { flex: 1; min-width: 0; font-family: var(--font-sans); font-size: clamp(14px, 1.02rem, 16px); line-height: 1.75; }
+.panel [data-log-form], .panel [data-log-form] .field { font-family: var(--font-sans); font-size: clamp(14px, 1.02rem, 16px); line-height: 1.75; }
+html:not([data-theme="farm"]) .panel [data-log-form] button,
+html:not([data-theme="farm"]) .panel .log-entry button { font-family: var(--font-sans); font-size: 14px; }
+.panel [data-log-form] { display: grid; gap: 10px; }
+.panel [data-log-form] .field { min-width: 0; width: 100%; }
+.log-entry-body p { white-space: pre-wrap; overflow-wrap: anywhere; }
+.log-mood { display: block; font-size: 22px; margin-top: 6px; }
+.log-actions, .pwa-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 10px; }
+.pwa-tools { flex-basis: 100%; font-family: var(--font-sans); font-size: 14px; }
+.log-photo { margin: 16px 0; display: grid; justify-items: start; gap: 10px; }
+.log-photo img, .log-photo canvas { width: min(100%, 640px); height: auto; border-radius: 6px; }
+.log-photo canvas { image-rendering: pixelated; }
+.cabin-now { max-width: 42em; margin: 22px auto 0; padding: 0 16px; font-family: var(--font-sans); font-size: clamp(14px, 1.02rem, 16px); line-height: 1.75; color: var(--ink); }
+.home .title-menu { grid-template-columns: repeat(2, minmax(0, 1fr)); width: min(100%, 600px); margin-inline: auto; }
+.home .title-menu .is-primary { grid-column: 1 / -1; min-height: 84px; }
+.cabin-details { font-family: var(--font-sans); margin: 18px 0; }
+.cabin-details summary { cursor: pointer; padding: 12px 0; color: var(--ink); font-size: 16px; line-height: 1.75; }
+.cabin-details summary:focus-visible { outline: 2px solid var(--focus); outline-offset: 4px; }
+.cabin-workshop { border-block: 1px solid var(--line); padding: 8px 0; }
+.cabin-workshop > summary { font-size: clamp(18px, 2vw, 24px); font-weight: 650; }
+.cabin-reading { display: grid; grid-template-columns: 1.2fr 1fr; gap: 40px; padding: 24px 0; }
+.cabin-reading section { min-width: 0; }
+.cabin-reading .clean-section-head { flex-wrap: wrap; gap: 8px; }
+html[data-phase="night"] .cabin-now,
+html[data-phase="night"] .cabin-details summary { color: var(--cream); }
+html[data-phase="night"] .clean-card .cabin-details summary { color: var(--ink); }
+@media (max-width: 640px) {
+  .cabin-reading { grid-template-columns: 1fr; gap: 24px; }
+  .home .title-menu { gap: 10px; }
+  .home .title-btn { min-width: 0; }
+  .home .title-btn small { font-size: 12px; }
+  .cabin-now { margin-top: 16px; }
+  .panel .log-entry { display: block; }
+  .panel .log-entry .row-key { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .panel .log-entry-body { width: 100%; }
+  .panel .log-photo img, .panel .log-photo canvas { width: 100%; }
+  .log-mood { display: inline; margin: 0; }
+}

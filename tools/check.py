@@ -379,6 +379,32 @@ elif cname.read_text().strip() != "www.my-ricardo.com":
 if re.search(r'url\("?/', css):
     bad("farm.css 里有以 / 开头的路径，站点在子路径下会找不到")
 
+# PWA 的预缓存清单缺一项就会安装失败，静态阶段提前拦住。
+manifest = json.loads(read("manifest.json"))
+for key in ("start_url", "scope", "id"):
+    if not manifest.get(key, "").startswith("./"):
+        bad(f"manifest.json 的 {key} 应使用相对路径")
+if manifest.get("display") != "standalone":
+    bad("PWA 应使用 standalone 显示模式")
+for icon in manifest.get("icons", []):
+    path = ROOT / icon.get("src", "")
+    if not path.is_file():
+        bad(f"PWA 图标不存在：{icon.get('src')}")
+worker = read("sw.js")
+core = re.search(r"const CORE = \[([\s\S]*?)\];", worker)
+if not core:
+    bad("sw.js 缺少核心离线清单")
+else:
+    for resource in re.findall(r"'([^']+)'", core.group(1)):
+        if not (ROOT / resource).exists():
+            bad(f"离线清单资源不存在：{resource}")
+        if resource.startswith("/") or resource.startswith("api/"):
+            bad(f"离线清单不应包含绝对路径或 API：{resource}")
+for extra in ("css/ambience.css", "css/board-pins.css", "css/life.css"):
+    for resource in re.findall(r'url\("\.\./([^\"]+)"\)', read(extra)):
+        if not (ROOT / resource).is_file():
+            bad(f"{extra} 引用了不存在的 {resource}")
+
 # 迁移期的旧文件已经删掉，不许回来。
 for old in ("css/site.css", "js/site.js", "assets", "fonts/ark-pixel-12px-proportional-latin.otf.woff2"):
     if (ROOT / old).exists():

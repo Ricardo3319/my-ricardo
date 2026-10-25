@@ -20,7 +20,10 @@
       return null;
     }
   })();
-  var settings = { on: false, music: 0.6, ambience: 0.5, track: "auto" };
+  var settings = { on: false, music: 0.6, ambience: 0.5, track: "auto", weather: "auto" };
+  var focusMode = null; // 临时压低音乐；退出时恢复进入前的开关，不覆盖音乐音量。
+  var cropDeadline = 0;
+  var cropTimer = 0;
   try {
     var kept = JSON.parse(local.getItem("sound.settings"));
     if (kept && typeof kept === "object") {
@@ -28,6 +31,7 @@
       if (typeof kept.music === "number") settings.music = Math.min(1, Math.max(0, kept.music));
       if (typeof kept.ambience === "number") settings.ambience = Math.min(1, Math.max(0, kept.ambience));
       if (typeof kept.track === "string") settings.track = kept.track;
+      if (["auto", "clear", "rain"].indexOf(kept.weather) >= 0) settings.weather = kept.weather;
     }
   } catch (error) {
     /* 没存过或读不到，用默认。 */
@@ -35,7 +39,7 @@
 
   function keep() {
     try {
-      if (local) local.setItem("sound.settings", JSON.stringify(settings));
+      if (local) local.setItem("sound.settings", JSON.stringify(Object.assign({}, settings, { on: focusMode ? focusMode.wasOn : settings.on })));
     } catch (error) {
       /* 存不进时，这次照样能听。 */
     }
@@ -149,7 +153,7 @@
   // ---------------------------------------------------------------- 合成
 
   var ctx = null;
-  var master, musicBus, ambienceBus, noise;
+  var master, musicBus, ambienceBus, noise, pink;
 
   function audio() {
     if (ctx) return ctx;
@@ -164,6 +168,16 @@
     noise = ctx.createBuffer(1, ctx.sampleRate * 2, ctx.sampleRate);
     var data = noise.getChannelData(0);
     for (var i = 0; i < data.length; i += 1) data[i] = Math.random() * 2 - 1;
+    pink = ctx.createBuffer(1, ctx.sampleRate * 4, ctx.sampleRate);
+    var rainData = pink.getChannelData(0);
+    var b0 = 0, b1 = 0, b2 = 0;
+    for (var j = 0; j < rainData.length; j += 1) {
+      var white = Math.random() * 2 - 1;
+      b0 = 0.99765 * b0 + white * 0.099046;
+      b1 = 0.963 * b1 + white * 0.2965164;
+      b2 = 0.57 * b2 + white * 1.0526913;
+      rainData[j] = (b0 + b1 + b2 + white * 0.1848) * 0.12;
+    }
     levels();
     return ctx;
   }
@@ -171,10 +185,10 @@
   // 音量滑块是线性的，听感按平方走。
   function levels() {
     if (ctx) {
-      musicBus.gain.setTargetAtTime(settings.music * settings.music, ctx.currentTime, 0.05);
+      musicBus.gain.setTargetAtTime(focusMode ? 0 : settings.music * settings.music, ctx.currentTime, 0.05);
       ambienceBus.gain.setTargetAtTime(settings.ambience * settings.ambience, ctx.currentTime, 0.05);
     }
-    if (player) player.volume = settings.music;
+    if (player) player.volume = focusMode ? 0 : settings.music;
   }
 
   // 一个音：起音、衰减到持续、松开后收尾。
@@ -310,19 +324,74 @@
 
   var weather = [];
 
+  function rainy() {
+    return settings.weather === "rain" || (settings.weather === "auto" && root.getAttribute("data-weather") === "rain");
+  }
+
+  function rainSound() {
+    var src = ctx.createBufferSource();
+    var high = ctx.createBiquadFilter();
+    var low = ctx.createBiquadFilter();
+    var gain = ctx.createGain();
+    src.buffer = pink;
+    src.loop = true;
+    high.type = "highpass";
+    high.frequency.value = 180;
+    low.type = "lowpass";
+    low.frequency.value = 3200;
+    gain.gain.value = 0.2;
+    src.connect(high);
+    high.connect(low);
+    low.connect(gain);
+    gain.connect(ambienceBus);
+    src.start();
+    weather.push({ node: src });
+  }
+
+  function crackle() {
+    if (ctx.state !== "running") return;
+    var t = ctx.currentTime + 0.01;
+    var src = ctx.createBufferSource();
+    var band = ctx.createBiquadFilter();
+    var gain = ctx.createGain();
+    var duration = 0.025 + Math.random() * 0.065;
+    src.buffer = noise;
+    band.type = "bandpass";
+    band.frequency.value = 600 + Math.random() * 1900;
+    band.Q.value = 1.8 + Math.random();
+    gain.gain.setValueAtTime(0.0001, t);
+    gain.gain.exponentialRampToValueAtTime(0.06 + Math.random() * 0.06, t + 0.003);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t + duration);
+    src.connect(band);
+    band.connect(gain);
+    gain.connect(ambienceBus);
+    src.start(t, Math.random());
+    src.stop(t + duration + 0.01);
+  }
+
   function ambience() {
     stopAmbience();
     audio();
-    var season = root.getAttribute("data-season");
+    var season = root.getAttribute("data-season") || "spring";
     var phase = root.getAttribute("data-phase");
     var night = phase === "night";
+    var rain = rainy();
+    if (rain) rainSound();
+    if (night) {
+      every(function () {
+        crackle();
+        // 指数分布的间隔形成稀疏、非周期性的木柴爆裂。
+        return Math.max(80, -Math.log(1 - Math.random()) * 900);
+      });
+    }
 
     // 风：一段噪声过低通，隔几秒变一阵。
     var wind = ctx.createBufferSource();
     var lp = ctx.createBiquadFilter();
     var gust = ctx.createGain();
     var level = { spring: 0.03, summer: 0.025, autumn: 0.07, winter: 0.12 }[season] * (night ? 0.7 : 1);
-    var pitch = season === "winter" ? 900 : 500;
+    var pitch = { spring: 520, summer: 380, autumn: 720, winter: 950 }[season] || 520;
+    var gustTime = { spring: 3.6, summer: 4.8, autumn: 2.4, winter: 1.8 }[season] || 3.6;
     wind.buffer = noise;
     wind.loop = true;
     lp.type = "lowpass";
@@ -334,12 +403,12 @@
     wind.start();
     weather.push({ node: wind });
     every(function () {
-      gust.gain.setTargetAtTime(level * (0.4 + Math.random()), ctx.currentTime, 1.2);
-      lp.frequency.setTargetAtTime(pitch * (0.7 + Math.random() * 0.8), ctx.currentTime, 1.5);
-      return 2000 + Math.random() * 3000;
+      gust.gain.setTargetAtTime(level * (0.4 + Math.random()), ctx.currentTime, gustTime * 0.4);
+      lp.frequency.setTargetAtTime(pitch * (0.7 + Math.random() * 0.8), ctx.currentTime, gustTime * 0.5);
+      return gustTime * (700 + Math.random() * 600);
     });
 
-    if (!night && season !== "winter") {
+    if (!night && !rain && season !== "winter") {
       var busy = (phase === "dawn" ? 2 : 1) * (season === "autumn" ? 0.5 : 1);
       every(function () {
         birdsong();
@@ -518,7 +587,54 @@
     coin: function () {
       if (settings.on && ctx) sfxCoin();
     },
+    tick: function () {
+      if (settings.on && ctx) chatter();
+    },
+    focus: function () { return !!focusMode; },
+    toggleFocus: function () {
+      if (focusMode) endFocus();
+      else beginFocus();
+    },
+    crop: function (deadline) {
+      cropDeadline = Number(deadline) || 0;
+      if (focusMode && focusMode.crop && (!cropDeadline || cropDeadline <= Date.now())) endFocus();
+      else if (focusMode && cropDeadline > Date.now()) {
+        focusMode.crop = true;
+        watchCrop();
+        paint();
+      }
+    },
   };
+
+  function beginFocus() {
+    focusMode = { wasOn: settings.on, crop: cropDeadline > Date.now() };
+    settings.on = true;
+    if (!focusMode.wasOn) start();
+    else {
+      audio().resume().then(paint, paint);
+      levels();
+    }
+    watchCrop();
+    paint();
+  }
+
+  function endFocus() {
+    if (!focusMode) return;
+    var wasOn = focusMode.wasOn;
+    focusMode = null;
+    window.clearTimeout(cropTimer);
+    settings.on = wasOn;
+    if (!wasOn) stop();
+    else { levels(); paint(); }
+  }
+
+  function watchCrop() {
+    window.clearTimeout(cropTimer);
+    if (!focusMode || !focusMode.crop) return;
+    var remaining = cropDeadline - Date.now();
+    if (remaining <= 0) return endFocus();
+    cropTimer = window.setTimeout(watchCrop, Math.min(remaining, 60000));
+  }
 
   function stopAmbience() {
     weather.forEach(function (w) {
@@ -551,7 +667,7 @@
     if (blobUrl && blobUrl !== url) URL.revokeObjectURL(blobUrl);
     blobUrl = url.indexOf("blob:") === 0 ? url : "";
     player.src = url;
-    player.volume = settings.music;
+    player.volume = focusMode ? 0 : settings.music;
     playing = name;
     paint();
     var started = player.play();
@@ -659,7 +775,9 @@
   }
 
   function start() {
+    if (!settings.on) return;
     audio();
+    levels();
     choose();
     ambience();
     ctx.resume().then(paint, paint);
@@ -697,17 +815,17 @@
   }
 
   // 季节、钟点真变了：环境音跟着换，「跟着季节」的话曲子也换。js/farm.js 每 30 秒重写一次天色，值没变就不管。
-  var seen = root.getAttribute("data-season") + " " + root.getAttribute("data-phase");
+  var seen = root.getAttribute("data-season") + " " + root.getAttribute("data-phase") + " " + root.getAttribute("data-weather");
   new MutationObserver(function () {
     var season = root.getAttribute("data-season");
-    var mood = season + " " + root.getAttribute("data-phase");
+    var mood = season + " " + root.getAttribute("data-phase") + " " + root.getAttribute("data-weather");
     if (mood === seen) return;
     var seasonChanged = seen.split(" ")[0] !== season;
     seen = mood;
     if (!settings.on) return;
     if (seasonChanged && settings.track === "auto") autoPlay();
     ambience();
-  }).observe(root, { attributes: true, attributeFilter: ["data-season", "data-phase"] });
+  }).observe(root, { attributes: true, attributeFilter: ["data-season", "data-phase", "data-weather"] });
 
   // ---------------------------------------------------------------- 面板
 
@@ -745,6 +863,40 @@
   }
   var musicVol = slider("音乐", settings.music);
   var ambVol = slider("环境音", settings.ambience);
+  var weatherLabel = el("label", "sound-row");
+  var weatherPick = el("select", "field");
+  option(weatherPick, "auto", "跟随场景");
+  option(weatherPick, "clear", "晴日微风");
+  option(weatherPick, "rain", "屋檐听雨");
+  weatherPick.value = settings.weather;
+  weatherLabel.append(el("span", "", "天气声"), weatherPick);
+  var focusButton = el("button", "btn sound-focus", "开始白噪音专注");
+  focusButton.type = "button";
+  focusButton.addEventListener("click", function () {
+    window.FARM_SOUND.toggleFocus();
+  });
+  var fullscreenButton = el("button", "btn sound-fullscreen", "全屏专注");
+  fullscreenButton.type = "button";
+  fullscreenButton.hidden = !root.requestFullscreen;
+  fullscreenButton.addEventListener("click", function () {
+    if (document.fullscreenElement) {
+      document.exitFullscreen().catch(function () {});
+      return;
+    }
+    if (!focusMode) beginFocus();
+    root.requestFullscreen().then(function () { open(false); }, function () {
+      now.textContent = "当前浏览器不能全屏，白噪音仍会继续。";
+    });
+  });
+  document.addEventListener("fullscreenchange", function () {
+    fullscreenButton.textContent = document.fullscreenElement ? "退出全屏" : "全屏专注";
+    fullscreenButton.setAttribute("aria-pressed", String(!!document.fullscreenElement));
+  });
+  weatherPick.addEventListener("change", function () {
+    settings.weather = weatherPick.value;
+    keep();
+    if (settings.on) ambience();
+  });
 
   var mineHead = el("p", "sound-row");
   var add = el("label", "btn", "加一首");
@@ -756,11 +908,11 @@
   add.append(file);
   mineHead.append(el("span", "", "我加的"), add);
   var mineBox = el("ul", "sound-mine");
-  var note = el("p", "sound-note", "环境音是风、鸟叫、虫鸣，跟着季节和钟点变。自己加的音乐只存在这台设备的浏览器里，不会传到网站上。");
+  var note = el("p", "sound-note", "微风随四季变化，夜间添上篝火声；可选屋檐雨声。专注时只保留环境音，退出恢复原来的声音设置。自己加的音乐只存在这台设备。");
   var now = el("p", "sound-note");
   now.setAttribute("role", "status");
 
-  panel.append(head, trackLabel, musicVol.label, ambVol.label, mineHead, mineBox, now, note);
+  panel.append(head, trackLabel, musicVol.label, ambVol.label, weatherLabel, focusButton, fullscreenButton, mineHead, mineBox, now, note);
   hud.append(panel);
   toggle.hidden = false; // 有脚本、浏览器能出声，才露出小喇叭
 
@@ -821,12 +973,16 @@
   }
 
   function paint() {
+    if (settings.on) dismissCue();
     var on = settings.on;
     power.textContent = on ? "开着" : "关着";
     power.setAttribute("aria-pressed", String(on));
     toggle.setAttribute("data-state", !on ? "off" : waiting ? "wait" : "on");
     toggle.setAttribute("aria-label", !on ? "声音关着，打开声音面板" : waiting ? "声音开着，点一下页面就出声" : "声音开着，打开声音面板");
-    now.textContent = !on ? "" : waiting ? "点一下页面任意地方就出声。" : playing ? "正在放：" + playing : "";
+    now.textContent = !on ? "" : waiting ? "点一下页面任意地方就出声。" : focusMode ? (focusMode.crop ? "白噪音陪伴这茬庄稼，成熟时自动恢复。" : "白噪音专注中，可关闭面板继续阅读。") : playing ? "正在放：" + playing : "";
+    focusButton.textContent = focusMode ? "结束白噪音专注" : "开始白噪音专注";
+    focusButton.setAttribute("aria-pressed", String(!!focusMode));
+    document.dispatchEvent(new CustomEvent("farm:sound"));
   }
 
   function open(yes) {
@@ -853,6 +1009,8 @@
   });
 
   power.addEventListener("click", function () {
+    focusMode = null;
+    window.clearTimeout(cropTimer);
     settings.on = !settings.on;
     keep();
     if (settings.on) start();
@@ -899,6 +1057,61 @@
       });
   });
 
+  // 首次进农场才提醒；进入农场的那次点击不算已读，下一次交互再收起。
+  var cue = null;
+  var cueSeen = false;
+  try {
+    cueSeen = local && local.getItem("sound.cue.seen") === "1";
+  } catch (error) {}
+
+  function dismissCue() {
+    if (!cue || cue.hidden || cueSeen) return;
+    cueSeen = true;
+    try {
+      if (local) local.setItem("sound.cue.seen", "1");
+    } catch (error) {}
+    cue.classList.add("is-dismissed");
+    cue.disabled = true;
+    cue.setAttribute("aria-hidden", "true");
+    window.setTimeout(function () { cue.hidden = true; }, 240);
+  }
+
+  function syncCue() {
+    if (!cue) {
+      cue = el("button", "sound-cue", "🎵 点击开启声音");
+      cue.type = "button";
+      cue.hidden = true;
+      cue.setAttribute("aria-label", "开启田园环境音与八音盒");
+      toggle.parentNode.appendChild(cue);
+      cue.addEventListener("click", function () {
+        settings.on = true;
+        keep();
+        start();
+        dismissCue();
+        toggle.focus({ preventScroll: true });
+      });
+    }
+    if (cueSeen) return;
+    var farm = root.getAttribute("data-theme") === "farm";
+    cue.hidden = !farm || settings.on || !panel.hidden;
+  }
+
+  function cueInteraction(event) {
+    if (!cue || cue.hidden || cue.contains(event.target)) return;
+    if (event.type === "keydown" && ["Tab", "Shift", "Control", "Alt", "Meta"].indexOf(event.key) >= 0) return;
+    dismissCue();
+  }
+
+  document.addEventListener("pointerdown", cueInteraction, true);
+  document.addEventListener("click", cueInteraction, true);
+  document.addEventListener("keydown", cueInteraction, true);
+  document.addEventListener("DOMContentLoaded", syncCue);
+  document.addEventListener("farm:page", syncCue);
+  document.addEventListener("visibilitychange", function () {
+    if (!document.hidden) watchCrop();
+  });
+  new MutationObserver(syncCue).observe(root, { attributes: true, attributeFilter: ["data-theme"] });
+  syncCue();
   paint();
   if (settings.on) {
     siteList().then(start);

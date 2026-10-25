@@ -57,6 +57,10 @@
   var pos = { x: START.x, y: START.y, dir: 0, step: 0 };
   var target = null; // {x, y, talk}
   var held = null; // 长按持续走的那根手指的 pointerId
+  var touchScreen = window.matchMedia && window.matchMedia("(any-pointer: coarse)");
+  var pad = null;
+  var padPointer = null;
+  var padDirection = "";
   var talking = null;
   // 换页过场：跑回屋门、跨进门淡出，走完才叫 nav.js 换页。
   var leaving = false;
@@ -146,6 +150,7 @@
   }
 
   function setWalking(on) {
+    if (!on) release();
     walkOn = on;
     document.body.classList.toggle("is-walking", on);
     if (peep) peep.hidden = !on || !!talking;
@@ -168,6 +173,7 @@
   }
 
   function openTalk(actor) {
+    release();
     var d = actor.data;
     talking = actor;
     target = null;
@@ -523,6 +529,7 @@
      立刻回调，换页和以前一样快。路是碰撞格上 BFS 找出来的，绕得开告示牌和栅栏；
      实在没有路（人卡在圈里）或跑得比 LEAVE_CAP 久，就地淡出换页。 */
   function leave(done) {
+    release();
     closeTalk();
     done();
   }
@@ -566,11 +573,11 @@
           }
         }
       }
-    } else if (!talking && !(window.FARM_GAMES && window.FARM_GAMES.isOpen())) {
-      if (keys.left) dx -= 1;
-      if (keys.right) dx += 1;
-      if (keys.up) dy -= 1;
-      if (keys.down) dy += 1;
+    } else if (!talking && !modalOpen()) {
+      if (keys.left || padDirection === "left") dx -= 1;
+      if (keys.right || padDirection === "right") dx += 1;
+      if (keys.up || padDirection === "up") dy -= 1;
+      if (keys.down || padDirection === "down") dy += 1;
       if ((dx || dy) && target) target = null; // 键盘优先，点地的目标作废
       if (!dx && !dy && target) {
         if (target.route === undefined) target.route = held === null ? routeTo(target.x, target.y) : null;
@@ -671,6 +678,9 @@
       ty = focusY - pos.y * k;
       tx = mapW > vw ? Math.min(Math.max(tx, vw - mapW), 0) : (vw - mapW) / 2;
       ty = mapH > vh ? Math.min(Math.max(ty, vh - mapH), 0) : (vh - mapH) / 2;
+      // CSS 的底图和角色层都以 50% / 38% 为锚点，这里把左上角坐标换成相对偏移。
+      tx -= (vw - mapW) * 0.5;
+      ty -= (vh - mapH) * 0.38;
     } else {
       tx = mapW / 2 - pos.x * k;
       ty = vh * 0.06 + mapH * 0.38 - pos.y * k;
@@ -791,9 +801,88 @@
     return false;
   }
 
+  function modalOpen() {
+    return (window.FARM_GAMES && window.FARM_GAMES.isOpen()) ||
+      (window.FARM_MSG && window.FARM_MSG.isOpen());
+  }
+
+  function resetPad() {
+    var pointer = padPointer;
+    padPointer = null;
+    padDirection = "";
+    if (!pad) return;
+    pad.removeAttribute("data-direction");
+    pad.classList.remove("is-held");
+    if (pointer !== null && pad.hasPointerCapture(pointer)) pad.releasePointerCapture(pointer);
+  }
+
+  function syncPad() {
+    if (!pad) return;
+    var show = touchScreen && touchScreen.matches && farmMode() && walking() && !talking && !leaving && !modalOpen();
+    pad.hidden = !show;
+    if (!show) resetPad();
+  }
+
+  function steerPad(event) {
+    if (event.pointerId !== padPointer) return;
+    event.preventDefault();
+    var rect = pad.getBoundingClientRect();
+    var x = event.clientX - rect.left;
+    var y = event.clientY - rect.top;
+    var dx = x - rect.width / 2;
+    var dy = y - rect.height / 2;
+    // 中间一格是停步区；滑出控制盘也停，滑回来可继续转向。
+    var outside = x < 0 || y < 0 || x > rect.width || y > rect.height;
+    var center = Math.abs(dx) < rect.width / 6 && Math.abs(dy) < rect.height / 6;
+    padDirection = outside || center ? "" : Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? "right" : "left") : (dy > 0 ? "down" : "up");
+    pad.setAttribute("data-direction", padDirection);
+  }
+
+  function makePad() {
+    pad = document.createElement("div");
+    pad.className = "walk-pad";
+    pad.hidden = true;
+    pad.setAttribute("role", "group");
+    pad.setAttribute("aria-label", "农场方向键，按住移动，滑动转向，松手停止");
+    [["up", "上"], ["left", "左"], ["right", "右"], ["down", "下"]].forEach(function (item) {
+      var button = document.createElement("button");
+      button.type = "button";
+      button.className = "walk-pad-key";
+      button.setAttribute("data-direction", item[0]);
+      button.setAttribute("aria-label", "向" + item[1] + "走");
+      // 键盘或辅助技术的单次激活走一格，触控连续移动由指针事件负责。
+      button.addEventListener("click", function (event) {
+        if (event.detail || pad.hidden) return;
+        resetPad();
+        var dx = item[0] === "left" ? -TILE : item[0] === "right" ? TILE : 0;
+        var dy = item[0] === "up" ? -TILE : item[0] === "down" ? TILE : 0;
+        target = { x: pos.x + dx, y: pos.y + dy, talk: null, route: null };
+      });
+      pad.appendChild(button);
+    });
+    pad.addEventListener("pointerdown", function (event) {
+      if (pad.hidden || padPointer !== null || event.button !== 0) return;
+      event.preventDefault();
+      release();
+      padPointer = event.pointerId;
+      pad.setPointerCapture(padPointer);
+      pad.classList.add("is-held");
+      steerPad(event);
+    });
+    pad.addEventListener("pointermove", steerPad);
+    function end(event) {
+      if (event.pointerId === padPointer) resetPad();
+    }
+    pad.addEventListener("pointerup", end);
+    pad.addEventListener("pointercancel", end);
+    pad.addEventListener("lostpointercapture", end);
+    document.body.appendChild(pad);
+    syncPad();
+  }
+
   function onKeyDown(event) {
     var onControl = event.target && event.target.closest && event.target.closest("input, textarea, button, a");
-    if (!farmMode() || leaving || (window.FARM_GAMES && window.FARM_GAMES.isOpen())) return;
+    if (!farmMode() || leaving || modalOpen()) return;
     if (talking) {
       if (event.key === "Escape") {
         event.preventDefault();
@@ -834,7 +923,7 @@
   }
 
   function onPoint(event) {
-    if (!farmMode() || leaving || (window.FARM_GAMES && window.FARM_GAMES.isOpen())) return;
+    if (!farmMode() || leaving || modalOpen() || padPointer !== null) return;
     if (talking) closeTalk();
     if (!walking()) setWalking(true);
     if (event.currentTarget !== hitArea) {
@@ -944,10 +1033,10 @@
     }
     bg = document.querySelector(".world");
     if (!bg) return; // 没有农场背景，镜头变量没处写
-    if (COARSE) {
+    if (touchScreen && touchScreen.matches) {
       // 触屏没有 W/S 和回车可说，提示换成点法的。
       var h0 = document.querySelector(".walk-hint");
-      if (h0) h0.textContent = "点地面或带名牌的地方走过去搭话。";
+      if (h0) h0.textContent = "按住左下方向键走动，也可以点地面或村民搭话。";
     }
     rememberGreeting();
     var initChoices = document.querySelector(".dialogue .choices");
@@ -1057,6 +1146,7 @@
     hitArea.addEventListener("pointermove", onHoldMove);
     hitArea.addEventListener("pointerup", onHoldEnd);
     hitArea.addEventListener("pointercancel", onHoldEnd);
+    makePad();
 
     var hint = document.querySelector(".walk-hint");
     if (hint) hint.hidden = false;
@@ -1081,11 +1171,15 @@
       cam.set = false;
       frame.last = 0;
       frame.cx = frame.cy = frame.sx = frame.sy = frame.sz = frame.sp = frame.near = null;
-      raf = window.requestAnimationFrame(frame);
+      if (!raf) raf = window.requestAnimationFrame(frame);
     }
+    syncPad();
   }
   function unmount() {
     if (!layer) return;
+    release();
+    if (pad) pad.remove();
+    pad = null;
     save();
     if (raf) {
       window.cancelAnimationFrame(raf);
@@ -1121,9 +1215,19 @@
   // 窗口切走（换标签、切应用）时收不到 keyup：一律当松手，别回来发现小人自己走个不停。
   function release() {
     keys = Object.create(null);
+    target = null;
+    var pointer = held;
     held = null;
+    if (pointer !== null && hitArea && hitArea.hasPointerCapture(pointer)) hitArea.releasePointerCapture(pointer);
+    resetPad();
   }
 
+  new MutationObserver(function () {
+    if (modalOpen()) release();
+    syncPad();
+  }).observe(document.body, { attributes: true, attributeFilter: ["class"], childList: true });
+  if (touchScreen) touchScreen.addEventListener("change", syncPad);
+  document.addEventListener("DOMContentLoaded", mount);
   document.addEventListener("keydown", onKeyDown);
   document.addEventListener("keyup", onKeyUp);
   document.addEventListener("farm:page", page);

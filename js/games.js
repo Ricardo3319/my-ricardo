@@ -96,6 +96,8 @@
   var statusEl = null;
   var subBtn = null;
   var actionBtn = null;
+  var focusBtn = null;
+  var focusNote = null;
   var footTitleEl = null;
   var footGridEl = null;
   var footDetailEl = null;
@@ -305,8 +307,20 @@
     });
     actionBtn = el("button", "btn game-action", "开始");
     actionBtn.type = "button";
-    btnsWrap.append(subBtn, actionBtn);
-    bar.append(statusEl, btnsWrap);
+    focusBtn = el("button", "btn game-focus", "开启白噪音陪伴");
+    focusBtn.type = "button";
+    focusBtn.hidden = true;
+    focusBtn.addEventListener("click", function () {
+      if (window.FARM_SOUND && window.FARM_SOUND.toggleFocus) {
+        syncCropSound();
+        window.FARM_SOUND.toggleFocus();
+        updateFocusControls();
+      }
+    });
+    focusNote = el("p", "game-focus-note", "");
+    focusNote.hidden = true;
+    btnsWrap.append(subBtn, actionBtn, focusBtn);
+    bar.append(statusEl, btnsWrap, focusNote);
 
     var divider = el("hr", "divider");
 
@@ -1952,6 +1966,26 @@
     }
   }
 
+  function syncCropSound() {
+    var act = state.crop.active;
+    if (window.FARM_SOUND && window.FARM_SOUND.crop) {
+      window.FARM_SOUND.crop(act ? Number(act.startAt) + (Math.max(10, Number(act.durationSec) || 1500) - (Number(act.bonusSec) || 0)) * 1000 : 0);
+    }
+  }
+
+  function updateFocusControls() {
+    if (!focusBtn) return;
+    var canFocus = activeGame === "crop" && window.FARM_SOUND && window.FARM_SOUND.toggleFocus;
+    var on = !!(canFocus && window.FARM_SOUND.focus());
+    focusBtn.hidden = !canFocus;
+    focusNote.hidden = !canFocus;
+    focusBtn.textContent = on ? "结束白噪音陪伴" : "开启白噪音陪伴";
+    focusBtn.setAttribute("aria-pressed", String(on));
+    focusNote.textContent = on
+      ? "只听环境音。关掉菜地或切页后继续陪伴，庄稼成熟或放弃时恢复原来的声音。手机系统休眠时可能暂停播放。"
+      : "想安静种菜时再开启。白噪音可在后台陪伴，右上角声音面板可选择雨声。";
+  }
+
   function updateCropControls() {
     if (activeGame !== "crop" || !statusEl || !actionBtn || !subBtn) return;
     var crop = getSelectedCropObj();
@@ -2002,6 +2036,7 @@
     cropGame.canAnim = 1.1;
     spawnWaterDrops();
     saveState();
+    syncCropSound();
     if (window.FARM_SOUND) window.FARM_SOUND.cast();
     updateCropControls();
   }
@@ -2042,6 +2077,7 @@
       state.crop.active.bonusSec = (Number(state.crop.active.bonusSec) || 0) + 10;
       cropGame.waterCooldown = 1.2;
       saveState();
+      syncCropSound();
       if (window.FARM_SOUND) window.FARM_SOUND.coin();
       for (var i = 0; i < 4; i++) {
         cropGame.sparkles.push({
@@ -2067,6 +2103,7 @@
     state.crop.totalPlots = (Number(state.crop.totalPlots) || 0) + 1;
     state.crop.totalMinutes = (Number(state.crop.totalMinutes) || 0) + mins;
     state.crop.active = null;
+    syncCropSound();
     var topTask = getTopBoardTask();
     var taskCount = topTask ? incrementBoardTaskPomodoro(topTask.id) : 0;
     saveState();
@@ -2107,6 +2144,7 @@
       var info = getCropProgressInfo();
       if (info.ripe && !cropGame.justRipeNotified) {
         cropGame.justRipeNotified = true;
+        syncCropSound();
         if (window.FARM_SOUND) window.FARM_SOUND.win();
         for (var k = 0; k < 12; k++) {
           cropGame.sparkles.push({
@@ -2655,6 +2693,7 @@
       } else {
         state.crop.active = null;
         saveState();
+        syncCropSound();
         if (window.FARM_SOUND) window.FARM_SOUND.lose();
         updateCropControls();
       }
@@ -2733,6 +2772,8 @@
     if (kind !== "fish" && kind !== "cart" && kind !== "crop" && kind !== "well") return;
     ensureModal();
     activeGame = kind;
+    syncCropSound();
+    updateFocusControls();
     holding = false;
     selectedSlotIndex = 0;
     backdrop.hidden = false;
@@ -2786,6 +2827,7 @@
       closeGame();
       return;
     }
+    if (e.target && e.target.closest && e.target.closest(".game-focus")) return;
     if (e.key === " " || e.key === "ArrowUp" || e.key === "w" || e.key === "W" || e.key === "Enter") {
       e.preventDefault();
       e.stopPropagation();
@@ -2795,6 +2837,7 @@
 
   function onKeyUp(e) {
     if (!activeGame) return;
+    if (e.target && e.target.closest && e.target.closest(".game-focus")) return;
     if (e.key === " " || e.key === "ArrowUp" || e.key === "w" || e.key === "W" || e.key === "Enter") {
       e.preventDefault();
       e.stopPropagation();
@@ -2803,6 +2846,8 @@
   }
 
   function boot() {
+    syncCropSound();
+    updateFocusControls();
     if (!document.body.classList.contains("home")) {
       closeGame();
     }
@@ -2820,5 +2865,9 @@
   window.addEventListener("blur", onPressEnd);
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot);
   else boot();
-  document.addEventListener("farm:page", closeGame);
+  document.addEventListener("farm:sound", updateFocusControls);
+  document.addEventListener("farm:page", function () {
+    closeGame();
+    boot();
+  });
 })();

@@ -11,6 +11,12 @@
   var GROUPS = [["late", "逾期"], ["today", "今天"], ["soon", "三天内"], ["later", "以后"], ["none", "没定日子"]];
   var PIN = { late: "red", today: "orange", soon: "gold", later: "green", none: "gray" };
   var DAY = 86400000;
+  var PIN_COLORS = ["red", "blue", "green", "gold"];
+  var PIN_LABELS = { red: "紧急待办", blue: "灵感碎片", green: "代码与链接", gold: "生活里程碑" };
+  var script = document.currentScript;
+  var apiBase = new URL("../api/", script ? script.src : location.href);
+  var archiving = Object.create(null);
+  var archiveErrors = Object.create(null);
 
   var form, titleField, dateField, timeField, hintLine, syncLine, notesBox, monthLine, seasonMark, daysBox;
   var doneBox, doneCount, keyForm, keyOn, keyState, keyNote, unlink, toastBox, toastText, toastUndo, hint;
@@ -101,6 +107,9 @@
           done: typeof t.done === "string" ? t.done : "",
           made: typeof t.made === "string" ? t.made : "",
           private: !!t.private,
+          pin: PIN_COLORS.indexOf(t.pin) >= 0 ? t.pin : "",
+          pinnedAt: typeof t.pinnedAt === "number" ? t.pinnedAt : 0,
+          archive: t.archive === "public" || t.archive === "local" ? t.archive : "",
           updatedAt: typeof t.updatedAt === "number" ? t.updatedAt : 0,
         };
       });
@@ -227,6 +236,7 @@
   }
 
   function change(op) {
+    if (op.task) op.task = Object.assign({}, op.task, { updatedAt: Date.now() });
     editing = ""; /* 改到一半去点别的，就当不改了。 */
     if (key) {
       state.queue.push(op);
@@ -502,9 +512,17 @@
       notesBox.append(empty);
       return;
     }
+    var pasted = open.filter(function (t) { return t.pinnedAt; }).sort(function (a, b) { return b.pinnedAt - a.pinnedAt; });
+    if (pasted.length) {
+      var recent = el("section", "note-group");
+      var recentList = el("ol", "note-list");
+      pasted.forEach(function (t) { recentList.append(note(t, now)); });
+      recent.append(el("h3", "", "随手钉上 · " + pasted.length), recentList);
+      notesBox.append(recent);
+    }
     GROUPS.forEach(function (group) {
       var mine = open.filter(function (t) {
-        return urgency(t, now).level === group[0];
+        return !t.pinnedAt && urgency(t, now).level === group[0];
       });
       if (!mine.length) return;
       var section = el("section", "note-group");
@@ -521,6 +539,15 @@
     var u = urgency(t, now);
     var item = el("li", "note");
     item.setAttribute("data-due", u.level);
+    var color = t.pin || PIN[u.level];
+    item.setAttribute("data-pin", color);
+    var pin = button("note-pin", "", (t.pin ? PIN_LABELS[t.pin] : "按截止日自动配色") + "，点击切换图钉分类", function () {
+      var next = PIN_COLORS[(PIN_COLORS.indexOf(t.pin) + 1) % PIN_COLORS.length];
+      change({ op: "put", task: Object.assign({}, t, { pin: next }), say: "分类：" + t.title });
+    });
+    pin.setAttribute("data-pin", color);
+    pin.setAttribute("data-focus", "pin:" + t.id);
+    pin.title = pin.getAttribute("aria-label");
     var check = button("note-check", undefined, "做完了：" + t.title, function () {
       var task = Object.assign({}, t, { done: new Date().toISOString() });
       change({ op: "put", task: task, say: "做完：" + t.title });
@@ -540,6 +567,7 @@
     tag.setAttribute("data-due", u.level);
     when.append(tag);
     if (t.private) when.append(el("span", "note-private", "私密"));
+    if (t.pin) when.append(el("span", "note-category", PIN_LABELS[t.pin]));
     var pomoMap = load("farm.crop.taskCounts", {}) || {};
     var pomoCount = pomoMap[t.id] || 0;
     if (pomoCount > 0) when.append(el("span", "note-private", "🍅×" + pomoCount));
@@ -553,8 +581,22 @@
       tearOff(t);
     });
     tear.setAttribute("data-focus", "tear:" + t.id);
-    tools.append(edit, tear);
-    item.append(check, body, tools);
+    var archive = button("", archiving[t.id] ? "归档中…" : "归档入流水", "归档入流水：" + t.title, function () {
+      archiveTask(t, false);
+    });
+    archive.disabled = !!archiving[t.id];
+    archive.setAttribute("data-focus", "archive:" + t.id);
+    tools.append(edit, archive, tear);
+    if (archiveErrors[t.id]) {
+      var status = el("p", "note-archive-status", archiveErrors[t.id]);
+      status.setAttribute("role", "status");
+      body.append(status);
+      if (passkeyValue()) tools.append(button("", "仅归档本机", "仅在这台设备归档：" + t.title, function () { archiveTask(t, true); }));
+    }
+    if (archiving[t.id]) {
+      check.disabled = pin.disabled = edit.disabled = tear.disabled = true;
+    }
+    item.append(pin, check, body, tools);
     return item;
   }
 
@@ -650,7 +692,7 @@
         var pins = el("span", "day-pins");
         list.slice(0, 3).forEach(function (t) {
           var pin = el("i");
-          pin.setAttribute("data-pin", PIN[urgency(t, now).level]);
+          pin.setAttribute("data-pin", t.pin || PIN[urgency(t, now).level]);
           pins.append(pin);
         });
         cellButton.append(pins);
@@ -686,6 +728,7 @@
       var finished = day(ymd(new Date(t.done)));
       var info = el("span", "done-info");
       info.append(el("span", "", t.title), el("span", "row-note", (t.due ? "截止 " + nice(t.due) + " · " : "") + "做完 " + (finished.getMonth() + 1) + "月" + finished.getDate() + "日"));
+      if (t.archive) info.append(el("span", "row-note", t.archive === "public" ? "已归档公开流水" : "已归档本机流水"));
       var tools = el("span", "note-tools");
       tools.append(
         button("", "放回", "放回：" + t.title, function () {
@@ -697,6 +740,69 @@
       );
       row.append(info, tools);
       doneBox.append(row);
+    });
+  }
+
+  function archiveTask(t, localOnly) {
+    if (archiving[t.id]) return;
+    var pk = passkeyValue();
+    var publicLog = !!pk && !localOnly;
+    if (!t.archive && publicLog && !window.confirm((t.private ? "这张便签是私密的。" : "") + "归档后，便签内容和完成时间会出现在公开日常中，所有访客可见。确认公开归档？")) return;
+    var completed = t.done || new Date().toISOString();
+    var date = ymd(new Date(completed));
+    var entry = {
+      sourceId: "board:" + t.id,
+      date: date,
+      text: t.title + "（完成于 " + date + " " + clock(completed) + "）",
+    };
+    archiving[t.id] = true;
+    delete archiveErrors[t.id];
+    render();
+
+    function finish(mode) {
+      delete archiving[t.id];
+      var current = tasks().filter(function (task) { return task.id === t.id; })[0];
+      if (current) change({ op: "put", task: Object.assign({}, current, { done: completed, archive: mode }), say: "归档：" + t.title });
+      if (here()) toast(mode === "public" ? "已归档到公开日常。" : "已归档到本机日常，不会自动公开。", null);
+      document.dispatchEvent(new CustomEvent("farm:logs"));
+    }
+
+    function fail(message) {
+      delete archiving[t.id];
+      archiveErrors[t.id] = message;
+      render();
+    }
+
+    if (t.archive) return finish(t.archive);
+    if (!publicLog) {
+      try {
+        if (!local) throw new Error("storage");
+        var raw = local.getItem("farm.logs.local.v1");
+        var list = raw ? JSON.parse(raw) : [];
+        if (!Array.isArray(list)) throw new Error("storage");
+        if (!list.some(function (item) { return item.sourceId === entry.sourceId; })) {
+          list.unshift(Object.assign({ id: "local:" + t.id, local: true }, entry));
+        }
+        local.setItem("farm.logs.local.v1", JSON.stringify(list));
+        finish("local");
+      } catch (error) {
+        fail("本机存储不可用，便签仍在板上，尚未归档。");
+      }
+      return;
+    }
+    fetch(apiUrl("logs"), {
+      method: "POST",
+      headers: { Accept: "application/json", "Content-Type": "application/json", "X-Passkey": pk },
+      credentials: "same-origin",
+      cache: "no-store",
+      body: JSON.stringify(entry),
+    }).then(jsonRes).then(function (result) {
+      if (!result._ok || result.id === undefined || result.id === null) {
+        throw new Error(result._status === 401 ? "口令不对，尚未归档。" : "云端未确认写入，便签仍在板上。请重试，或仅归档本机。");
+      }
+      finish("public");
+    }).catch(function (error) {
+      fail(error.offline || error instanceof TypeError ? "云端不可达，便签仍在板上。请重试，或仅归档本机。" : error.message);
     });
   }
 
@@ -721,7 +827,9 @@
   var toastTimer = 0;
   var undoing = null;
   function toast(text, undo) {
+    if (!here()) return;
     toastText.textContent = text;
+    toastUndo.hidden = !undo;
     undoing = undo;
     toastBox.hidden = false;
     window.clearTimeout(toastTimer);
@@ -751,6 +859,33 @@
     }
     var u = urgency({ due: dateField.value, time: timeField.value }, new Date());
     hintLine.textContent = (title ? "「" + title + "」" : "") + "钉在 " + nice(dateField.value, timeField.value) + " · " + u.text;
+  }
+
+  function pasteNote(event) {
+    if (!here() || event.defaultPrevented || !event.clipboardData) return;
+    var active = event.target;
+    if (active && (active.isContentEditable || (active.closest && active.closest("input, textarea, select, [role='textbox']")))) return;
+    var text = event.clipboardData.getData("text/plain").trim();
+    if (!text) return;
+    event.preventDefault();
+    // 链接和多行代码原样保存，避免把 URL 路径或代码里的日期当成截止日。
+    var got = /https?:\/\/|[\r\n]/.test(text) ? { rest: text, date: null, time: "" } : parse(text, new Date());
+    var task = {
+      id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+      title: got.rest,
+      due: got.date ? ymd(got.date) : "",
+      time: got.time,
+      done: "",
+      made: new Date().toISOString(),
+      private: !!(privateBox && privateBox.checked),
+      pin: /https?:\/\/|[\r\n]/.test(text) ? "green" : got.date ? "red" : "blue",
+      pinnedAt: Date.now(),
+      updatedAt: Date.now(),
+    };
+    change({ op: "put", make: true, task: task, say: "粘贴：" + task.title });
+    toast("已钉在最前面" + (task.due ? "，截止 " + nice(task.due, task.time) : "") + "。", function () {
+      change({ op: "drop", id: task.id, say: "撤回粘贴" });
+    });
   }
 
   function bindForm() {
@@ -910,7 +1045,7 @@
   }
 
   function apiUrl(name) {
-    return new URL("../api/" + name, location.href).href;
+    return new URL(name, apiBase).href;
   }
 
   function jsonRes(res) {
@@ -936,6 +1071,8 @@
     var pk = passkeyValue();
     if (!pk) return Promise.resolve(false);
     var headers = { Accept: "application/json", "X-Passkey": pk };
+    var sentTasks = null;
+    var sentOps = 0;
     return fetch(apiUrl("board"), { method: "GET", headers: headers, cache: "no-store", credentials: "same-origin" })
       .then(jsonRes)
       .then(function (got) {
@@ -946,6 +1083,8 @@
         }
         if (!pk) return false;
         headers["Content-Type"] = "application/json";
+        sentTasks = tasks();
+        sentOps = state.queue.length;
         return fetch(apiUrl("board"), {
           method: "PUT",
           headers: headers,
@@ -955,7 +1094,7 @@
             version: 2,
             updatedAt: Date.now(),
             scratchpad: asPad(state.scratchpad),
-            tasks: tasks(),
+            tasks: sentTasks,
           }),
         }).then(jsonRes);
       })
@@ -971,9 +1110,18 @@
           bad.offline = true;
           throw bad;
         }
-        state.base = tidy(out.data.tasks);
-        state.scratchpad = asPad(out.data.scratchpad);
-        state.queue = [];
+        // PUT 在途时仍可点图钉或归档：保留请求发出后的本机改动，再补一次同步。
+        var currentTasks = tasks();
+        var sentById = Object.create(null);
+        sentTasks.forEach(function (t) { sentById[t.id] = t; });
+        var late = currentTasks.filter(function (t) { return JSON.stringify(t) !== JSON.stringify(sentById[t.id]); });
+        var present = Object.create(null);
+        currentTasks.forEach(function (t) { present[t.id] = true; });
+        var lateDrops = sentTasks.filter(function (t) { return !present[t.id]; });
+        state.base = apply(tidy(out.data.tasks), late.map(function (t) { return { op: "put", task: t, make: true }; }).concat(lateDrops.map(function (t) { return { op: "drop", id: t.id }; })));
+        state.scratchpad = pickPad(state.scratchpad, out.data.scratchpad);
+        state.queue = state.queue.slice(sentOps);
+        if (late.length || lateDrops.length) again = true;
         state.synced = new Date().toISOString();
         cloud = true;
         problem = "";
@@ -1301,6 +1449,8 @@
   }
 
   mount();
+  document.addEventListener("paste", pasteNote);
+  document.addEventListener("DOMContentLoaded", mount);
   document.addEventListener("farm:page", mount);
   flush();
 })();

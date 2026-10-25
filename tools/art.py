@@ -1969,7 +1969,29 @@ def og_cover():
 TOWN = FARM = None
 
 
+def pwa_icon(size):
+    """整倍像素木板图钉，安全区内留出主屏裁切余量。"""
+    image = Img(64, 64, rgb("#8c4a27"))
+    image.rect(10, 12, 44, 42, rgb("#3b1d0e"))
+    image.rect(12, 14, 40, 38, rgb("#ffc97f"))
+    image.rect(16, 20, 32, 27, rgb("#fff1d6"))
+    image.rect(20, 34, 24, 2, rgb("#d48f4c"))
+    image.rect(20, 40, 17, 2, rgb("#d48f4c"))
+    image.rect(30, 21, 4, 12, rgb("#5b2a12"))
+    image.rect(25, 18, 14, 6, rgb("#a94437"))
+    image.rect(27, 16, 10, 6, rgb("#d76b4e"))
+    if size == 512:
+        return image.scaled(8)
+    return image.scaled(3)
+
+
 def main(argv):
+    if "--pwa-only" in argv:
+        OUT.mkdir(exist_ok=True)
+        for size in (192, 512):
+            write_png(OUT / f"pwa-{size}.png", pwa_icon(size))
+        print("写了 PWA 图标 192 / 512")
+        return
     global TOWN, FARM
     TOWN = Sheet(SRC / "kenney-tiny-town" / "Tilemap" / "tilemap_packed.png")
     FARM = Sheet(SRC / "kenney-tiny-farm" / "Tilemap" / "tilemap_packed.png")
@@ -1987,6 +2009,8 @@ def main(argv):
     fav = Img(32, 32)
     fav.blit(made["icon-about"].scaled(2), 5, 5)
     made["favicon"] = fav
+    for size in (192, 512):
+        made[f"pwa-{size}"] = pwa_icon(size)
     # 作品格子和随身物品用的物件，直接取 Kenney Tiny Farm 的图块
     for name, i in (("carrot", 8), ("turnip", 20), ("corn", 32), ("tomato", 44), ("cabbage", 56),
                     ("wheat", 68), ("crate", 11), ("seeds", 9), ("hay", 96), ("bucket", 73)):

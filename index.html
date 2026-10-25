@@ -42,6 +42,9 @@
   <link rel="stylesheet" href="css/fonts.css">
   <link rel="stylesheet" href="css/farm.css">
   <link rel="icon" href="img/favicon.png">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#8c4a27">
+  <link rel="apple-touch-icon" href="img/pwa-192.png">
 </head>
 <body class="home">
   <a class="skip" href="#content">跳到对话</a>
@@ -109,15 +112,10 @@
           <div class="title-sub-plaque">
             <span class="title-chain chain-left" aria-hidden="true"></span>
             <span class="title-chain chain-right" aria-hidden="true"></span>
-            <p>南京航空航天大学硕士研究生 · 微秒级 RPC 任务调度</p>
+            <p>欢迎来到我的赛博木屋 · 在南京读研，也在这里种菜听风</p>
           </div>
 
-          <!-- 悬浮微动效农场漫游小入口 -->
-          <button class="farm-cabin-entrance-btn" type="button" data-enter-farm aria-label="漫步像素农场" title="点击进入沉浸式像素农场漫游与互动街机">
-            <span class="cabin-icon" aria-hidden="true">🏡</span>
-            <span class="cabin-label">漫步像素农场</span>
-            <small class="cabin-tag">RPG 漫游</small>
-          </button>
+          <p class="cabin-now" data-now-status>🍁 在南航读研，打磨微秒级调度，也慢慢收拾这座像素农场。</p>
         </div>
 
         <!-- 开始菜单经典竖向木牌按钮组（New / Load / Co-op / Exit 比例） -->
@@ -129,14 +127,6 @@
             <span class="title-btn-label">漫游农场</span>
             <small>进入实景与小游戏</small>
           </button>
-
-          <a class="title-btn" href="#overview">
-            <span class="title-btn-window">
-              <img class="pixel" src="img/portrait.png" width="48" height="48" alt="">
-            </span>
-            <span class="title-btn-label">个人概览</span>
-            <small>一页速览研究与近况</small>
-          </a>
 
           <a class="title-btn" href="notes/">
             <span class="title-btn-window">
@@ -153,18 +143,10 @@
             <span class="title-btn-label">随身告示牌</span>
             <small>待办日历 · 剪贴板</small>
           </a>
-
-          <a class="title-btn" href="about/">
-            <span class="title-btn-window">
-              <img class="pixel" src="img/icon-about.png" width="33" height="33" alt="">
-            </span>
-            <span class="title-btn-label">关于与联系</span>
-            <small>学术履历 · 邮箱</small>
-          </a>
         </nav>
 
         <a class="title-scroll-cue" href="#overview">
-          <span>向下滚动查看一页式个人主页（研究 · 笔记 · 动态）</span>
+          <span>往下坐坐，看看木屋里的近况与手作</span>
           <i aria-hidden="true">↓</i>
         </a>
       </section>
@@ -180,7 +162,8 @@
                 <span class="clean-badge">南航 · 计算机硕士在读（本科推免）</span>
               </div>
               <p class="clean-lead">目前就读于南京航空航天大学计算机科学与技术专业，专注于数据中心同机架微秒级 RPC 任务调度、多核排队论建模与长尾延迟（P99）抑制。闲暇时喜欢像素独立游戏与音乐，并亲手搭建了这座零前端框架依赖的个人小站。</p>
-              <p class="clean-status" data-now-status>🍁 2026 秋 · 在南航读研，日常和微秒级任务调度打交道，空下来打磨这座像素小农场。</p>
+              <details class="cabin-details">
+                <summary>木屋此刻 · 音乐、游戏与手边的玩具</summary>
               <ul class="now-grid" aria-label="木屋此刻的生活动态">
                 <li class="now-cell">
                   <span class="now-key" aria-hidden="true">🎵</span>
@@ -199,18 +182,18 @@
                   <div class="now-body"><b>今日状态</b><span>耶加雪菲日晒浅烘手冲。晴空万里，代码编译零警告，今日宜深耕。</span></div>
                 </li>
               </ul>
+              </details>
               <div class="clean-actions">
-                <a class="clean-btn is-solid" href="about/">完整学术履历</a>
-                <a class="clean-btn" href="https://github.com/Ricardo3319">GitHub · @Ricardo3319</a>
+                <a class="clean-btn is-solid" href="about/">关于我与随身装备</a>
                 <a class="clean-btn" href="contact/">发邮件联系</a>
-                <button class="clean-btn" type="button" data-copy="Renmingyang3319@outlook.com">抄下邮箱</button>
-                <a class="clean-btn" href="feed.xml">RSS 订阅</a>
               </div>
             </div>
           </div>
         </section>
 
-        <section class="clean-section" id="home-works" aria-labelledby="home-works-title">
+        <details class="cabin-details cabin-workshop" id="home-works">
+          <summary>打开木屋工坊 · rpcsim 与这座手作网站</summary>
+        <section class="clean-section" aria-labelledby="home-works-title">
           <div class="clean-section-head">
             <h2 id="home-works-title">木屋工坊 · 锻造代表作</h2>
             <a class="clean-more" href="work/">查看全部作品箱 →</a>
@@ -249,9 +232,10 @@
             </article>
           </div>
         </section>
+        </details>
 
-        <div class="clean-grid-2">
-          <section class="clean-card" aria-labelledby="home-notes-title">
+        <div class="cabin-reading">
+          <section aria-labelledby="home-notes-title">
             <div class="clean-section-head">
               <h2 id="home-notes-title">最新技术笔记</h2>
               <a class="clean-more" href="notes/">全部笔记 →</a>
@@ -264,23 +248,10 @@
                   <span>从 128 核纳秒级仿真剖析 JBSQ、多核池化挤压与 20% 算力预算红线。</span>
                 </a>
               </li>
-              <li>
-                <a class="clean-list-item" href="notes/pixel-cabin/">
-                  <span class="clean-date">2026-10-16 · 工程架构</span>
-                  <strong>零依赖像素木屋：程序化绘图、字库分片与实时音频合成</strong>
-                  <span>不引前端框架与外部 CDN，用 Python 与原生 Web API 搭一座四季农场。</span>
-                </a>
-              <li>
-                <a class="clean-list-item" href="notes/sample/">
-                  <span class="clean-date">2026-10-15 · 图形与交互</span>
-                  <strong>Canvas 打造像素农场：游戏循环、深度遮挡与超采样漫游</strong>
-                  <span>原生 60FPS 调度、Y-sorting 层叠优化与 4 款亚像素小程序的工程复盘。</span>
-                </a>
-              </li>
             </ul>
           </section>
 
-          <section class="clean-card" aria-labelledby="home-logs-title">
+          <section aria-labelledby="home-logs-title">
             <div class="clean-section-head">
               <h2 id="home-logs-title">近期日常与牧场互动</h2>
               <a class="clean-more" href="log/">全部日常 →</a>
@@ -290,34 +261,11 @@
                 <span class="clean-date">2026-10-18</span>
                 <span>整理完同机架微秒级 RPC 调度的实验笔记与十页组会幻灯片，把多核池化挤压跨机纠偏的定量结论放进了笔记栏。</span>
               </li>
-              <li class="clean-log-item">
-                <span class="clean-date">2026-10-17</span>
-                <span>给农场池塘、矿车街机、菜地番茄钟和古井祈愿签补上了常驻名牌与 4 倍超采样平滑动画。</span>
-              </li>
             </ul>
-            <div class="clean-mini-bar" aria-label="牧场小程序快捷体验">
-              <button class="clean-btn is-solid" type="button" data-enter-farm>🌾 进入农场漫游</button>
-              <button class="clean-btn" type="button" data-open-game="fish">🎣 池塘垂钓</button>
-              <button class="clean-btn" type="button" data-open-game="cart">🛤️ 矿车历险</button>
-              <button class="clean-btn" type="button" data-open-game="crop">🍅 农田番茄钟</button>
-              <button class="clean-btn" type="button" data-open-game="well">🪣 古井祈愿签</button>
-            </div>
-          </section>
-
-          <!-- 底端创意农场漫游入口卡片 -->
-          <section class="clean-card farm-trail-card" aria-label="漫步像素农场小径">
-            <div class="farm-trail-content">
-              <div class="farm-trail-icon" aria-hidden="true">
-                <img class="pixel" src="img/season-spring.png" width="48" height="48" alt="">
-              </div>
-              <div class="farm-trail-text">
-                <h3 class="farm-trail-heading">🌿 漫步 Ricardo 的像素农场</h3>
-                <p class="farm-trail-desc">探索四季田园风光、古井抽签、篝火夜话、矿车历险街机与 5 位个性独特的村民 NPC。</p>
-              </div>
-              <button class="btn farm-trail-action" type="button" data-enter-farm>
-                <span>🌾 进入农场漫游</span>
-              </button>
-            </div>
+            <details class="cabin-details">
+              <summary>在农场歇一会儿</summary>
+              <p class="clean-mini-bar"><a class="clean-btn" href="./?spot=fish">池塘垂钓</a><a class="clean-btn" href="./?spot=cart">矿车历险</a><a class="clean-btn" href="./?spot=crop">农田番茄钟</a><a class="clean-btn" href="./?spot=well">古井祈愿签</a></p>
+            </details>
           </section>
         </div>
       </div>

@@ -21,7 +21,7 @@
 - `version`: `2`
 - `updatedAt`: 毫秒级时间戳
 - `scratchpad`: `{"text": "跨设备临时粘贴的链接、命令或灵感片段...", "updatedAt": 1792044000000, "history": []}`
-- `tasks`: 数组，每项包含 `id`、`title`、`due`、`time`、`done`、`made`、`private`（布尔值，是否仅主人可见）、`pin`（由到期紧迫度自动推导的图钉色：`"red" | "orange" | "gold" | "green" | "gray"`，见 `js/board.js` 的 `PIN` 映射）、`updatedAt`。四色手动分类为 V7 Task 33 规划，见 §9。
+- `tasks`: 数组，每项包含 `id`、`title`、`due`、`time`、`done`、`made`、`private`（是否仅主人可见）、`updatedAt`。`pin` 可选 `red/blue/green/gold` 手动分类，空值沿用旧的到期紧迫度配色；`pinnedAt` 标记粘贴置顶时间，`archive` 为 `local/public` 或空。见 §9。
 
 三级存储与同步降级机制：
 1. **自建云服务器模式（优先）**：当配置了主人口令（Passkey）且 `/api/board` 可达时，通过 `GET /api/board` 与 `PUT /api/board` 实时同步。
@@ -37,8 +37,9 @@
 - `POST /api/logs`：需 `X-Passkey` 鉴权。支持新增日常流水或更新 `nowStatus`。
 - `DELETE /api/logs?id=<id>`：需 `X-Passkey` 鉴权。删除指定日常条目。
 
-**待实现（V7 规划）**：
-- `GET /api/logs` 扩展 `mood`、`weather` 字段（Task 34，对应 DESIGN §8）：`{"id": 1, "date": "2026-10-15", "text": "...", "mood": "☕", "weather": "☀️"}`。
+**V7 扩展（已实现）**：
+- 日常记录扩展 `mood`、`weather`、`image`、`imageAlt`、`sourceId`。图片由客户端压缩为最长边 ≤1200px 的 JPEG，服务端接受 JPEG/PNG/WebP data URL（解码后 ≤400KB），拒绝 SVG 与无效格式。旧库启动时幂等迁移；`sourceId` 非空时唯一，重复 POST 返回同一顶层 `id`。
+- `farm.logs.v1` 只存公开日志缓存；`farm.logs.local.v1` 独立保存本机记录，在线拉取不覆盖、不自动公开。公开本机记录需口令与明确确认。
 - `GET /api/messages`：公开返回最新留言/漂流瓶列表 `{"messages": [{"id": 1, "text": "...", "author": "路过的农夫", "badge": "🌾", "created_at": 1792044000}]}`（Task 29）。
 - `POST /api/messages`：公开提交简短访客打卡/漂流瓶。单条限长 60 字，IP 速率限制（每 IP 10 分钟最多 2 条），防 XSS 强制纯文本存储（Task 29）。
 
@@ -72,13 +73,13 @@
 - **移除底部冗余免责声明（REQ-06）**：全局删除全部 11 个 HTML 页面 `<footer class="credit">` 中“受田园生活模拟游戏启发，非官方，与 ConcernedApe 无关”的 DOM 节点，并从 `tools/check.py` 中移除该免责声明的校验逻辑。
 - **小游戏可用性与切页流畅度（REQ-07）**：修复矿车街机被老木触控区域遮挡的问题，延长初始轨道缓冲；全站子页面预加载 `js/games.js`；落地页模式切页零延迟秒开（不走回屋门动画），已预取页面切换 ≤ 100ms。
 
-## 7. 轻量级社交留痕：木屋留言簿与池塘漂流瓶规格（待实现 · V7 Task 29）
+## 7. 轻量级社交留痕：木屋留言簿与池塘漂流瓶规格（已实现 · V7 Task 29）
 - **双通道留痕机制**：
   - **池塘漂流瓶（Fishing Drift Bottle）**：在池塘垂钓结算时，设定 15% 概率触发捞起漂流瓶动画，随机展示近期访客留言或木屋生活语录；
   - **篝火打卡册（Campfire Guestbook）**：角色靠近篝火按空格或点击时，弹出便携式羊皮纸留言板，允许访客挑选预设像素头像并提交不超过 60 字的暖心寄语；
   - **降级与防刷策略**：服务端不可达（纯 GitHub Pages 静态模式）时自动降级回内置静态语录池与 LocalStorage 本地写存；严格限制字数与高频提交，渲染时全链路使用 `textContent` 规避 XSS 注入。
 
-## 8. 随身工作台 PWA 独立窗口化规格（`/board/`）（待实现 · V7 Task 32）
+## 8. 随身工作台 PWA 独立窗口化规格（`/board/`）（已实现 · V7 Task 32）
 - **Web App Manifest 规范（`manifest.json`）**：
   - `name`: `Ricardo's Workbench · 随身告示牌`
   - `short_name`: `告示牌`
@@ -89,9 +90,10 @@
   - `icons`: 提供 192×192 与 512×512 像素木图钉图标，支持手机主屏幕与桌面快捷启动。
 - **Service Worker（`sw.js`）缓存策略**：
   - **Stale-While-Revalidate** 策略缓存核心静态资源（HTML 框架、CSS 样式、分片字库 `shard-common.woff2`、像素图块）；
-  - 弱网与无网环境下保证秒开告示牌本地待办与剪贴板，联网后后台静默同步 SQLite / GitHub。
+  - 弱网与无网环境下支持告示牌本地待办与剪贴板，联网后沿用告示牌同步 SQLite / GitHub 的队列；API、认证请求与写操作不进入 Cache Storage。
+  - Manifest 与 worker 使用站点相对路径，兼容 `/my-ricardo/` 子路径；首次在线备好缓存后可离线启动。新版本等待用户点击更新，避免自动刷新未保存表单。
 
-## 9. 告示牌全局快捷键与无感暂存便签（Ctrl+V / Cmd+V）（待实现 · V7 Task 33）
+## 9. 告示牌全局快捷键与无感暂存便签（Ctrl+V / Cmd+V）（已实现 · V7 Task 33）
 - **剪贴板瞬发便签（Instant Pin via Paste）**：
   - 在 `/board/` 页面全局监听 `paste` 事件（当焦点不在文本框内时触发）；
   - 自动读取剪贴板纯文本、URL 链接或文字片段，直接在最前列插入一张新便签纸；
@@ -103,22 +105,22 @@
   - 🟡 **金图钉（Milestone）**：关键节点、重要日常。
   - 用户点击便签图钉即可轮转切换颜色分类。
 - **一键归档至日常流水（Archive to Log）**：
-  - 便签动作栏增加「归档入流水」按钮，点击自动将便签标题与完成时间写入 `/log/` 流水条目，并从当前活跃木板移入已做完列表。
+  - 便签动作栏「归档入流水」将标题与完成时间写入日常，成功后移入已完成列表；无口令时只归档本机，有口令公开归档前明确确认（私密条目另提示），失败保留任务并支持重试/仅本机归档。
 
-## 10. 移动端虚拟十字键（Virtual D-Pad）与环境音引导气泡（待实现 · V7 Task 31）
+## 10. 移动端虚拟十字键（Virtual D-Pad）与环境音引导气泡（已实现 · V7 Task 31）
 - **虚拟十字键（Virtual D-Pad）**：
   - 仅在触屏设备且处于农场漫游模式（`is-farm-mode`）时浮现于左下角；
   - 采用半透明像素方向键四向布局，绑定 `PointerEvent`，支持按住拖拽连续移动；
   - 不侵入 PC 端键盘操控，不遮挡左下角信箱与村民 NPC。
 - **声音呼吸气泡组件**：
   - 检测到 `sound.settings.on === false` 时，在右上角 HUD 音量喇叭旁边悬浮微动效小气泡；
-  - 引导文案：“🎵 点击开启田园白噪音与八音盒”，访客主动点击开启音频或点击小气泡后自动隐藏且记住状态。
+  - 引导文案：“🎵 点击开启声音”，点击气泡直接开启现有田园环境音与音乐；首次其他交互只收起提示且记住状态，切入农场的那次交互不算已读。
 
-## 11. 社交分享 Open Graph 元数据与多端预览规格（部分实现 · V7 Task 35 收尾）
+## 11. 社交分享 Open Graph 元数据与多端预览规格（已实现 · V7 Task 35）
 - **Open Graph 标准卡片配置**：
   - `og:site_name`: `Ricardo's Cyber Cabin`
   - `og:title`: `Ricardo's Cyber Cabin · 田园赛博木屋与随身工作台`
   - `og:description`: `一座零前端框架、程序化像素绘图与实时音频合成的手搓田园赛博木屋。收录微秒级任务调度研究、生活日常与跨设备随身工作台。`
-  - `og:image`: 当前全站为 `https://www.my-ricardo.com/img/farm-spring.png`；目标产物为 1200×630 夜间像素木屋暖光全景 `img/cabin-og-cover.png`（待 `tools/art.py` 生成，Task 35）。
+  - `og:image`: `https://www.my-ricardo.com/img/cabin-og-cover.png`，由 `tools/art.py` 生成的 1200×630 夜间像素木屋暖光全景。
   - `twitter:card`: `summary_large_image`
 - **支持主流即时通讯工具卡片解析**：微信分享缩略图、飞书卡片展开、Telegram 链接预览、Discord 及 X/Twitter 完整适配。

@@ -1,5 +1,5 @@
 /* 只缓存公开静态文件；所有 API、带口令请求和写操作始终直连。 */
-const VERSION = 'v7-1';
+const VERSION = 'v7-2';
 const BASE = new URL('./', self.location.href);
 const PREFIX = 'ricardo-static-' + BASE.pathname + '-';
 const CACHE = PREFIX + VERSION;

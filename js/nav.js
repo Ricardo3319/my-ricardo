@@ -211,7 +211,17 @@
     }
     // 同一页里的锚点（作品页的项目、跳到内容）交给浏览器。
     if (key(url.href) === key(location.href)) {
-      if (url.hash) return;
+      if (url.hash) {
+        // 有目标容器时平滑滚过去（减少动效时直接跳），并把焦点交给目标，跳过链接的读屏顺序才接得上。
+        var anchor = document.getElementById(decodeURIComponent(url.hash.slice(1)));
+        if (!anchor) return;
+        event.preventDefault();
+        if (location.hash !== url.hash) history.pushState({ y: window.scrollY }, "", url.href);
+        anchor.scrollIntoView({ behavior: still() ? "auto" : "smooth", block: "start" });
+        if (!anchor.hasAttribute("tabindex")) anchor.setAttribute("tabindex", "-1");
+        anchor.focus({ preventScroll: true });
+        return;
+      }
       event.preventDefault();
       window.scrollTo(0, 0);
       return;

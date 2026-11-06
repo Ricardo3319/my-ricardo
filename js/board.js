@@ -84,11 +84,12 @@
 
   function keep(name, value) {
     try {
-      if (!local) return;
+      if (!local) return false;
       if (value === null) local.removeItem(name);
       else local.setItem(name, JSON.stringify(value));
+      return true;
     } catch (error) {
-      /* 存不进时，这一页照样能用，只是关掉就没了。 */
+      return false;
     }
   }
 
@@ -96,9 +97,10 @@
     if (!Array.isArray(list)) return [];
     return list
       .filter(function (t) {
-        return t && typeof t.id === "string" && typeof t.title === "string";
+        return t && typeof t.id === "string" && (t.deleted || typeof t.title === "string");
       })
       .map(function (t) {
+        if (t.deleted) return { id: t.id, deleted: true, updatedAt: t.updatedAt || 0 };
         return {
           id: t.id,
           title: t.title,
@@ -200,19 +202,26 @@
   var state = {
     base: tidy(saved.base),
     sha: saved.sha || null,
-    queue: Array.isArray(saved.queue) ? saved.queue : [],
+    queue: Array.isArray(saved.queue) ? saved.queue.map(function (op) {
+      return op.op === "drop" && !op.updatedAt ? Object.assign({}, op, { updatedAt: Date.now() }) : op;
+    }) : [],
     synced: saved.synced || "",
     scratchpad: asPad(saved.scratchpad),
+    scratchSyncedAt: saved.scratchSyncedAt || 0,
   };
+  var storageProblem = "";
 
   function save() {
-    keep("board.data", {
+    var stored = keep("board.data", {
       base: state.base,
       sha: state.sha,
       queue: state.queue,
       synced: state.synced,
       scratchpad: state.scratchpad,
+      scratchSyncedAt: state.scratchSyncedAt,
     });
+    storageProblem = stored ? "" : "本机保存失败，关闭页面前请复制内容。";
+    return stored;
   }
 
   // put 换掉同 id 的便条；make 为真时没有就新钉一张。drop 撕掉。
@@ -224,19 +233,24 @@
       out.forEach(function (t, i) {
         if (t.id === id) at = i;
       });
-      if (op.op === "put" && at >= 0) out[at] = op.task;
-      else if (op.op === "put" && op.make) out.push(op.task);
-      else if (op.op === "drop" && at >= 0) out.splice(at, 1);
+      var next = op.op === "drop" ? { id: id, deleted: true, updatedAt: op.updatedAt } : op.task;
+      if (at >= 0 && next.updatedAt >= (out[at].updatedAt || 0)) out[at] = next;
+      else if (at < 0 && (op.make || op.op === "drop")) out.push(next);
     });
     return out;
   }
 
-  function tasks() {
+  function entries() {
     return apply(state.base, state.queue);
+  }
+
+  function tasks() {
+    return entries().filter(function (t) { return !t.deleted; });
   }
 
   function change(op) {
     if (op.task) op.task = Object.assign({}, op.task, { updatedAt: Date.now() });
+    if (op.op === "drop") op.updatedAt = Date.now();
     editing = ""; /* 改到一半去点别的，就当不改了。 */
     if (key) {
       state.queue.push(op);
@@ -1038,10 +1052,11 @@
 
   function setPasskey(value) {
     try {
-      if (!local) return;
+      if (!local) return false;
       if (value) local.setItem("ricardo_passkey", value);
       else local.removeItem("ricardo_passkey");
-    } catch (error) {}
+      return true;
+    } catch (error) { return false; }
   }
 
   function apiUrl(name) {
@@ -1083,7 +1098,7 @@
         }
         if (!pk) return false;
         headers["Content-Type"] = "application/json";
-        sentTasks = tasks();
+        sentTasks = entries();
         sentOps = state.queue.length;
         return fetch(apiUrl("board"), {
           method: "PUT",
@@ -1111,17 +1126,15 @@
           throw bad;
         }
         // PUT 在途时仍可点图钉或归档：保留请求发出后的本机改动，再补一次同步。
-        var currentTasks = tasks();
+        var currentTasks = entries();
         var sentById = Object.create(null);
         sentTasks.forEach(function (t) { sentById[t.id] = t; });
         var late = currentTasks.filter(function (t) { return JSON.stringify(t) !== JSON.stringify(sentById[t.id]); });
-        var present = Object.create(null);
-        currentTasks.forEach(function (t) { present[t.id] = true; });
-        var lateDrops = sentTasks.filter(function (t) { return !present[t.id]; });
-        state.base = apply(tidy(out.data.tasks), late.map(function (t) { return { op: "put", task: t, make: true }; }).concat(lateDrops.map(function (t) { return { op: "drop", id: t.id }; })));
+        state.base = apply(tidy(out.data.tasks), late.map(function (t) { return { op: "put", task: t, make: true }; }));
         state.scratchpad = pickPad(state.scratchpad, out.data.scratchpad);
+        state.scratchSyncedAt = out.data.scratchpad.updatedAt;
         state.queue = state.queue.slice(sentOps);
-        if (late.length || lateDrops.length) again = true;
+        if (late.length) again = true;
         state.synced = new Date().toISOString();
         cloud = true;
         problem = "";
@@ -1129,7 +1142,7 @@
       })
       .catch(function (error) {
         cloud = false;
-        if (error && error.offline) return false;
+        problem = "云端暂不可达，等待同步";
         return false;
       });
   }
@@ -1142,17 +1155,18 @@
         var localPad = asPad(state.scratchpad);
         var remotePad = asPad(remote.scratchpad);
         state.scratchpad = pickPad(localPad, remotePad);
+        var sentPad = asPad(state.scratchpad);
         var sent = state.queue.slice();
         var next = sent.length ? apply(remote.tasks, sent) : remote.tasks;
         var needPush = sent.length > 0 || localPad.updatedAt > remotePad.updatedAt;
-        if (!needPush) return { tasks: next, sha: remote.sha };
+        if (!needPush) return { tasks: next, sha: remote.sha, scratchpad: remotePad };
         var message = sent.length
           ? sent[0].say + (sent.length > 1 ? " 等 " + sent.length + " 处" : "")
           : "暂存贴";
         return push(next, remote.sha, message).then(
           function (sha) {
             state.queue = state.queue.slice(sent.length);
-            return { tasks: next, sha: sha };
+            return { tasks: next, sha: sha, scratchpad: sentPad };
           },
           function (error) {
             if ((error.status === 409 || error.status === 422) && ++tries < 3) return round();
@@ -1167,6 +1181,8 @@
         state.base = remote.tasks;
         state.sha = remote.sha;
         state.synced = new Date().toISOString();
+        state.scratchSyncedAt = remote.scratchpad.updatedAt;
+        problem = "";
       },
       function (error) {
         problem = explain(error);
@@ -1183,7 +1199,7 @@
     again = false;
     problem = "";
     renderSync();
-    flushCloud()
+    return flushCloud()
       .then(function (ok) {
         if (ok || !key) return;
         return flushGithub();
@@ -1200,7 +1216,8 @@
     if (!here()) return;
     var waiting = state.queue.length ? "，" + state.queue.length + " 处等着推上去" : "";
     var pk = passkeyValue();
-    if (busy) syncLine.textContent = "同步中…";
+    if (storageProblem) syncLine.textContent = storageProblem;
+    else if (busy) syncLine.textContent = "同步中…";
     else if (cloud) syncLine.textContent = (state.synced ? "已同步云端 " + clock(state.synced) : "云端已连") + waiting;
     else if (problem) syncLine.textContent = "没同步上：" + problem + waiting;
     else if (key) syncLine.textContent = (state.synced ? "已同步 " + clock(state.synced) : "还没同步") + waiting;
@@ -1210,8 +1227,13 @@
     keyOn.hidden = !key;
     if (passForm) passForm.hidden = !!pk;
     if (passOn) passOn.hidden = !pk;
-    if (scratchNote && !scratchTimer) {
-      scratchNote.textContent = cloud ? "☁️ 已连云端 · 自动多端同步" : key ? "☁️ GitHub 同步 · 自动留存近 5 条" : "🔒 访客本地存储（未登录口令不公开）· Ctrl+S";
+    if (scratchNote) {
+      var pending = state.scratchpad.updatedAt > state.scratchSyncedAt;
+      if (storageProblem) scratchNote.textContent = storageProblem;
+      else if (pk || key) scratchNote.textContent = pending
+        ? (busy ? "已保存本机，正在同步…" : "已保存本机，等待同步。")
+        : (state.scratchSyncedAt ? "远端已确认 ✓" : "等待同步确认…");
+      else scratchNote.textContent = state.scratchpad.updatedAt ? "已保存到本机 ✓" : "🔒 访客本地存储（未登录口令不公开）· Ctrl+S";
     }
     var scratchTip = document.querySelector(".scratchpad-tip");
     if (scratchTip) {
@@ -1278,7 +1300,7 @@
       key = null;
       keep("board.key", null);
       keep("ricardo_owner", null);
-      state = { base: [], sha: null, queue: [], synced: "", scratchpad: emptyPad() };
+      state = { base: [], sha: null, queue: [], synced: "", scratchpad: emptyPad(), scratchSyncedAt: 0 };
       problem = "";
       save();
       keyNote.textContent = "断开了。这台设备上的告示牌清空了，仓库里的还在。";
@@ -1300,7 +1322,6 @@
     if (!editing && !(active && active.closest && active.closest(".cal, .notes"))) render();
   }, 60000);
 
-  var scratchTimer = 0;
   function saveScratchpad() {
     if (!scratchInput) return;
     var prev = state.scratchpad ? (state.scratchpad.text || "").trim() : "";
@@ -1321,16 +1342,6 @@
     state.scratchpad = { text: nextText, updatedAt: Date.now(), history: hist };
     save();
     fillScratchpadHistory();
-    if (scratchNote) {
-      scratchNote.textContent = cloud ? "已保存到云端 ✓" : "已保存到本地 ✓";
-      window.clearTimeout(scratchTimer);
-      scratchTimer = window.setTimeout(function () {
-        scratchTimer = 0;
-        if (scratchNote) {
-          scratchNote.textContent = cloud ? "☁️ 已连云端 · 自动多端同步" : key ? "☁️ GitHub 同步 · 自动留存近 5 条" : "🔒 访客本地存储（未登录口令不公开）· Ctrl+S";
-        }
-      }, 1800);
-    }
     flush();
   }
 
@@ -1408,7 +1419,10 @@
             if (passNote) passNote.textContent = "口令不对。";
             return;
           }
-          setPasskey(value);
+          if (!setPasskey(value)) {
+            if (passNote) passNote.textContent = "本机保存失败，口令未保存。";
+            return;
+          }
           passForm.reset();
           if (passNote) passNote.textContent = "口令对了。告示牌会走云端同步。";
           render();
@@ -1420,7 +1434,10 @@
     });
     if (passOff) {
       passOff.addEventListener("click", function () {
-        setPasskey("");
+        if (!setPasskey("")) {
+          if (passNote) passNote.textContent = "口令未能移除，请重试。";
+          return;
+        }
         cloud = false;
         if (passNote) passNote.textContent = "口令已从这台设备拿掉。";
         render();

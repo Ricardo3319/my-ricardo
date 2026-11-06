@@ -1,7 +1,8 @@
 #!/usr/bin/env sh
 set -e
-BACKUP_DIR="$(dirname "$0")/data/backups"
-DB_FILE="$(dirname "$0")/data/ricardo.db"
+DATA_DIR="${RICARDO_DATA_DIR:-${XDG_DATA_HOME:-$HOME/.local/share}/my-ricardo}"
+BACKUP_DIR="$DATA_DIR/backups"
+DB_FILE="$DATA_DIR/ricardo.db"
 mkdir -p "$BACKUP_DIR"
 if [ -f "$DB_FILE" ]; then
   cp "$DB_FILE" "$BACKUP_DIR/ricardo_$(date +%Y%m%d_%H%M%S).db"

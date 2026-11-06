@@ -2,6 +2,7 @@
 """my-ricardo lightweight backend server (Python stdlib + SQLite)."""
 import base64
 import binascii
+from contextlib import contextmanager
 import hmac
 import json
 import os
@@ -12,17 +13,24 @@ from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlparse
 
 ROOT_DIR = pathlib.Path(__file__).resolve().parent.parent
-DATA_DIR = pathlib.Path(__file__).resolve().parent / "data"
+DATA_DIR = pathlib.Path(os.environ.get(
+    "RICARDO_DATA_DIR", pathlib.Path(os.environ.get("XDG_DATA_HOME", pathlib.Path.home() / ".local/share")) / "my-ricardo"
+)).expanduser().resolve()
 DB_PATH = DB_FILE = DATA_DIR / "ricardo.db"
-PASSKEY = os.environ.get("RICARDO_PASSKEY", "dev-passkey")
+PASSKEY = os.environ.get("RICARDO_PASSKEY", "").strip()
 PORT = int(os.environ.get("PORT", "8000"))
 
 
+@contextmanager
 def get_db():
     DATA_DIR.mkdir(parents=True, exist_ok=True)
     conn = sqlite3.connect(str(DB_PATH), timeout=10)
     conn.row_factory = sqlite3.Row
-    return conn
+    try:
+        with conn:
+            yield conn
+    finally:
+        conn.close()
 
 
 def init_db():
@@ -44,17 +52,19 @@ def init_db():
         conn.commit()
 
 
-def load_board_state():
-    with get_db() as conn:
-        row = conn.execute("SELECT value FROM kv_store WHERE key = 'board'").fetchone()
-        if row:
-            try:
-                data = json.loads(row["value"])
-                if isinstance(data, list):
-                    return {"version": 2, "updatedAt": 0, "scratchpad": {"text": "", "updatedAt": 0}, "tasks": data}
-                return data
-            except Exception:
-                pass
+def load_board_state(conn=None):
+    if conn is None:
+        with get_db() as conn:
+            return load_board_state(conn)
+    row = conn.execute("SELECT value FROM kv_store WHERE key = 'board'").fetchone()
+    if row:
+        try:
+            data = json.loads(row["value"])
+            if isinstance(data, list):
+                return {"version": 2, "updatedAt": 0, "scratchpad": {"text": "", "updatedAt": 0}, "tasks": data}
+            return data
+        except Exception:
+            pass
     return {"version": 2, "updatedAt": 0, "scratchpad": {"text": "", "updatedAt": 0}, "tasks": []}
 
 
@@ -126,7 +136,10 @@ def merge_board_state(current, incoming):
             tid = t["id"]
             if tid not in task_map or t.get("updatedAt", 0) >= task_map[tid].get("updatedAt", 0):
                 task_map[tid] = t
-    merged_tasks = [t for t in task_map.values() if not t.get("deleted")]
+    merged_tasks = [
+        {"id": t["id"], "updatedAt": t.get("updatedAt", 0), "deleted": True} if t.get("deleted") else t
+        for t in task_map.values()
+    ]
     merged_tasks.sort(key=lambda x: x.get("updatedAt", 0), reverse=True)
     now_ms = int(time.time() * 1000)
     merged = {
@@ -135,10 +148,16 @@ def merge_board_state(current, incoming):
         "scratchpad": merged_sp,
         "tasks": merged_tasks,
     }
+    return merged
+
+
+def update_board_state(incoming):
     with get_db() as conn:
+        conn.execute("BEGIN IMMEDIATE")
+        merged = merge_board_state(load_board_state(conn), incoming)
         conn.execute(
             "INSERT INTO kv_store (key, value, updated_at) VALUES ('board', ?, ?) ON CONFLICT(key) DO UPDATE SET value=excluded.value, updated_at=excluded.updated_at",
-            (json.dumps(merged, ensure_ascii=False), now_ms),
+            (json.dumps(merged, ensure_ascii=False), merged["updatedAt"]),
         )
         conn.commit()
     return merged
@@ -147,6 +166,22 @@ def merge_board_state(current, incoming):
 class RicardoRequestHandler(SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, directory=str(ROOT_DIR), **kwargs)
+
+    def send_head(self):
+        # GET 与 HEAD 共用同一白名单；解析后的路径也不能通过符号链接离开站点。
+        path = pathlib.Path(self.translate_path(self.path)).resolve()
+        try:
+            rel = path.relative_to(ROOT_DIR.resolve())
+        except ValueError:
+            self.send_error(404)
+            return None
+        public_dirs = {"about", "board", "contact", "log", "notes", "now", "work", "rpc-slides", "css", "js", "img", "fonts", "audio"}
+        public_files = {"index.html", "404.html", "manifest.json", "feed.xml", "sitemap.xml", "sw.js"}
+        allowed = not rel.parts or rel.parts[0] in public_dirs or str(rel) in public_files
+        if not allowed or any(part.startswith(".") for part in rel.parts) or (path.is_dir() and not (path / "index.html").is_file()):
+            self.send_error(404)
+            return None
+        return super().send_head()
 
     def _client_ip(self):
         fwd = self.headers.get("X-Forwarded-For", "").split(",")[0].strip()
@@ -195,7 +230,7 @@ class RicardoRequestHandler(SimpleHTTPRequestHandler):
             state = load_board_state()
             if self._is_authed():
                 return self._send_json(200, {"authed": True, "data": state})
-            public_tasks = [t for t in state.get("tasks", []) if not t.get("private")]
+            public_tasks = [t for t in state.get("tasks", []) if not t.get("private") and not t.get("deleted")]
             return self._send_json(
                 200,
                 {
@@ -208,17 +243,29 @@ class RicardoRequestHandler(SimpleHTTPRequestHandler):
                     },
                 },
             )
-        if parsed.path == "/api/logs":
+        if parsed.path in {"/api/logs", "/api/summary"}:
+            summary = parsed.path == "/api/summary"
+            params = parse_qs(parsed.query)
+            try:
+                limit = 3 if summary else min(20, max(1, int(params.get("limit", [10])[0])))
+                before = int(params.get("before", [0])[0])
+                if before < 0:
+                    raise ValueError()
+            except ValueError:
+                return self._send_json(400, {"error": "Invalid pagination"})
             with get_db() as conn:
                 now_row = conn.execute("SELECT value FROM kv_store WHERE key = 'now_status'").fetchone()
-                rows = conn.execute("SELECT id, date, text, mood, weather, image, imageAlt, sourceId, created_at FROM logs ORDER BY id DESC LIMIT 100").fetchall()
-            return self._send_json(
-                200,
-                {
-                    "nowStatus": now_row["value"] if now_row else "",
-                    "logs": [dict(r) for r in rows],
-                },
-            )
+                if summary:
+                    rows = conn.execute("SELECT id, date, text FROM logs ORDER BY id DESC LIMIT 3").fetchall()
+                else:
+                    rows = conn.execute(
+                        "SELECT id, date, text, mood, weather, image, imageAlt, sourceId, created_at FROM logs "
+                        "WHERE (? = 0 OR id < ?) ORDER BY id DESC LIMIT ?", (before, before, limit + 1)
+                    ).fetchall()
+            payload = {"nowStatus": now_row["value"] if now_row else "", "logs": [dict(r) for r in rows[:limit]]}
+            if not summary:
+                payload["nextBefore"] = rows[limit - 1]["id"] if len(rows) > limit else None
+            return self._send_json(200, payload)
         if parsed.path == "/api/messages":
             with get_db() as conn:
                 rows = conn.execute(
@@ -298,7 +345,7 @@ class RicardoRequestHandler(SimpleHTTPRequestHandler):
             if not self._is_authed():
                 return self._send_json(401, {"error": "Unauthorized"})
             incoming = self._read_json()
-            merged = merge_board_state(load_board_state(), incoming)
+            merged = update_board_state(incoming)
             return self._send_json(200, {"ok": True, "data": merged})
         return self._send_json(404, {"error": "Not found"})
 
@@ -324,9 +371,12 @@ class RicardoRequestHandler(SimpleHTTPRequestHandler):
 
 
 if __name__ == "__main__":
+    if not PASSKEY or PASSKEY in {"dev-passkey", "please-change-me"}:
+        raise SystemExit("Set RICARDO_PASSKEY to a non-default passkey before starting.")
+    legacy_db = ROOT_DIR / "server/data/ricardo.db"
+    if legacy_db.exists() and legacy_db.resolve() != DB_PATH and not DB_PATH.exists():
+        raise SystemExit("Existing server/data/ricardo.db found. Move it to RICARDO_DATA_DIR before starting; see docs/SPEC.md.")
     init_db()
-    if PASSKEY == "dev-passkey":
-        print("Notice: using default dev-passkey. Set RICARDO_PASSKEY in production.")
     server = ThreadingHTTPServer(("0.0.0.0", PORT), RicardoRequestHandler)
     print(f"Serving my-ricardo on http://127.0.0.1:{PORT}")
     server.serve_forever()

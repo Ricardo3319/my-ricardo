@@ -1931,13 +1931,16 @@
       var map = {};
       var base = Array.isArray(data) ? data : (data && Array.isArray(data.base) ? data.base : []);
       base.forEach(function (t) {
-        if (t && t.id && t.title) map[t.id] = t;
+        if (t && t.id) map[t.id] = t;
       });
       if (data && Array.isArray(data.queue)) {
         data.queue.forEach(function (op) {
           if (!op) return;
-          if (op.op === "drop") delete map[op.id];
-          if (op.op === "put" && op.task && op.task.id) map[op.task.id] = op.task;
+          var next = op.op === "drop" ? { id: op.id, deleted: true, updatedAt: op.updatedAt || 0 } : op.task;
+          if (!next || !next.id) return;
+          var current = map[next.id];
+          // 与告示牌的时间戳合并一致；旧队列中尚未带时间戳的 drop 仍表示删除。
+          if (!current || (next.updatedAt || 0) >= (current.updatedAt || 0) || (op.op === "drop" && !op.updatedAt)) map[next.id] = next;
         });
       }
       var open = Object.keys(map)
@@ -1945,7 +1948,7 @@
           return map[k];
         })
         .filter(function (t) {
-          return t && !t.done;
+          return t && !t.deleted && !t.done && typeof t.title === "string";
         });
       return open.length ? open[0] : null;
     } catch (e) {

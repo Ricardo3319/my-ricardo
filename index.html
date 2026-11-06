@@ -120,21 +120,21 @@
 
         <!-- 开始菜单经典竖向木牌按钮组（New / Load / Co-op / Exit 比例） -->
         <nav class="title-menu" aria-label="开始菜单主选项">
-          <button class="title-btn is-primary" type="button" data-enter-farm>
-            <span class="title-btn-window">
-              <img class="pixel" src="img/season-spring.png" width="36" height="36" alt="">
-            </span>
-            <span class="title-btn-label">漫游农场</span>
-            <small>进入实景与小游戏</small>
-          </button>
-
-          <a class="title-btn" href="notes/">
+          <a class="title-btn is-primary" href="notes/">
             <span class="title-btn-window">
               <img class="pixel" src="img/icon-notes.png" width="30" height="33" alt="">
             </span>
             <span class="title-btn-label">研究与笔记</span>
             <small>rpcsim · 论文与长文</small>
           </a>
+
+          <button class="title-btn" type="button" data-enter-farm>
+            <span class="title-btn-window">
+              <img class="pixel" src="img/season-spring.png" width="36" height="36" alt="">
+            </span>
+            <span class="title-btn-label">漫游农场</span>
+            <small>进入实景与小游戏</small>
+          </button>
 
           <a class="title-btn" href="board/">
             <span class="title-btn-window">
@@ -144,6 +144,11 @@
             <small>待办日历 · 剪贴板</small>
           </a>
         </nav>
+
+        <div class="clean-actions title-profile-links">
+          <a class="clean-btn" href="about/Ricardo-CV.pdf" download>↓ 下载简历 CV (PDF)</a>
+          <a class="clean-btn" href="contact/">发邮件联系</a>
+        </div>
 
         <a class="title-scroll-cue" href="#overview">
           <span>往下坐坐，看看木屋里的近况与手作</span>
@@ -192,8 +197,8 @@
           </div>
         </section>
 
-        <details class="cabin-details cabin-workshop" id="home-works">
-          <summary>打开木屋工坊 · rpcsim 与这座手作网站</summary>
+        <details class="cabin-details cabin-workshop" id="home-works" open>
+          <summary>木屋工坊 · rpcsim 与这座手作网站</summary>
         <section class="clean-section" aria-labelledby="home-works-title">
           <div class="clean-section-head">
             <h2 id="home-works-title">木屋工坊 · 锻造代表作</h2>
@@ -257,7 +262,7 @@
               <h2 id="home-logs-title">近期日常与牧场互动</h2>
               <a class="clean-more" href="log/">全部日常 →</a>
             </div>
-            <ul class="clean-list">
+            <ul class="clean-list" data-recent-logs>
               <li class="clean-log-item">
                 <span class="clean-date">2026-10-18</span>
                 <span>整理完同机架微秒级 RPC 调度的实验笔记与十页组会幻灯片，把多核池化挤压跨机纠偏的定量结论放进了笔记栏。</span>

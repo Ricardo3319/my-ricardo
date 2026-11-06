@@ -1,5 +1,5 @@
 /* 只缓存公开静态文件；所有 API、带口令请求和写操作始终直连。 */
-const VERSION = 'v7-2';
+const VERSION = 'v8-1';
 const BASE = new URL('./', self.location.href);
 const PREFIX = 'ricardo-static-' + BASE.pathname + '-';
 const CACHE = PREFIX + VERSION;
@@ -24,7 +24,7 @@ const CORE = [
   'img/season-autumn.png', 'img/season-winter.png'
 ];
 self.addEventListener('install', event => {
-  event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(CORE.map(path => new URL(path, BASE).href))));
+  event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(CORE.map(path => new Request(new URL(path, BASE).href, { cache: 'reload' })))));
 });
 self.addEventListener('activate', event => {
   event.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(key => key.startsWith(PREFIX) && key !== CACHE).map(key => caches.delete(key))))
@@ -47,7 +47,7 @@ self.addEventListener('fetch', event => {
   key.search = ''; // ?source=pwa 与普通路径共享离线副本，不改变真实请求。
   event.respondWith(caches.open(CACHE).then(async cache => {
     const saved = await cache.match(key.href);
-    const fresh = fetch(request).then(async response => {
+    const fresh = fetch(request, { cache: 'no-cache' }).then(async response => {
       if (response.ok && response.type === 'basic' && !/no-store|private/i.test(response.headers.get('Cache-Control') || '')) {
         await cache.put(key.href, response.clone());
       }

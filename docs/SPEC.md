@@ -22,6 +22,8 @@
 - `updatedAt`: 毫秒级时间戳
 - `scratchpad`: `{"text": "跨设备临时粘贴的链接、命令或灵感片段...", "updatedAt": 1792044000000, "history": []}`
 - `tasks`: 数组，每项包含 `id`、`title`、`due`、`time`、`done`、`made`、`private`（是否仅主人可见）、`updatedAt`。`pin` 可选 `red/blue/green/gold` 手动分类，空值沿用旧的到期紧迫度配色；`pinnedAt` 标记粘贴置顶时间，`archive` 为 `local/public` 或空。见 §9。
+- V8 删除条目保留为 `{ "id": "...", "deleted": true, "updatedAt": 123 }`，不保留正文。删除记录参与云端/GitHub 时间戳合并，在列表和匿名响应中隐藏；撤销生成更新的正常条目。旧设备的过期副本不能复活已删除任务。
+- 本机缓存记录 `scratchSyncedAt`，只有远端确认后才更新；界面区分本机保存、等待同步、远端确认和本机保存失败。
 
 三级存储与同步降级机制：
 1. **自建云服务器模式（优先）**：当配置了主人口令（Passkey）且 `/api/board` 可达时，通过 `GET /api/board` 与 `PUT /api/board` 实时同步。
@@ -32,14 +34,16 @@
 **已实现**：
 - `POST /api/auth/verify`：校验请求头 `X-Passkey` 是否与服务端环境变量 `RICARDO_PASSKEY` 匹配，返回 `{"ok": true}`。
 - `GET /api/board`：已鉴权返回完整 `board` 数据（含私密任务与 `scratchpad`）；未鉴权仅返回公开任务且隐藏私密暂存贴。
-- `PUT /api/board`：需 `X-Passkey` 鉴权。按任务 `id` 与 `updatedAt` 时间戳合并客户端与服务端 SQLite 中的数据后落盘。
-- `GET /api/logs`：公开返回 `{"nowStatus": "...", "logs": [{"id": 1, "date": "2026-10-15", "text": "..."}]}`。
+- `PUT /api/board`：需 `X-Passkey` 鉴权。在同一 `BEGIN IMMEDIATE` 事务中读取、按任务 `id` 与 `updatedAt` 合并并写回，避免并发覆盖。
+- `GET /api/summary`：公开返回 `nowStatus` 与最近 3 条日志的 `id/date/text`，不含图片，供首页与独立近况页使用。
+- `GET /api/logs?limit=10&before=<id>`：公开返回 `{"nowStatus": "...", "logs": [...], "nextBefore": 123}`；默认 10 条、最多 20 条，按 ID 倒序，下一页只取小于游标的记录；末页 `nextBefore` 为 `null`。配图只在日常列表响应中返回。
 - `POST /api/logs`：需 `X-Passkey` 鉴权。支持新增日常流水或更新 `nowStatus`。
 - `DELETE /api/logs?id=<id>`：需 `X-Passkey` 鉴权。删除指定日常条目。
 
 **V7 扩展（已实现）**：
 - 日常记录扩展 `mood`、`weather`、`image`、`imageAlt`、`sourceId`。图片由客户端压缩为最长边 ≤1200px 的 JPEG，服务端接受 JPEG/PNG/WebP data URL（解码后 ≤400KB），拒绝 SVG 与无效格式。旧库启动时幂等迁移；`sourceId` 非空时唯一，重复 POST 返回同一顶层 `id`。
 - `farm.logs.v1` 只存公开日志缓存；`farm.logs.local.v1` 独立保存本机记录，在线拉取不覆盖、不自动公开。公开本机记录需口令与明确确认。
+- V8 首页使用独立的 `farm.logs.summary.v1` 缓存，只展示公开记录；日常页的“更多日常”按游标追加。接口不可用时保留缓存或页面自带的静态文字。
 - `GET /api/messages`：公开返回最新留言/漂流瓶列表 `{"messages": [{"id": 1, "text": "...", "author": "路过的农夫", "badge": "🌾", "created_at": 1792044000}]}`（Task 29）。
 - `POST /api/messages`：公开提交简短访客打卡/漂流瓶。单条限长 60 字，IP 速率限制（每 IP 10 分钟最多 2 条），防 XSS 强制纯文本存储（Task 29）。
 
@@ -92,6 +96,7 @@
   - **Stale-While-Revalidate** 策略缓存核心静态资源（HTML 框架、CSS 样式、分片字库 `shard-common.woff2`、像素图块）；
   - 弱网与无网环境下支持告示牌本地待办与剪贴板，联网后沿用告示牌同步 SQLite / GitHub 的队列；API、认证请求与写操作不进入 Cache Storage。
   - Manifest 与 worker 使用站点相对路径，兼容 `/my-ricardo/` 子路径；首次在线备好缓存后可离线启动。新版本等待用户点击更新，避免自动刷新未保存表单。
+  - V8 固定文件名图片与字体使用 `Cache-Control: public, no-cache` 重新验证。新 worker 安装时以 `cache: reload` 获取核心资源，后台刷新以 `cache: no-cache` 请求，避免复用旧部署的一年 HTTP 缓存；断网仍可使用 Cache Storage。
 
 ## 9. 告示牌全局快捷键与无感暂存便签（Ctrl+V / Cmd+V）（已实现 · V7 Task 33）
 - **剪贴板瞬发便签（Instant Pin via Paste）**：
@@ -124,3 +129,12 @@
   - `og:image`: `https://www.my-ricardo.com/img/cabin-og-cover.png`，由 `tools/art.py` 生成的 1200×630 夜间像素木屋暖光全景。
   - `twitter:card`: `summary_large_image`
 - **支持主流即时通讯工具卡片解析**：微信分享缩略图、飞书卡片展开、Telegram 链接预览、Discord 及 X/Twitter 完整适配。
+
+## 12. V8 自建部署与数据迁移
+
+- `RICARDO_PASSKEY` 必须显式设置；空值以及旧默认值 `dev-passkey` / `please-change-me` 会拒绝启动。不要将口令写进仓库。
+- 原生运行默认使用 `${XDG_DATA_HOME:-~/.local/share}/my-ricardo` 保存数据库与 `backups/`，可通过 `RICARDO_DATA_DIR` 指定绝对路径。后端与 `server/backup.sh` 使用同一变量。
+- 从旧原生部署升级：先停止后端，备份并将整个 `server/data/` 目录移至所选的私有数据路径，再使用相同 `RICARDO_DATA_DIR` 启动后端和备份任务。如果发现旧库仍在原处且新位置没有数据库，启动会中止，避免误建空库。本文只说明迁移步骤，不会自动移动现有数据。
+- Docker 保留宿主机 `./server/data`，容器内改挂到 `/data`，由镜像的 `RICARDO_DATA_DIR=/data` 读取；已有 Compose 用户无需移动宿主机数据库。宿主机备份时将 `RICARDO_DATA_DIR` 设置为该目录的绝对路径。
+- `.dockerignore` 排除数据库、环境变量文件和 Git/智能体私有目录。静态处理器的 GET/HEAD 共用公开目录白名单，拒绝私有路径和目录列表。
+- 部署验证脚本：`python3 -B tools/test_server.py` 与 `node tools/test_frontend.cjs` 使用临时数据；常规静态验收仍为 `python3 tools/check.py`。

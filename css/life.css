@@ -18,6 +18,7 @@ html:not([data-theme="farm"]) .panel .log-entry button { font-family: var(--font
 .cabin-now { max-width: 42em; margin: 22px auto 0; padding: 0 16px; font-family: var(--font-sans); font-size: clamp(14px, 1.02rem, 16px); line-height: 1.75; color: var(--ink); }
 .home .title-menu { grid-template-columns: repeat(2, minmax(0, 1fr)); width: min(100%, 600px); margin-inline: auto; }
 .home .title-menu .is-primary { grid-column: 1 / -1; min-height: 84px; }
+.home .title-profile-links { justify-content: center; margin-top: 18px; }
 .cabin-details { font-family: var(--font-sans); margin: 18px 0; }
 .cabin-details summary { cursor: pointer; padding: 12px 0; color: var(--ink); font-size: 16px; line-height: 1.75; }
 .cabin-details summary:focus-visible { outline: 2px solid var(--focus); outline-offset: 4px; }

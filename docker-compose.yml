@@ -3,10 +3,10 @@ services:
     build: .
     restart: unless-stopped
     environment:
-      - RICARDO_PASSKEY=${RICARDO_PASSKEY:-please-change-me}
+      - RICARDO_PASSKEY=${RICARDO_PASSKEY:?Set RICARDO_PASSKEY before starting}
       - PORT=8000
     volumes:
-      - ./server/data:/app/server/data
+      - ./server/data:/data
 
   caddy:
     image: caddy:2-alpine

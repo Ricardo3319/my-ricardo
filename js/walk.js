@@ -107,11 +107,11 @@
       gridSeason = season;
       var rows = world.solid[season] || world.solid.spring;
       grid = rows.map(function (hex) {
-        return parseInt(hex, 16);
+        return BigInt("0x" + hex);
       });
     }
     if (col < 0 || row < 0 || col >= world.cols || row >= world.rows) return true;
-    return (grid[row] >> col) & 1;
+    return Number((grid[row] >> BigInt(col)) & 1n);
   }
 
   function freeAt(x, y) {

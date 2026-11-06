@@ -1,0 +1,9 @@
+.git
+.env
+.env.*
+server/data
+__pycache__
+*.pyc
+.agents
+.codex
+.aws

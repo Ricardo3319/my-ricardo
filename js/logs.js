@@ -4,11 +4,19 @@
   var bound = null;
   var revision = 0;
   var remote = { logs: [], nowStatus: '' };
+  var summary = null;
   function read(key, fallback) {
     try { return JSON.parse(localStorage.getItem(key)) || fallback; } catch (e) { return fallback; }
   }
   function write(key, value) {
     try { localStorage.setItem(key, JSON.stringify(value)); return true; } catch (e) { return false; }
+  }
+  function cacheRemote() {
+    write('farm.logs.v1', remote);
+    summary = { nowStatus: remote.nowStatus, logs: remote.logs.slice(0, 3).map(function (item) {
+      return { id: item.id, date: item.date, text: item.text };
+    }) };
+    write('farm.logs.summary.v1', summary);
   }
   function passkey() {
     try { return localStorage.getItem('ricardo_passkey') || localStorage.getItem('ricardo_owner') || ''; } catch (e) { return ''; }
@@ -71,8 +79,19 @@
   }
   function render() {
     var list = document.querySelector('[data-log-list]');
+    var recent = document.querySelector('[data-recent-logs]');
     var now = document.querySelector('[data-now-status]');
-    if (now && remote.nowStatus) now.textContent = remote.nowStatus;
+    var publicData = !list && summary ? summary : remote;
+    if (now && publicData.nowStatus) now.textContent = publicData.nowStatus;
+    if (recent && (summary || remote.logs.length)) {
+      recent.replaceChildren();
+      publicData.logs.slice(0, 3).forEach(function (item) {
+        var li = node('li', 'clean-log-item');
+        li.append(node('span', 'clean-date', item.date), node('span', '', item.text));
+        recent.appendChild(li);
+      });
+      if (!publicData.logs.length) recent.appendChild(node('li', 'hint', '还没有日常。'));
+    }
     if (!list) return;
     var pending = localLogs();
     var cloud = Array.isArray(remote.logs) ? remote.logs : [];
@@ -104,7 +123,7 @@
           del.disabled = true;
           request('DELETE', { id: item.id }).then(function () {
             remote.logs = remote.logs.filter(function (r) { return r.id !== item.id; });
-            write('farm.logs.v1', remote);
+            cacheRemote();
             render();
           }).catch(function (e) { status(e.message); del.disabled = false; });
         });
@@ -128,21 +147,44 @@
       li.append(when, body);
       list.appendChild(li);
     });
+    var more = document.querySelector('[data-log-more]');
+    if (more) more.hidden = !remote.nextBefore;
   }
   function status(text) {
     var note = document.querySelector('[data-log-note]');
     if (note) note.textContent = text;
   }
-  function refresh() {
+  function refresh(append) {
+    var full = !!document.querySelector('[data-log-list]');
+    if (append && (!full || !remote.nextBefore)) return Promise.resolve();
     var token = ++revision;
-    return fetch(new URL('api/logs', site), { cache: 'no-store', headers: { Accept: 'application/json' } })
+    var url = new URL(full ? 'api/logs' : 'api/summary', site);
+    var more = document.querySelector('[data-log-more]');
+    var note = document.querySelector('[data-log-page-note]');
+    if (full) {
+      url.searchParams.set('limit', '10');
+      if (append) url.searchParams.set('before', remote.nextBefore);
+      if (more) more.disabled = true;
+      if (note) note.textContent = '';
+    }
+    return fetch(url, { cache: 'no-store', headers: { Accept: 'application/json' } })
       .then(function (res) { if (!res.ok) throw new Error('offline'); return res.json(); })
       .then(function (data) {
         if (token !== revision || !Array.isArray(data.logs)) return;
-        remote = data;
-        write('farm.logs.v1', remote);
+        if (full) {
+          if (append) data.logs = remote.logs.concat(data.logs.filter(function (item) {
+            return !remote.logs.some(function (existing) { return existing.id === item.id; });
+          }));
+          remote = data;
+          cacheRemote();
+        } else {
+          summary = data;
+          write('farm.logs.summary.v1', summary);
+        }
         render();
-      }).catch(function () {});
+      }).catch(function () {
+        if (token === revision && note) note.textContent = '暂时无法更新，已保留当前日常。';
+      }).finally(function () { if (token === revision && more) more.disabled = false; });
   }
   function encodeImage(file) {
     if (!file) return Promise.resolve('');
@@ -173,12 +215,18 @@
     var list = document.querySelector('[data-log-list]');
     if (!list && !document.querySelector('[data-now-status]')) { revision++; return; }
     var cached = read('farm.logs.v1', null);
+    summary = read('farm.logs.summary.v1', null);
     if (cached && Array.isArray(cached.logs)) remote = cached;
     else if (list) remote = { nowStatus: '', logs: Array.prototype.map.call(list.querySelectorAll('li.row'), function (li, i) {
       return { id: 'static:' + i, date: li.children[0].textContent, text: li.children[1].textContent };
     }) };
     render();
     refresh();
+    var more = document.querySelector('[data-log-more]');
+    if (more && !more.dataset.bound) {
+      more.dataset.bound = '1';
+      more.addEventListener('click', function () { if (!more.disabled) refresh(true); });
+    }
     var form = document.querySelector('[data-log-form]');
     var drawer = document.querySelector('[data-log-publish]');
     if (drawer) drawer.hidden = false;
@@ -224,7 +272,7 @@
   document.addEventListener('DOMContentLoaded', page);
   document.addEventListener('farm:page', page);
   document.addEventListener('farm:logs', function () { render(); });
-  window.addEventListener('online', function () { if (document.querySelector('[data-log-list]')) refresh(); });
+  window.addEventListener('online', function () { if (document.querySelector('[data-log-list], [data-now-status]')) refresh(); });
   window.addEventListener('storage', function (event) { if (event.key === 'farm.logs.local.v1') render(); });
   if (document.readyState !== 'loading') page();
 })();

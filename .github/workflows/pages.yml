@@ -1,0 +1,82 @@
+name: Check and publish Pages
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pages-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+      - uses: astral-sh/setup-uv@v10
+        with:
+          enable-cache: false
+      - name: Check pages and JavaScript syntax
+        run: |
+          python3 tools/check.py
+          for script in js/*.js sw.js; do node --check "$script"; done
+      - name: Check workbench, messages and offline data
+        run: |
+          node tools/test_frontend.cjs
+          node tools/test_review_edges.cjs
+          node tools/test_backup.cjs
+          node tools/test_messages.cjs
+      - name: Check backend and database snapshots
+        run: |
+          python3 -B tools/test_server.py
+          python3 -B tools/test_server_backup.py
+      - name: Check complete publishing command
+        run: python3 -B tools/test_publishing.py
+
+  build:
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    needs: check
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: read
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/configure-pages@v5
+      - uses: actions/jekyll-build-pages@v1
+        with:
+          source: ./
+          destination: ./_site
+      - name: Verify public artifact
+        run: |
+          test -f _site/index.html
+          test -f _site/notes/rpc-scheduling/citation.bib
+          test ! -e _site/server
+          test ! -e _site/tools
+          test ! -e _site/docs
+      - uses: actions/upload-pages-artifact@v4
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Publish checked artifact
+        id: deployment
+        uses: actions/deploy-pages@v4

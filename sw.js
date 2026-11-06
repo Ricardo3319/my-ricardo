@@ -1,11 +1,16 @@
 /* 只缓存公开静态文件；所有 API、带口令请求和写操作始终直连。 */
-const VERSION = 'v8-1';
+const VERSION = 'v9-1';
 const BASE = new URL('./', self.location.href);
 const PREFIX = 'ricardo-static-' + BASE.pathname + '-';
 const CACHE = PREFIX + VERSION;
 const CORE = [
   './', 'board/', 'log/', 'about/', 'now/', 'work/', 'contact/', 'notes/',
-  'notes/sample/', 'notes/pixel-cabin/', 'notes/rpc-scheduling/', '404.html',
+  // notes:start
+  'notes/rpc-scheduling/', 'notes/pixel-cabin/', 'notes/sample/',
+  // notes:end
+  '404.html', 'feed.xml', 'sitemap.xml', 'notes/catalog.json',
+  'notes/rpc-scheduling/citation.bib',
+  'rpc-slides/fig_e1_violations-1.png', 'rpc-slides/fig_e3_movement-1.png',
   'manifest.json', 'css/fonts.css', 'css/farm.css', 'css/board-pins.css', 'css/life.css', 'css/ambience.css',
   'js/nav.js', 'js/farm.js', 'js/pwa.js', 'js/logs.js', 'js/board.js',
   'js/sound.js', 'js/messages.js', 'js/games.js', 'js/walk.js', 'js/world-data.js',
@@ -37,7 +42,7 @@ function staticPath(url) {
   if (url.origin !== BASE.origin || !url.pathname.startsWith(BASE.pathname)) return false;
   const path = url.pathname.slice(BASE.pathname.length);
   return !path.startsWith('api/') && (/^(css|js|img|fonts|audio)\//.test(path) || /^(manifest\.json|404\.html)$/.test(path) ||
-    /^(|board\/|log\/|about\/|now\/|work\/|contact\/|notes\/|notes\/(sample|pixel-cabin|rpc-scheduling)\/)(index\.html)?$/.test(path));
+    CORE.includes(path) || CORE.includes(path.replace(/index\.html$/, '')));
 }
 self.addEventListener('fetch', event => {
   const request = event.request;

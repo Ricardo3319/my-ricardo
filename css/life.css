@@ -22,6 +22,14 @@ html:not([data-theme="farm"]) .panel .log-entry button { font-family: var(--font
 .cabin-details { font-family: var(--font-sans); margin: 18px 0; }
 .cabin-details summary { cursor: pointer; padding: 12px 0; color: var(--ink); font-size: 16px; line-height: 1.75; }
 .cabin-details summary:focus-visible { outline: 2px solid var(--focus); outline-offset: 4px; }
+.letter .research-summary, .letter .research-toc { padding: 16px; margin-block: 20px; border: 1px solid var(--line); border-radius: 8px; }
+.letter .prose .research-summary h2, .letter .prose .research-toc h2 { margin-top: 0; }
+.letter .research-note, .letter .research-figure figcaption { font-size: 14px; line-height: 1.75; }
+.letter .research-figure { margin: 24px 0; }
+.letter .research-figure img { display: block; width: 100%; height: auto; background: white; image-rendering: auto; }
+.letter .research-figure figcaption { margin-top: 10px; }
+.letter .research-reference { overflow-wrap: anywhere; }
+.letter .research-reference pre { white-space: pre-wrap; padding: 16px; border: 1px solid var(--line); font-size: 14px; line-height: 1.75; }
 .cabin-workshop { border-block: 1px solid var(--line); padding: 8px 0; }
 .cabin-workshop > summary { font-size: clamp(18px, 2vw, 24px); font-weight: 650; }
 .cabin-reading { display: grid; grid-template-columns: 1.2fr 1fr; gap: 40px; padding: 24px 0; }

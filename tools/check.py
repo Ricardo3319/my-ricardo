@@ -11,6 +11,7 @@ import json
 import posixpath
 import re
 import sys
+import xml.etree.ElementTree as ET
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -23,14 +24,14 @@ PAGES = {
     "log/index.html": ("日常", "日常", None),
     "work/index.html": ("作品", None, "笔记"),
     "notes/index.html": ("笔记", "笔记", None),
-    "notes/rpc-scheduling/index.html": ("微秒级任务调度", None, "笔记"),
-    "notes/pixel-cabin/index.html": ("零依赖像素木屋", None, "笔记"),
-    "notes/sample/index.html": ("Canvas 打造像素农场", None, "笔记"),
     "contact/index.html": ("联系", None, "关于"),
     "board/index.html": ("告示牌", "告示牌", None),
 }
 # 用信纸的页、用告示牌的页，其余内页用木框菜单。
-LETTERS = {"notes/rpc-scheduling/index.html", "notes/pixel-cabin/index.html", "notes/sample/index.html", "contact/index.html"}
+CATALOG = json.loads((ROOT / "notes/catalog.json").read_text(encoding="utf-8"))
+for note in CATALOG:
+    PAGES[f"notes/{note['slug']}/index.html"] = (htmlmod.escape(note["short_title"]), None, "笔记")
+LETTERS = {"contact/index.html"} | {f"notes/{note['slug']}/index.html" for note in CATALOG}
 BOARDS = {"board/index.html"}
 FORMS = {"board/index.html", "log/index.html"}
 NAME = "Ricardo"
@@ -395,6 +396,18 @@ for icon in manifest.get("icons", []):
     if not path.is_file():
         bad(f"PWA 图标不存在：{icon.get('src')}")
 worker = read("sw.js")
+# 每篇登记文章都应有可访问的订阅、目录、地图及离线入口。
+feed_links = {node.get("href") for node in ET.fromstring(read("feed.xml")).findall("{http://www.w3.org/2005/Atom}entry/{http://www.w3.org/2005/Atom}link")}
+sitemap_links = {node.text for node in ET.fromstring(read("sitemap.xml")).iter("{http://www.sitemaps.org/schemas/sitemap/0.9}loc")}
+if len({note["slug"] for note in CATALOG}) != len(CATALOG):
+    bad("文章清单有重复路径")
+for note in CATALOG:
+    route = f"notes/{note['slug']}/"
+    url = "https://www.my-ricardo.com/" + route
+    if url not in feed_links or url not in sitemap_links or repr(route) not in worker:
+        bad(f"{route} 缺少订阅、站点地图或离线入口")
+    if f'href="{note["slug"]}/"' not in read("notes/index.html"):
+        bad(f"{route} 未列入笔记目录")
 core = re.search(r"const CORE = \[([\s\S]*?)\];", worker)
 if not core:
     bad("sw.js 缺少核心离线清单")

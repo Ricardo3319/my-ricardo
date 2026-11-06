@@ -262,6 +262,205 @@
     flush();
   }
 
+  // ---------------------------------------------------------------- 备份（只取内容字段，不读写钥匙与公开日志缓存）
+
+  function backupLogs(rows) {
+    if (!Array.isArray(rows)) throw new Error("本机日常格式不正确，请保留原文件。");
+    return rows.map(function (row) {
+      if (!row || typeof row.id !== "string" || !row.id || typeof row.text !== "string" ||
+          typeof row.date !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(row.date)) {
+        throw new Error("备份中有无法读取的日常，尚未恢复。");
+      }
+      var clean = { id: row.id, local: true, date: row.date, text: row.text };
+      ["sourceId", "mood", "weather", "image", "imageAlt"].forEach(function (name) {
+        if (row[name] !== undefined && typeof row[name] !== "string") throw new Error("日常字段格式不正确，尚未恢复。");
+        clean[name] = row[name] || "";
+      });
+      if (clean.image && (clean.image.length >= 550000 || !/^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(clean.image))) {
+        throw new Error("日常配图格式不正确，尚未恢复。");
+      }
+      return clean;
+    });
+  }
+
+  function readBackupLogs() {
+    if (!local) throw new Error("本机存储不可用，请保留备份文件。");
+    return backupLogs(JSON.parse(local.getItem("farm.logs.local.v1") || "[]"));
+  }
+
+  function currentBackupPad() {
+    var pad = asPad(state.scratchpad);
+    if (here() && scratchInput && scratchInput.value !== pad.text) {
+      pad = pickPad({ text: scratchInput.value, updatedAt: Date.now(), history: [] }, pad);
+    }
+    return pad;
+  }
+
+  function makeBackup() {
+    return {
+      format: "ricardo-workbench", version: 1, exportedAt: new Date().toISOString(),
+      board: { tasks: tidy(entries()), scratchpad: currentBackupPad() },
+      localLogs: readBackupLogs(),
+    };
+  }
+
+  function parseBackup(text) {
+    var data;
+    try { data = JSON.parse(text); } catch (error) { throw new Error("文件不是有效的 JSON 备份。"); }
+    function stamp(value) { return typeof value === "number" && Number.isFinite(value) && value >= 0; }
+    if (!data || data.format !== "ricardo-workbench" || data.version !== 1 ||
+        typeof data.exportedAt !== "string" || !Number.isFinite(Date.parse(data.exportedAt)) ||
+        !data.board || !Array.isArray(data.board.tasks) || !Array.isArray(data.localLogs)) {
+      throw new Error("请选择本站导出的工作台备份，当前文件格式不支持。");
+    }
+    var ids = new Set();
+    data.board.tasks.forEach(function (task) {
+      if (!task || typeof task.id !== "string" || !task.id || ids.has(task.id) || !stamp(task.updatedAt) ||
+          (task.deleted !== undefined && typeof task.deleted !== "boolean") || (!task.deleted && typeof task.title !== "string")) {
+        throw new Error("备份中的待办格式不正确，尚未恢复。");
+      }
+      ids.add(task.id);
+      ["due", "time", "done", "made", "pin", "archive"].forEach(function (name) {
+        if (task[name] !== undefined && typeof task[name] !== "string") throw new Error("待办字段格式不正确，尚未恢复。");
+      });
+      if ((task.private !== undefined && typeof task.private !== "boolean") ||
+          (task.pinnedAt !== undefined && !stamp(task.pinnedAt)) ||
+          [task.done, task.made].some(function (value) { return value && !Number.isFinite(Date.parse(value)); })) {
+        throw new Error("待办字段格式不正确，尚未恢复。");
+      }
+    });
+    var pad = data.board.scratchpad;
+    if (!pad || typeof pad.text !== "string" || !stamp(pad.updatedAt) || !Array.isArray(pad.history) ||
+        pad.history.some(function (value) { return typeof value !== "string"; })) {
+      throw new Error("备份中的剪贴板格式不正确，尚未恢复。");
+    }
+    return {
+      exportedAt: data.exportedAt,
+      board: { tasks: tidy(data.board.tasks), scratchpad: asPad(pad) },
+      localLogs: backupLogs(data.localLogs),
+    };
+  }
+
+  function planRestore(backup) {
+    var current = tidy(entries());
+    var byId = new Map(current.map(function (task) { return [task.id, task]; }));
+    var ops = [];
+    var counts = { added: 0, updated: 0, deleted: 0, skipped: 0, logs: 0 };
+    backup.board.tasks.forEach(function (task) {
+      var old = byId.get(task.id);
+      if (old && task.updatedAt <= old.updatedAt) { counts.skipped++; return; }
+      ops.push({ op: "put", make: true, task: task, say: "恢复备份" });
+      if (task.deleted) counts.deleted++;
+      else if (old) counts.updated++;
+      else counts.added++;
+    });
+    var logs = readBackupLogs();
+    var logIds = new Set(logs.map(function (item) { return item.id; }));
+    var sources = new Set(logs.map(function (item) { return item.sourceId; }).filter(Boolean));
+    backup.localLogs.forEach(function (item) {
+      if (logIds.has(item.id) || (item.sourceId && sources.has(item.sourceId))) return;
+      logs.push(item); logIds.add(item.id);
+      if (item.sourceId) sources.add(item.sourceId);
+      counts.logs++;
+    });
+    logs.sort(function (a, b) { return b.date.localeCompare(a.date); });
+    var pad = pickPad(currentBackupPad(), backup.board.scratchpad);
+    return {
+      counts: counts, logs: logs, ops: ops,
+      state: Object.assign({}, state, {
+        base: key ? state.base : apply(current, ops),
+        queue: key ? state.queue.concat(ops) : [],
+        scratchpad: pad,
+      }),
+    };
+  }
+
+  function restoreBackup(backup) {
+    if (busy) throw new Error("正在同步，请稍后再确认恢复。");
+    var plan = planRestore(backup);
+    var boardJSON = JSON.stringify(plan.state);
+    var logsJSON = JSON.stringify(plan.logs);
+    var oldLogs = local.getItem("farm.logs.local.v1");
+    // 两个存储键不能原子提交；第二次写失败时还原第一次，内存状态只在全部成功后替换。
+    try { local.setItem("farm.logs.local.v1", logsJSON); }
+    catch (error) { throw new Error("本机空间不足或存储不可用，尚未恢复，请保留备份文件。"); }
+    try { local.setItem("board.data", boardJSON); }
+    catch (error) {
+      try {
+        if (oldLogs === null) local.removeItem("farm.logs.local.v1");
+        else local.setItem("farm.logs.local.v1", oldLogs);
+      } catch (rollbackError) {
+        throw new Error("告示牌未恢复，本机日常可能已导入。请保留备份文件后重试。");
+      }
+      throw new Error("本机空间不足或存储不可用，已取消恢复，请保留备份文件。");
+    }
+    state = plan.state;
+    storageProblem = "";
+    render();
+    document.dispatchEvent(new CustomEvent("farm:logs"));
+    return plan;
+  }
+
+  function bindBackup() {
+    var box = document.querySelector("[data-backup]");
+    if (!box) return;
+    var fileInput = box.querySelector("[data-backup-file]");
+    var preview = box.querySelector("[data-backup-preview]");
+    var summary = box.querySelector("[data-backup-summary]");
+    var changes = box.querySelector("[data-backup-changes]");
+    var note = box.querySelector("[data-backup-note]");
+    var incoming = null;
+    var selection = 0;
+    box.querySelector("[data-backup-export]").addEventListener("click", function () {
+      try {
+        var blob = new Blob([JSON.stringify(makeBackup(), null, 2) + "\n"], { type: "application/json" });
+        var url = URL.createObjectURL(blob);
+        var link = document.createElement("a");
+        link.href = url; link.download = "ricardo-workbench-" + ymd(new Date()) + ".json";
+        link.click();
+        window.setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+        note.textContent = "备份文件已生成，请在浏览器下载列表确认。";
+      } catch (error) { note.textContent = "无法导出备份：" + error.message; }
+    });
+    fileInput.addEventListener("change", function () {
+      var token = ++selection;
+      incoming = null; preview.hidden = true; note.textContent = "";
+      var file = fileInput.files[0];
+      if (!file) return;
+      note.textContent = "正在读取备份…";
+      file.text().then(function (text) {
+        if (token !== selection || !box.isConnected) return;
+        var backup = parseBackup(text);
+        var plan = planRestore(backup);
+        var count = plan.counts;
+        summary.textContent = "备份时间：" + new Date(backup.exportedAt).toLocaleString();
+        changes.replaceChildren();
+        [
+          "待办：新增 " + count.added + " 条，更新 " + count.updated + " 条，删除记录 " + count.deleted + " 条，跳过较旧或相同记录 " + count.skipped + " 条。",
+          "剪贴板：保留较新的正文，合并后保留 " + plan.state.scratchpad.history.length + " 条历史。",
+          "本机日常：新增 " + count.logs + " 条，跳过重复记录 " + (backup.localLogs.length - count.logs) + " 条，配图一并保留。",
+        ].forEach(function (text) { changes.appendChild(el("li", "", text)); });
+        incoming = backup; preview.hidden = false;
+        note.textContent = "预览完成，尚未写入。确认后按当前本机数据合并。";
+      }).catch(function (error) {
+        if (token === selection && box.isConnected) note.textContent = "无法读取备份：" + error.message;
+      });
+    });
+    box.querySelector("[data-backup-cancel]").addEventListener("click", function () {
+      selection++; incoming = null; fileInput.value = ""; preview.hidden = true;
+      note.textContent = "已取消，未修改数据。";
+    });
+    box.querySelector("[data-backup-restore]").addEventListener("click", function () {
+      if (!incoming) return;
+      try {
+        restoreBackup(incoming);
+        incoming = null; fileInput.value = ""; preview.hidden = true;
+        note.textContent = "已合并恢复到本机。本机日常不会自动公开。";
+        if (key || passkeyValue()) flush();
+      } catch (error) { note.textContent = error.message; }
+    });
+  }
+
   // ---------------------------------------------------------------- 日子
 
   function pad(n) {
@@ -1462,6 +1661,7 @@
     bindPasskey();
     bindScratchpad();
     bindAutoOpen();
+    bindBackup();
     render();
   }
 

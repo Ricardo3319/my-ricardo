@@ -45,6 +45,7 @@
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#8c4a27">
   <link rel="apple-touch-icon" href="img/pwa-192.png">
+  <link rel="alternate" type="application/atom+xml" title="Ricardo · 笔记" href="feed.xml">
 </head>
 <body class="home">
   <a class="skip" href="#content">跳到对话</a>
@@ -212,12 +213,12 @@
               </div>
               <h3>rpcsim 纳秒显式计费调度仿真器</h3>
               <p class="craft-motto">「128 核高并发世界的瑞士钟表。」</p>
-              <p class="craft-why"><b>为什么造这个轮子：</b>现有的网络级仿真器太重（跑一次几小时），单机多线程测试又受内核调度抖动干扰。我需要一台能把纳秒时间轴当尺子量、与排队论解析解 100% 对齐的显式计费引擎。</p>
-              <p class="craft-note"><b>好玩的技术突破：</b>在无锁多队列环境下精确捕捉微秒任务窃取纠偏的时钟损耗，找到了 20% 算力预算下的最优调度相图。</p>
+              <p class="craft-why"><b>为什么造这个轮子：</b>现有的网络级仿真器太重（跑一次几小时），单机多线程测试又受内核调度抖动干扰。我需要一台能把纳秒时间轴当尺子量、<a href="notes/rpc-scheduling/#model">与排队论解析解 100% 对齐</a>的显式计费引擎。</p>
+              <p class="craft-note"><b>好玩的技术突破：</b>在无锁多队列环境下精确捕捉微秒任务窃取纠偏的时钟损耗，<a href="notes/rpc-scheduling/#findings">找到了 20% 算力预算下的最优调度相图</a>。</p>
               <div class="clean-actions">
                 <a class="clean-btn is-solid" href="rpc-slides/index.html">看组会汇报 PPT（10 页）</a>
                 <a class="clean-btn" href="notes/rpc-scheduling/">阅读研究笔记</a>
-                <a class="clean-btn" href="https://github.com/Ricardo3319/rpcsim">GitHub 源码复现</a>
+                <a class="clean-btn" href="notes/rpc-scheduling/#scope">代码复现入口待开放</a>
               </div>
             </article>
 
@@ -246,6 +247,7 @@
               <h2 id="home-notes-title">最新技术笔记</h2>
               <a class="clean-more" href="notes/">全部笔记 →</a>
             </div>
+            <!-- notes:start -->
             <ul class="clean-list">
               <li>
                 <a class="clean-list-item" href="notes/rpc-scheduling/">
@@ -255,6 +257,7 @@
                 </a>
               </li>
             </ul>
+            <!-- notes:end -->
           </section>
 
           <section aria-labelledby="home-logs-title">
@@ -310,7 +313,6 @@
   <script src="js/nav.js"></script>
   <script src="js/sound.js"></script>
   <script src="js/messages.js"></script>
-  <script src="js/games.js"></script>
   <script src="js/world-data.js"></script>
   <script src="js/walk.js"></script>
   <script src="js/farm.js"></script>

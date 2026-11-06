@@ -104,6 +104,7 @@
   var selectedSlotIndex = 0;
 
   var activeGame = ""; // "fish" | "cart" | "crop" | "well" | ""
+  var releaseModal = null;
   var raf = 0;
   var lastTime = 0;
   var holding = false;
@@ -237,7 +238,10 @@
   }
 
   function ensureModal() {
-    if (backdrop) return;
+    if (backdrop) {
+      if (!backdrop.isConnected) document.body.appendChild(backdrop);
+      return;
+    }
     backdrop = el("div", "game-backdrop");
     backdrop.hidden = true;
 
@@ -2806,6 +2810,7 @@
     lastTime = 0;
     window.cancelAnimationFrame(raf);
     raf = window.requestAnimationFrame(loop);
+    if (!releaseModal) releaseModal = window.FARM_MODAL.open(backdrop, actionBtn, closeGame);
     if (actionBtn) actionBtn.focus({ preventScroll: true });
   }
 
@@ -2816,6 +2821,7 @@
     window.cancelAnimationFrame(raf);
     if (backdrop) backdrop.hidden = true;
     document.body.classList.remove("is-gaming");
+    if (releaseModal) { releaseModal(); releaseModal = null; }
   }
 
   function isOpen() {
@@ -2823,14 +2829,14 @@
   }
 
   function onKeyDown(e) {
-    if (!activeGame) return;
+    if (!activeGame || !backdrop.contains(e.target)) return;
     if (e.key === "Escape") {
       e.preventDefault();
       e.stopPropagation();
       closeGame();
       return;
     }
-    if (e.target && e.target.closest && e.target.closest(".game-focus")) return;
+    if (e.target && e.target.closest && e.target.closest("button, a, input, textarea, select") && e.target !== actionBtn) return;
     if (e.key === " " || e.key === "ArrowUp" || e.key === "w" || e.key === "W" || e.key === "Enter") {
       e.preventDefault();
       e.stopPropagation();
@@ -2839,8 +2845,8 @@
   }
 
   function onKeyUp(e) {
-    if (!activeGame) return;
-    if (e.target && e.target.closest && e.target.closest(".game-focus")) return;
+    if (!activeGame || !backdrop.contains(e.target)) return;
+    if (e.target && e.target.closest && e.target.closest("button, a, input, textarea, select") && e.target !== actionBtn) return;
     if (e.key === " " || e.key === "ArrowUp" || e.key === "w" || e.key === "W" || e.key === "Enter") {
       e.preventDefault();
       e.stopPropagation();

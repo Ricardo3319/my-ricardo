@@ -3507,6 +3507,9 @@ html[data-phase="night"]:not([data-theme="farm"]) .board .pwa-tools .hint {
 
 .panel .key-actions { margin-top: calc(2 * var(--px)); }
 
+.board [data-backup] .key-form { grid-template-columns: minmax(0, 1fr); }
+.board [data-backup] .key-actions { flex-wrap: wrap; gap: calc(2 * var(--px)); }
+
 /* 刚做的事和「放回」：浮在屏幕底下，几秒后自己收起。 */
 .toast {
   position: fixed;

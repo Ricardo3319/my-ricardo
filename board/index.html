@@ -140,6 +140,25 @@
         <ol class="rows" data-done></ol>
       </details>
 
+      <details class="drawer" data-backup>
+        <summary>备份与恢复</summary>
+        <div class="sheet key">
+          <p>导出当前浏览器的待办、剪贴板及最近 5 条历史、本机日常与配图。备份包含私密内容，请妥善保管；不包含口令和 GitHub 钥匙。</p>
+          <p class="key-actions"><button class="btn" type="button" data-backup-export>导出备份</button></p>
+          <div class="key-form">
+            <label for="backup-file">选择备份文件，先预览再恢复</label>
+            <input class="field" id="backup-file" type="file" accept=".json,application/json" data-backup-file>
+          </div>
+          <section class="sheet" data-backup-preview aria-label="恢复预览" hidden>
+            <p data-backup-summary></p>
+            <ul data-backup-changes></ul>
+            <p>保留本机较新的待办和剪贴板，同一条日常不重复导入。本机日常不会自动公开；告示牌会沿用当前连接的同步通道。</p>
+            <p class="key-actions"><button class="btn" type="button" data-backup-restore>确认合并恢复</button><button class="btn" type="button" data-backup-cancel>取消</button></p>
+          </section>
+          <p class="hint" role="status" data-backup-note></p>
+        </div>
+      </details>
+
       <details class="drawer" data-key-box>
         <summary>钥匙 · <span data-key-state>还没连</span></summary>
         <div class="sheet key">
@@ -181,7 +200,6 @@
   <script src="../js/nav.js"></script>
   <script src="../js/sound.js"></script>
   <script src="../js/messages.js"></script>
-  <script src="../js/games.js"></script>
   <script src="../js/board.js"></script>
   <script src="../js/farm.js"></script>
 </body>

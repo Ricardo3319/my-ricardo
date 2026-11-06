@@ -42,6 +42,7 @@
   <link rel="stylesheet" href="../../css/fonts.css">
   <link rel="stylesheet" href="../../css/farm.css">
   <link rel="icon" href="../../img/favicon.png">
+  <link rel="alternate" type="application/atom+xml" title="Ricardo · 笔记" href="../../feed.xml">
 </head>
 <body class="inner">
   <a class="skip" href="#content">跳到内容</a>
@@ -70,18 +71,42 @@
       <h1>微秒级任务调度</h1>
       <p class="meta">2026-10-18 · 同机架微秒级 RPC 绑定时机与跨机纠偏边界</p>
       <div class="prose">
+        <section class="research-summary" aria-labelledby="summary-title">
+          <h2 id="summary-title">先看这篇笔记回答什么</h2>
+          <p>问题：当网络反馈与请求执行同处微秒量级，应该把调度预算花在入口选择，还是绑定之后的跨机纠偏？方法：用 128 核机架级离散事件仿真，显式计入通信与控制开销。</p>
+          <ul>
+            <li><a href="#findings">入口信息会改变纠偏收益</a>：随机入口与具备状态信息的入口不能混为同一基线。</li>
+            <li><a href="#metrics">多核池化压缩剩余空间</a>：固定 128 核、85% 负载时，应连同单机核数和入口策略一起阅读改善幅度。</li>
+            <li><a href="#conclusions">选型还受控制资源约束</a>：硬件卸载与纯软件网关的成本条件不同。</li>
+          </ul>
+          <p class="research-note">材料版本：2026-10-18 组会汇报阶段笔记。本文与下方原图记录该阶段的仿真结果；适用范围与复现状态见文末说明。</p>
+        </section>
+        <nav class="research-toc" aria-label="研究笔记目录">
+          <h2>阅读目录</h2>
+          <ol>
+            <li><a href="#problem">研究问题</a></li>
+            <li><a href="#model">仿真方法与解析校验</a></li>
+            <li><a href="#findings">四个实验发现</a></li>
+            <li><a href="#figures">关键实验图与读图说明</a></li>
+            <li><a href="#metrics">关键指标速览</a></li>
+            <li><a href="#conclusions">工程选型结论</a></li>
+            <li><a href="#scope">适用范围与复现状态</a></li>
+            <li><a href="#citation">引用这篇笔记</a></li>
+          </ol>
+        </nav>
+        <h2 id="problem">研究问题</h2>
         <p>在现代数据中心内存键值存储与微服务调用中，单次 RPC 的纯计算耗时往往只有 1 到 10 微秒，而同机架高速网络的单向传输时延也在数微秒量级。当通信开销与任务执行时间处在同一个数量级、且 99% 尾延迟门限被严格卡在 50 微秒以内时，传统宏观调度里「跨机迁移与状态同步近似免费」的假设便不再成立。</p>
         <p>围绕这一核心矛盾，学术界演化出两条截然不同的路线：一是以 R2P2、Draconis、JBSQ 为代表的「入口晚绑定（Late Binding）」，请求先在网关暂存，由空闲工作节点通过提货券（Credit）按需拉取，从源头避免节点队列失衡；二是以 ZygOS、Capybara、SBB 为代表的「早绑定加事后跨机纠偏（Early Binding + Movement）」，请求到达时直接按连接或哈希派发，出现局部积压后再通过工作窃取（Work Stealing）或盲推转发重调度。</p>
 
-        <h2>一、全链路纳秒级显式计费仿真（rpcsim）</h2>
-        <p>为了脱离两派各自偏好的理想化假设，我用 C++17 构建了 128 核机架规模的离散事件仿真引擎 rpcsim，把每一次控制交互都折算为真实的物理耗时，并严格遵循非预知（Non-clairvoyant）原则。仿真器的核心调度实现、E0 阶段解析校验脚本与多维相图复现配置已整理至 GitHub 仓库分支：<a href="https://github.com/Ricardo3319/rpcsim">github.com/Ricardo3319/rpcsim</a>，方便同行复现、校准与引用：</p>
+        <h2 id="model">一、全链路纳秒级显式计费仿真（rpcsim）</h2>
+        <p>为了脱离两派各自偏好的理想化假设，我用 C++17 构建了 128 核机架规模的离散事件仿真引擎 rpcsim，把每一次控制交互都折算为真实的物理耗时，并严格遵循非预知（Non-clairvoyant）原则。该阶段的方法与校验口径如下；代码复现入口的当前状态见<a href="#scope">复现说明</a>：</p>
         <ul>
           <li>控制帧与数据帧网卡串行化耗时分别按 64B（20.48 纳秒）与 256B（81.92 纳秒）显式计入链路。</li>
           <li>单机多核共享队列的核间原子窃取（L3 Cache / CAS）计费 100 纳秒，软件网关单次调度决策计费 200 至 500 纳秒。</li>
           <li>底层引擎在 E0 基准校验阶段与 M/M/k 闭式解、M/G/1（P-K 公式）及 M/H2/k 矩阵几何解完成了背靠背比对，20 组测试单元 100% 落入 99% 理论置信区间，且与独立编写的 Python 验证器在相同随机种子下完全对齐（误差 1.21 SE）。</li>
         </ul>
 
-        <h2>二、四个核心实验发现与反例</h2>
+        <h2 id="findings">二、四个核心实验发现与反例</h2>
         <p>在跨越负载强度、网络与服务耗时比（D/s）、单机核数（m）与控制算力预算的多维空间扫参后，实验揭示了四条关键规律：</p>
         <ul>
           <li>绑定时机占据决定性主导：在无状态随机入口下，跨机转发能缩减 91% 至 96% 的违约差距；但一旦入口具备轻量状态感知（如 JSW），事后跨机纠偏能挽回的残余空间不足一半。同时消融实验证实，移除提货券的有效期（TTL）会因陈旧凭证诱发严重羊群效应，导致 23 个测试单元违约率全面恶化。</li>
@@ -90,7 +115,19 @@
           <li>软件网关算力断崖与资源预算红线：若采用纯软件集中网关（每包处理 200 至 500 纳秒），单控制核在 65% 负载处即发生 100% 饱和雪崩；而在限定额外控制 CPU 不超过 20%、端口带宽不超过 1% 的 72 组异构配置筛选中，有 79.2%（57 组）因高频探针与轮询超标而无可行解。</li>
         </ul>
 
-        <h2>三、关键实验指标速览</h2>
+        <section aria-labelledby="figures">
+          <h2 id="figures">关键实验图与读图说明</h2>
+          <figure class="research-figure">
+            <a href="../../rpc-slides/fig_e1_violations-1.png"><img src="../../rpc-slides/fig_e1_violations-1.png" width="1071" height="510" loading="lazy" alt="E1 原图：在 Steady、Stall、Heavy 场景及 0.7、0.85 负载下，对照不同入口和迁移策略的 SLO 违约率。"></a>
+            <figcaption>图 1 · 原汇报图 2。横轴区分绑定后迁移与不迁移策略，颜色与标记区分入口；纵轴为 SLO 违约率（对数刻度），需按各子图的负载与场景比较。<a href="../../rpc-slides/">查看原汇报</a> · 点图打开原尺寸。</figcaption>
+          </figure>
+          <figure class="research-figure">
+            <a href="../../rpc-slides/fig_e3_movement-1.png"><img src="../../rpc-slides/fig_e3_movement-1.png" width="1071" height="615" loading="lazy" alt="E3 原图：单向时延与服务时间之比从 0.1 增至 4，各场景下迁移策略与 JBSQ 的 SLO 违约率曲线。"></a>
+            <figcaption>图 2 · 原汇报图 4。横轴 D/s 为单向时延与服务时间之比，纵轴为 SLO 违约率（对数刻度）。六个子图分别给出三种场景与两档负载，图例中的策略应在同一子图内比较。<a href="../../rpc-slides/">查看原汇报</a> · 点图打开原尺寸。</figcaption>
+          </figure>
+        </section>
+
+        <h2 id="metrics">三、关键实验指标速览</h2>
         <dl class="rows">
           <div class="row"><dt class="row-key">E0 基准对齐</dt><dd>128 核仿真器与 M/M/k、M/G/1、M/H2/k 解析解 20 组单元 100% 落入 99% 置信区间（误差 1.21 SE）。</dd></div>
           <div class="row"><dt class="row-key">多核池化效应</dt><dd>单机核数 m ≥ 8 时，核间 100ns 共享队列消化 95% 以上微突发，跨机纠偏增益上限从 10.85pp 压至 0.09–0.38pp。</dd></div>
@@ -98,14 +135,32 @@
           <div class="row"><dt class="row-key">控制预算红线</dt><dd>纯软件集中网关在 65% 负载处饱和雪崩；20% 控制 CPU 与 1% 带宽红线下 79.2%（57/72）异构配置无可行解。</dd></div>
         </dl>
 
-        <h2>四、工程架构选型结论</h2>
+        <h2 id="conclusions">四、工程架构选型结论</h2>
         <p>微秒级 RPC 调度的工程选型可以归结为两条清晰准则：当机架具备可编程交换机（P4 Switch）或智能网卡（SmartNIC）硬件卸载条件时，应优先采用带 TTL 保护的入口晚绑定（JBSQ / Credit Pull），从源头消灭排队失衡；而在纯软件部署且单机核数不少于 8 核的常规机房中，「强入口派发（JSW）配合单机多核本地池化」即可逼近理论最优边界，跨机搬迁只需作为整机停顿时的兜底容灾机制。</p>
-        <p>这项研究的完整实验图表、数学公式与十页汇报文稿整理在站内的 <a href="../../rpc-slides/">微秒级 RPC 调度组会演示幻灯片</a> 中，可直接在线翻阅；仿真代码与复现基准亦可访问 <a href="https://github.com/Ricardo3319/rpcsim">rpcsim GitHub 仓库</a>。</p>
+        <p>这项研究的完整实验图表、数学公式与十页汇报文稿整理在站内的 <a href="../../rpc-slides/">微秒级 RPC 调度组会演示幻灯片</a> 中，可直接在线翻阅。</p>
+        <section class="research-reference" aria-labelledby="scope">
+          <h2 id="scope">适用范围与复现状态</h2>
+          <p>以上数值来自本页所述成本假设、策略、负载与规模下的仿真；解析校验的具体表述为 20 组单元全部落入 99% 理论置信区间，不表示任意输入下零误差。图中的比较应保留场景、入口策略及对数刻度，工程选型还需结合部署中的实际成本。</p>
+          <p>代码复现入口待开放。需要复现实验时可<a href="../../contact/">联系作者</a>获取对应材料；公开仓库、实验版本和运行命令会在入口开放后补充。</p>
+          <p>原始汇报材料可查看<a href="https://github.com/Ricardo3319/my-ricardo/tree/5219e7c1db167b3a9d7ee1c50d6a1a54ee80e02e/rpc-slides">站点历史版本中的汇报文件</a>，用于核对当时的图表。</p>
+        </section>
+        <section class="research-reference" aria-labelledby="citation">
+          <h2 id="citation">引用这篇笔记</h2>
+          <p>Ricardo. 微秒级任务调度：绑定时机与跨机纠偏的边界. 2026-10-18，组会汇报阶段研究笔记。阅读与引用入口更新于 2026-11-07。</p>
+          <p><a href="citation.bib" download>下载 BibTeX 引用</a> · <a href="https://www.my-ricardo.com/notes/rpc-scheduling/">文章固定地址</a></p>
+          <pre><code>@misc{ricardo2026rpc,
+  author = {Ricardo},
+  title = {微秒级任务调度：绑定时机与跨机纠偏的边界},
+  year = {2026},
+  howpublished = {https://www.my-ricardo.com/notes/rpc-scheduling/},
+  note = {2026-10-18 组会汇报阶段研究笔记}
+}</code></pre>
+        </section>
       </div>
       <p class="actions">
         <a class="btn" href="../pixel-cabin/">下一篇：零依赖像素木屋</a>
         <a class="btn" href="../../rpc-slides/">打开 10 页组会幻灯片</a>
-        <a class="btn" href="https://github.com/Ricardo3319/rpcsim">GitHub 源码与复现 →</a>
+        <a class="btn" href="#scope">复现状态与材料版本</a>
       </p>
       <p class="sign">——Ricardo</p>
     </main>
@@ -117,7 +172,6 @@
   <script src="../../js/nav.js"></script>
   <script src="../../js/sound.js"></script>
   <script src="../../js/messages.js"></script>
-  <script src="../../js/games.js"></script>
   <script src="../../js/farm.js"></script>
 </body>
 </html>

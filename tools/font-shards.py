@@ -1,10 +1,8 @@
 #!/usr/bin/env python3
 """把全字集字体切成 unicode-range 分片，首访只取静态页真用到的字。
 
-跑法（系统 python3 没有 fonttools，用 venv）：
-    python3 -m venv /tmp/fontvenv
-    /tmp/fontvenv/bin/python -m pip install fonttools brotli
-    /tmp/fontvenv/bin/python tools/font-shards.py
+跑法：
+    uv run --no-project --with fonttools --with brotli tools/font-shards.py
 
 产出 css/fonts.css 和 fonts/shard-*.woff2，都是生成文件，不手改。
 common 分片装九个页面和 js 文案里出现过的字（preload + block，不闪系统字体）；
@@ -14,6 +12,7 @@ common 分片装九个页面和 js 文案里出现过的字（preload + block，
 """
 
 import html
+import json
 import re
 from pathlib import Path
 
@@ -23,7 +22,7 @@ from fontTools.ttLib import TTFont
 ROOT = Path(__file__).resolve().parents[1]
 SRC = ROOT / "fonts" / "ark-pixel-12px-proportional-zh_hans.otf.woff2"
 
-# 和 tools/check.py 的 PAGES 同一份：九个会发布的页面。
+# 固定页面加文章清单，与 tools/check.py 保持一致。
 PAGES = [
     "index.html",
     "about/index.html",
@@ -31,13 +30,12 @@ PAGES = [
     "log/index.html",
     "work/index.html",
     "notes/index.html",
-    "notes/rpc-scheduling/index.html",
-    "notes/pixel-cabin/index.html",
-    "notes/sample/index.html",
     "contact/index.html",
     "board/index.html",
     "404.html",
 ]
+
+PAGES += [f"notes/{note['slug']}/index.html" for note in json.loads((ROOT / "notes/catalog.json").read_text(encoding="utf-8"))]
 
 # 页面里不一定写得到、但界面一定会出的字：ASCII  printable 和常用全角标点。
 EXTRA = set(chr(c) for c in range(0x20, 0x7F)) | set(

@@ -11,7 +11,11 @@
 import argparse
 import datetime
 import html
+import json
 import re
+import subprocess
+import sys
+import xml.etree.ElementTree as ET
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -23,10 +27,17 @@ TEMPLATE = """<!DOCTYPE html>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{short_title} · Ricardo</title>
   <meta name="description" content="{desc}">
+  <link rel="canonical" href="https://www.my-ricardo.com/notes/{slug}/">
+  <meta property="og:site_name" content="Ricardo's Cyber Cabin">
   <meta property="og:title" content="{short_title} · Ricardo">
   <meta property="og:description" content="{desc}">
   <meta property="og:type" content="article">
-  <meta property="og:image" content="https://www.my-ricardo.com/img/farm-spring.png">
+  <meta property="og:url" content="https://www.my-ricardo.com/notes/{slug}/">
+  <meta property="og:image" content="https://www.my-ricardo.com/img/cabin-og-cover.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="{short_title} · Ricardo">
+  <meta name="twitter:description" content="{desc}">
+  <meta name="twitter:image" content="https://www.my-ricardo.com/img/cabin-og-cover.png">
   <script>
     (function () {{
       var d = document.documentElement, now = new Date(), h = now.getHours();
@@ -37,6 +48,9 @@ TEMPLATE = """<!DOCTYPE html>
       }} catch (e) {{}}
       d.setAttribute("data-season", s);
       d.setAttribute("data-phase", h < 5 || h >= 19 ? "night" : h < 7 ? "dawn" : h < 17 ? "day" : "dusk");
+      var m = "landing";
+      try {{ if (localStorage.getItem("ricardo_home_mode") === "farm") m = "farm"; }} catch (e) {{}}
+      d.setAttribute("data-theme", m);
       var l = document.createElement("link");
       l.rel = "preload";
       l.as = "image";
@@ -48,6 +62,10 @@ TEMPLATE = """<!DOCTYPE html>
   <link rel="stylesheet" href="../../css/fonts.css">
   <link rel="stylesheet" href="../../css/farm.css">
   <link rel="icon" href="../../img/favicon.png">
+  <link rel="manifest" href="../../manifest.json">
+  <meta name="theme-color" content="#8c4a27">
+  <link rel="apple-touch-icon" href="../../img/pwa-192.png">
+  <link rel="alternate" type="application/atom+xml" title="Ricardo · 笔记" href="../../feed.xml">
 </head>
 <body class="inner">
   <a class="skip" href="#content">跳到内容</a>
@@ -57,8 +75,8 @@ TEMPLATE = """<!DOCTYPE html>
     <div class="hud-box">
       <div class="hud-sky" aria-hidden="true"><span class="hud-sun"></span></div>
       <div class="hud-lines">
-        <p><time data-today>今天</time></p>
-        <p><time data-clock>现在</time><button class="hud-season" type="button" data-season-cycle aria-label="换季"><span class="hud-season-icon"></span><span class="hud-season-name"></span></button><button class="hud-sound" type="button" data-sound aria-label="声音" hidden><span class="hud-sound-icon"></span></button></p>
+        <p><time data-today>--月--日 周-</time></p>
+        <p><time data-clock>--:--</time><button class="hud-season" type="button" data-season-cycle aria-label="换季"><span class="hud-season-icon"></span><span class="hud-season-name"></span></button><button class="hud-sound" type="button" data-sound aria-label="声音" hidden><span class="hud-sound-icon"></span></button></p>
       </div>
     </div>
   </header>
@@ -84,10 +102,10 @@ TEMPLATE = """<!DOCTYPE html>
 
   <footer class="credit">
     <p><a href="../../">农场</a><a href="../../board/">告示牌</a><a href="../../log/">日常</a><a href="../">笔记</a><a href="../../about/">关于</a></p>
-    <p>视觉受田园生活模拟游戏启发，非官方，与 ConcernedApe 无关。</p>
   </footer>
   <script src="../../js/nav.js"></script>
   <script src="../../js/sound.js"></script>
+  <script src="../../js/messages.js"></script>
   <script src="../../js/farm.js"></script>
 </body>
 </html>
@@ -150,38 +168,106 @@ def parse_markdown(md_text):
     return title or "未命名笔记", "\n".join(blocks)
 
 
+def replace_region(path, content, javascript=False):
+    start, end = ("// notes:start", "// notes:end") if javascript else ("<!-- notes:start -->", "<!-- notes:end -->")
+    text = path.read_text(encoding="utf-8")
+    if text.count(start) != 1 or text.count(end) != 1:
+        raise ValueError(f"{path.name} 缺少唯一的文章生成区域")
+    before, rest = text.split(start)
+    _, after = rest.split(end)
+    indent = before.rsplit("\n", 1)[-1]
+    path.write_text(before + start + "\n" + content.rstrip() + "\n" + indent + end + after, encoding="utf-8")
+
+
+def sync_catalog():
+    notes = json.loads((ROOT / "notes/catalog.json").read_text(encoding="utf-8"))
+    notes.sort(key=lambda note: (note["date"], note["slug"]), reverse=True)
+    rows = ['        <ol class="rows">']
+    for note in notes:
+        n = {key: html.escape(value) for key, value in note.items()}
+        rows.append(f'          <li><a class="row mail" href="{n["slug"]}/"><span class="row-key">{n["date"]}</span><span>{n["title"]}<span class="row-note"> · {n["tag"]}</span></span></a></li>')
+    rows.append('        </ol>\n        ')
+    replace_region(ROOT / "notes/index.html", "\n".join(rows))
+    n = {key: html.escape(value) for key, value in notes[0].items()}
+    replace_region(ROOT / "index.html", f'''            <ul class="clean-list">
+              <li>
+                <a class="clean-list-item" href="notes/{n['slug']}/">
+                  <span class="clean-date">{n['date']} · {n['tag']}</span>
+                  <strong>{n['title']}</strong>
+                  <span>{n['preview']}</span>
+                </a>
+              </li>
+            </ul>
+            ''')
+    ns = "http://www.w3.org/2005/Atom"
+    ET.register_namespace("", ns)
+    feed_path = ROOT / "feed.xml"
+    feed = ET.parse(feed_path)
+    for entry in feed.findall(f"{{{ns}}}entry"):
+        feed.getroot().remove(entry)
+    feed.find(f"{{{ns}}}updated").text = notes[0]["date"] + "T18:00:00+08:00"
+    for note in notes:
+        entry = ET.SubElement(feed.getroot(), f"{{{ns}}}entry")
+        url = f'https://www.my-ricardo.com/notes/{note["slug"]}/'
+        for tag, value in [("title", note["title"]), ("id", url), ("updated", note["date"] + "T18:00:00+08:00"), ("summary", note["description"])]:
+            ET.SubElement(entry, f"{{{ns}}}{tag}").text = value
+        ET.SubElement(entry, f"{{{ns}}}link", href=url)
+    ET.indent(feed, space="  ")
+    feed_path.write_bytes(ET.tostring(feed.getroot(), encoding="utf-8", xml_declaration=True) + b"\n")
+    ns = "http://www.sitemaps.org/schemas/sitemap/0.9"
+    ET.register_namespace("", ns)
+    sitemap_path = ROOT / "sitemap.xml"
+    sitemap = ET.parse(sitemap_path)
+    existing = {entry.findtext(f"{{{ns}}}loc") for entry in sitemap.getroot()}
+    for note in notes:
+        url = f'https://www.my-ricardo.com/notes/{note["slug"]}/'
+        if url in existing:
+            continue
+        entry = ET.SubElement(sitemap.getroot(), f"{{{ns}}}url")
+        ET.SubElement(entry, f"{{{ns}}}loc").text = url
+        ET.SubElement(entry, f"{{{ns}}}lastmod").text = note["date"]
+    ET.indent(sitemap, space="  ")
+    sitemap_path.write_bytes(ET.tostring(sitemap.getroot(), encoding="utf-8", xml_declaration=True) + b"\n")
+    replace_region(ROOT / "sw.js", "  " + ", ".join(repr(f'notes/{note["slug"]}/') for note in notes) + ",\n  ", javascript=True)
+
+
 def main():
-    parser = argparse.ArgumentParser(description="从 Markdown 生成信纸 HTML 笔记")
-    parser.add_argument("slug", help="笔记目录名，例如 rpc-scheduling")
-    parser.add_argument("markdown", help="输入的 Markdown 文件路径")
-    parser.add_argument("--short-title", default="", help="网页 <title> 使用的短标题")
-    parser.add_argument("--tag", default="技术笔记", help="文章分类标签")
-    parser.add_argument("--date", default=datetime.date.today().isoformat(), help="发布日期 YYYY-MM-DD")
+    parser = argparse.ArgumentParser(description="生成笔记并更新目录、订阅、站点地图、离线收录与字库")
+    parser.add_argument("slug", nargs="?")
+    parser.add_argument("markdown", nargs="?")
+    parser.add_argument("--short-title", default="")
+    parser.add_argument("--tag", default="技术笔记")
+    parser.add_argument("--date", default=datetime.date.today().isoformat())
+    parser.add_argument("--sync", action="store_true", help="按现有文章清单同步入口，不改正文")
     args = parser.parse_args()
-
-    md_path = Path(args.markdown)
-    full_title, body_html = parse_markdown(md_path.read_text(encoding="utf-8"))
-    short_title = args.short_title or full_title.split("：")[0]
-    plain_first = re.sub(r"<[^>]+>", "", body_html).strip().splitlines()
-    desc = (plain_first[0][:80] if plain_first else full_title).replace('"', "&quot;")
-    tag_suffix = f" · {html.escape(args.tag)}" if args.tag else ""
-
-    out_dir = ROOT / "notes" / args.slug
-    out_dir.mkdir(parents=True, exist_ok=True)
-    out_file = out_dir / "index.html"
-    out_file.write_text(
-        TEMPLATE.format(
-            short_title=html.escape(short_title),
-            full_title=html.escape(full_title),
-            desc=desc,
-            date=html.escape(args.date),
-            tag_suffix=tag_suffix,
-            body=body_html,
-        ),
-        encoding="utf-8",
-    )
-    print(f"已生成 {out_file.relative_to(ROOT)}")
-    print("提示：请将新路径加入 tools/check.py 与 tools/font-shards.py，随后运行字体分片与检查。")
+    if args.sync:
+        if args.slug or args.markdown:
+            parser.error("--sync 不接受文章路径")
+    else:
+        if not args.slug or not args.markdown or not re.fullmatch(r"[a-z0-9]+(?:-[a-z0-9]+)*", args.slug):
+            parser.error("请提供小写字母、数字和连字符组成的 slug 及 Markdown 文件路径")
+        try:
+            args.date = datetime.date.fromisoformat(args.date).isoformat()
+        except ValueError:
+            parser.error("日期应为 YYYY-MM-DD")
+        out = ROOT / "notes" / args.slug / "index.html"
+        catalog_path = ROOT / "notes/catalog.json"
+        catalog = json.loads(catalog_path.read_text(encoding="utf-8"))
+        if out.exists() or any(note["slug"] == args.slug for note in catalog):
+            parser.error("文章已存在，请直接编辑正文；更新入口可运行 --sync")
+        title, body = parse_markdown(Path(args.markdown).read_text(encoding="utf-8"))
+        short = args.short_title or title.split("：")[0]
+        description = html.unescape(re.sub(r"<[^>]+>", "", body)).strip().splitlines()[0][:160] if body else title
+        note = dict(slug=args.slug, title=title, short_title=short, date=args.date, tag=args.tag, description=description, preview=description)
+        out.parent.mkdir(parents=True)
+        out.write_text(TEMPLATE.format(slug=args.slug, short_title=html.escape(short), full_title=html.escape(title),
+            desc=html.escape(description), date=args.date, tag_suffix=" · " + html.escape(args.tag) if args.tag else "", body=body), encoding="utf-8")
+        catalog.append(note)
+        catalog_path.write_text(json.dumps(catalog, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    sync_catalog()
+    subprocess.run(["uv", "run", "--no-project", "--python", sys.executable, "--with", "fonttools", "--with", "brotli", str(ROOT / "tools/font-shards.py")], check=True, cwd=ROOT)
+    subprocess.run([sys.executable, str(ROOT / "tools/check.py")], check=True, cwd=ROOT)
+    print("文章入口、订阅、站点地图、离线收录及字库已同步，静态检查通过。")
 
 
 if __name__ == "__main__":

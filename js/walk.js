@@ -397,6 +397,7 @@
     farmModeOn = isFarm;
     document.body.classList.toggle("is-farm-mode", isFarm);
     document.documentElement.setAttribute("data-theme", isFarm ? "farm" : "landing");
+    document.dispatchEvent(new CustomEvent("farm:mode"));
     if (persist) {
       try {
         if (window.localStorage) window.localStorage.setItem(HOME_MODE_KEY, isFarm ? "farm" : "landing");

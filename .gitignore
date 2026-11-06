@@ -4,5 +4,7 @@ __pycache__/
 *.pyc
 .DS_Store
 server/data/
+.env
+.env.*
 *.db
 .qoder/

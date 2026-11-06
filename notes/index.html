@@ -42,6 +42,7 @@
   <link rel="stylesheet" href="../css/fonts.css">
   <link rel="stylesheet" href="../css/farm.css">
   <link rel="icon" href="../img/favicon.png">
+  <link rel="alternate" type="application/atom+xml" title="Ricardo · 笔记" href="../feed.xml">
 </head>
 <body class="inner">
   <a class="skip" href="#content">跳到内容</a>
@@ -77,7 +78,7 @@
           <div>
             <h3>同机架微秒级 RPC 调度研究（rpcsim）</h3>
             <p>针对 1 至 10 微秒极短任务下通信开销与服务时间同量级的调度难题，基于 C++17 构建 128 核机架级全链路纳秒显式计费仿真器（E0 与 M/M/k、M/G/1、M/H2/k 解析解 100% 置信对齐）。量化揭示了单机多核池化（8 核及以上）将跨机纠偏空间压缩至 0.4 个百分点以内、31 组高时延反噬反例，以及软件网关饱和断崖与 20% 算力预算下 79.2% 配置无解的资源红线。</p>
-            <p class="bundle-meta"><a href="rpc-scheduling/">研究笔记</a> · <a href="../rpc-slides/">组会汇报幻灯片（10 页）</a> · <a href="https://github.com/Ricardo3319/rpcsim">GitHub 源码与复现</a></p>
+            <p class="bundle-meta"><a href="rpc-scheduling/">研究笔记</a> · <a href="../rpc-slides/">组会汇报幻灯片（10 页）</a> · <a href="rpc-scheduling/#scope">代码复现入口待开放</a></p>
           </div>
         </article>
         <article class="bundle" id="farm-project">
@@ -92,11 +93,14 @@
       <hr class="divider">
       <section aria-labelledby="letters">
         <h2 id="letters">文章与研究笔记</h2>
+        <p><a href="../feed.xml">订阅笔记（Atom）</a></p>
+        <!-- notes:start -->
         <ol class="rows">
           <li><a class="row mail" href="rpc-scheduling/"><span class="row-key">2026-10-18</span><span>微秒级任务调度：绑定时机与跨机纠偏的边界<span class="row-note"> · 分布式系统</span></span></a></li>
           <li><a class="row mail" href="pixel-cabin/"><span class="row-key">2026-10-16</span><span>零依赖像素木屋：程序化绘图、字库分片与实时音频合成<span class="row-note"> · 工程架构</span></span></a></li>
           <li><a class="row mail" href="sample/"><span class="row-key">2026-10-15</span><span>Canvas 打造像素农场：游戏循环、深度遮挡与超采样漫游<span class="row-note"> · 图形与交互</span></span></a></li>
         </ol>
+        <!-- notes:end -->
       </section>
     </main>
   </div>
@@ -107,7 +111,6 @@
   <script src="../js/nav.js"></script>
   <script src="../js/sound.js"></script>
   <script src="../js/messages.js"></script>
-  <script src="../js/games.js"></script>
   <script src="../js/farm.js"></script>
 </body>
 </html>

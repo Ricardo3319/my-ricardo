@@ -182,3 +182,7 @@
 - check 任务核对页面/资源/字库、JavaScript 语法，并运行前端、缓存、备份恢复、留言、后端、SQLite 快照及完整发文回归。
 - 仅 main 在 check 成功后进入 Jekyll 构建，沿用 `_config.yml` 的发布排除规则；产物检查确认首页与引用文件存在，且 server/tools/docs 未进入发布目录。
 - build 成功后由 deploy 任务上传至现有 GitHub Pages 环境；部署令牌权限仅在对应任务授予。Pages 发布源设为 GitHub Actions，自定义域名与 DNS 保留；实际发布结果以 Actions 的构建、部署状态为准。
+
+## 19. 无刷新导航的页面信息与章节焦点（V10 Task 55）
+- 切页时同步目标 HTML 的 title、description、robots、canonical、Open Graph、Twitter Card 与 Atom 发现链接；目标页缺失的可选标签从当前页面移除，避免告示牌 noindex 残留。链接按目标页 URL 解析，样式、字库预加载、主题设置、PWA 与声音节点保留。
+- 跨页章节链接及历史前进/后退定位章节后，将键盘焦点交给该章节；没有章节目标时聚焦主内容。已有 tabindex 值保留，离线缓存页沿用相同导航逻辑。

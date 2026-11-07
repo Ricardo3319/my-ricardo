@@ -123,6 +123,13 @@
   // 把新页面的内容换进来：留下农场、右上角面板和已经在跑的脚本。
   function render(next, url) {
     document.title = next.title;
+    var metadata = 'meta[name="description"], meta[name="robots"], meta[property^="og:"], meta[name^="twitter:"], link[rel="canonical"], link[rel="alternate"][type="application/atom+xml"]';
+    document.head.querySelectorAll(metadata).forEach(function (node) { node.remove(); });
+    next.head.querySelectorAll(metadata).forEach(function (node) {
+      var fresh = document.importNode(node, true);
+      if (fresh.tagName === "LINK") fresh.href = new URL(node.getAttribute("href"), url).href;
+      document.head.appendChild(fresh);
+    });
     document.body.className = next.body.className;
     Array.prototype.slice.call(document.body.children).forEach(function (node) {
       if (!node.matches(KEEP) && node.tagName !== "SCRIPT") node.remove();
@@ -175,10 +182,10 @@
           var target = url.hash && document.getElementById(decodeURIComponent(url.hash.slice(1)));
           if (target) target.scrollIntoView();
           else window.scrollTo(0, y || 0);
-          var main = document.getElementById("content");
-          if (main) {
-            main.setAttribute("tabindex", "-1");
-            main.focus({ preventScroll: true });
+          var focusTarget = target || document.getElementById("content");
+          if (focusTarget) {
+            if (!focusTarget.hasAttribute("tabindex")) focusTarget.setAttribute("tabindex", "-1");
+            focusTarget.focus({ preventScroll: true });
           }
         }
         if (document.startViewTransition && !still()) {

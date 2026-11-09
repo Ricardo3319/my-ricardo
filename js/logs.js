@@ -229,7 +229,15 @@
     }
     var form = document.querySelector('[data-log-form]');
     var drawer = document.querySelector('[data-log-publish]');
-    if (drawer) drawer.hidden = false;
+    // 发布入口仅供持口令的站长使用；访客首屏直接读 Now 与流水。
+    // 本机暂存仍可展开：这是浏览器沙盒工具，不会自动公开。
+    var owner = !!passkey();
+    if (drawer) {
+      drawer.hidden = false;
+      drawer.classList.toggle('is-guest', !owner);
+      var summary = drawer.querySelector('summary');
+      if (summary) summary.textContent = owner ? '🔑 主人登录/更新 · 记一笔日常' : '🔑 主人登录/更新（访客可记本机草稿）';
+    }
     if (!form || form === bound) return;
     bound = form;
     var mode = form.elements.destination;

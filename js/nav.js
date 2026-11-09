@@ -38,6 +38,10 @@
   else boot();
   var latest = null;
   var shown = key(location.href);
+  // 读信纸时点栏目：换页过渡前先藏起底层文章，点「回文章」/浏览器返回时恢复。
+  function switching(on) {
+    document.body.classList.toggle("panel-switching", !!on);
+  }
 
   // 每一页滚到哪记在它自己的历史记录里，按返回时回到原处。
   history.scrollRestoration = "manual";
@@ -122,8 +126,9 @@
 
   // 把新页面的内容换进来：留下农场、右上角面板和已经在跑的脚本。
   function render(next, url) {
+    switching(false);
     document.title = next.title;
-    var metadata = 'meta[name="description"], meta[name="robots"], meta[property^="og:"], meta[name^="twitter:"], link[rel="canonical"], link[rel="alternate"][type="application/atom+xml"]';
+    var metadata = 'meta[name="description"], meta[name="robots"], meta[property^="og:"], meta[name^="twitter:"], link[rel="canonical"], link[rel="icon"], link[rel="apple-touch-icon"], link[rel="manifest"], link[rel="alternate"][type="application/atom+xml"]';
     document.head.querySelectorAll(metadata).forEach(function (node) { node.remove(); });
     next.head.querySelectorAll(metadata).forEach(function (node) {
       var fresh = document.importNode(node, true);
@@ -198,6 +203,7 @@
         }
       })
       .catch(function () {
+        switching(false);
         if (latest === token) location.href = url.href;
       });
   }
@@ -235,10 +241,12 @@
     }
     event.preventDefault();
     remember();
+    switching(true);
     leaveHome(url);
   });
 
   window.addEventListener("popstate", function (event) {
+    switching(true);
     var y = event.state && event.state.y;
     if (key(location.href) === shown) {
       var target = location.hash && document.getElementById(decodeURIComponent(location.hash.slice(1)));

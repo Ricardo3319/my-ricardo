@@ -102,6 +102,7 @@
   function shieldBackground() {
     background.forEach(function (inert, node) { node.inert = inert; });
     var top = modals[modals.length - 1];
+    document.body.classList.toggle("has-modal", !!top);
     if (!top) { background.clear(); return; }
     Array.prototype.forEach.call(document.body.children, function (node) {
       if (node.tagName === "SCRIPT") return;

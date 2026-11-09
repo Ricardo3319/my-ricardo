@@ -49,6 +49,14 @@ html {
   background: var(--edge);
 }
 
+html:not([data-theme="farm"]) {
+  background: #2c6134;
+}
+html[data-season="autumn"]:not([data-theme="farm"]) { background: #7e4b21; }
+html[data-season="winter"]:not([data-theme="farm"]) { background: #6c87a3; }
+html[data-phase="dusk"]:not([data-theme="farm"]) { background: #263d29; }
+html[data-phase="night"]:not([data-theme="farm"]) { background: #0d1f1b; }
+
 .world {
   position: fixed;
   inset: 0;
@@ -1200,6 +1208,8 @@ html:not([data-theme="farm"]) .sound-cue { display: none; }
 }
 
 .dialogue-text {
+  min-width: 0;
+  max-width: 100%;
   padding: calc(4 * var(--px)) calc(6 * var(--px));
   border-style: solid;
   border-width: calc(8 * var(--px));
@@ -1209,7 +1219,14 @@ html:not([data-theme="farm"]) .sound-cue { display: none; }
   cursor: default;
 }
 
-.dialogue-line { min-height: calc(var(--fs) * var(--lh)); }
+/* NPC 台词与打字机逐字输出都留在羊皮纸内：长句和连续拉丁字母允许在任意字符处折行。 */
+.dialogue-line {
+  min-width: 0;
+  max-width: 100%;
+  min-height: calc(var(--fs) * var(--lh));
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
 
 .choices {
   display: grid;
@@ -1333,9 +1350,9 @@ html:not([data-theme="farm"]) .sound-cue { display: none; }
   bottom: calc(152px + env(safe-area-inset-bottom));
   z-index: 3;
   display: none;
-  grid-template: repeat(3, 44px) / repeat(3, 44px);
+  grid-template: repeat(3, 44px) / repeat(3, 44px) 52px;
   gap: 2px;
-  opacity: 0.45;
+  opacity: 0.62;
   pointer-events: none;
   touch-action: none;
   user-select: none;
@@ -1383,18 +1400,40 @@ html:not([data-theme="farm"]) .sound-cue { display: none; }
   box-shadow: inset 0 3px var(--line);
 }
 
+/* 互动键在十字键右侧单独落位，和方向键同为 44px 触控格，不吃方向盘的指针。 */
+.walk-pad-key[data-direction="interact"] {
+  grid-area: 2 / 4;
+  width: 52px;
+  border-radius: 50%;
+  font-size: calc(8 * var(--px));
+  font-weight: 700;
+}
+
+.walk-pad-key[data-direction="interact"]::before { display: none; }
+
+.walk-pad[data-direction="interact"] [data-direction="interact"] {
+  background: var(--menu-deep);
+  box-shadow: inset 0 3px var(--line);
+}
+
 .walk-pad-key:focus-visible, .sound-cue:focus-visible {
   outline: var(--px) solid var(--focus);
   outline-offset: calc(2 * var(--px));
 }
 
 @media (any-pointer: coarse) {
-  .home.is-farm-mode.is-walking:not(.is-talking):not(.is-gaming) .walk-pad { display: grid; }
+  .home.is-farm-mode:not(.is-talking):not(.is-gaming) .walk-pad { display: grid; }
   .home.is-farm-mode .walk-peep {
     position: fixed;
     left: max(16px, env(safe-area-inset-left));
     bottom: calc(92px + env(safe-area-inset-bottom));
   }
+  /* 触屏漫游视图直接给控制盘，招呼木框同时让位，避免两层文字叠住。 */
+  .home.is-farm-mode:not(.is-talking):not(.is-gaming) .stage .dialogue { display: none; }
+}
+
+@media (max-width: 420px) and (any-pointer: coarse) {
+  .walk-pad { left: max(8px, env(safe-area-inset-left)); transform: scale(0.88); transform-origin: left bottom; }
 }
 
 /* 走动提示：一行小字，颜色压浅。 */
@@ -1814,7 +1853,7 @@ html[data-phase="night"] .cloud {
   position: absolute;
   left: 0;
   right: 0;
-  bottom: 0;
+  bottom: -2px;
   width: 100%;
   height: clamp(190px, 36vh, 340px);
   display: block;
@@ -1842,12 +1881,13 @@ html[data-phase="night"] .forest-line { fill: #0d1f1b; }
 
 /* 第一屏：一屏完整的开始菜单（上木牌、中下竖向木牌按钮、底端滚动提示）。 */
 .title-screen {
-  min-height: calc(100svh - 74px);
+  min-height: calc(100svh - 50px);
+  margin-bottom: 16px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: space-between;
-  padding: clamp(10px, 2.5vh, 28px) 0 clamp(14px, 3vh, 28px);
+  padding: clamp(10px, 2.5vh, 28px) 0 clamp(18px, 3.2vh, 32px);
   text-align: center;
 }
 
@@ -2677,6 +2717,62 @@ a.clean-list-item:hover {
   transform: none;
   cursor: not-allowed;
 }
+
+/* 待开放入口：同一套轻量木签提示同时服务键盘悬停、聚焦与触屏点击后的状态反馈。
+   装备格自带 .tip 时只改指针和状态，不再叠一层提示气泡。 */
+.is-unavailable {
+  position: relative;
+  opacity: 0.68;
+  cursor: not-allowed;
+}
+
+.is-unavailable:hover,
+.is-unavailable:focus-visible {
+  opacity: 1;
+  filter: none;
+  transform: none;
+}
+
+.is-unavailable::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 8px);
+  z-index: 12;
+  width: max-content;
+  max-width: min(260px, calc(100vw - 32px));
+  padding: 6px 10px;
+  border: var(--px) solid var(--focus);
+  border-radius: 3px;
+  background: #fff1d6;
+  box-shadow: 0 calc(2 * var(--px)) 0 rgb(42 20 10 / 0.35);
+  color: var(--ink);
+  font-family: var(--font-pixel);
+  font-size: calc(7 * var(--px));
+  line-height: 1.5;
+  white-space: normal;
+  text-align: center;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateX(-50%) translateY(4px);
+  pointer-events: none;
+  transition: opacity 140ms ease, transform 140ms ease, visibility 140ms ease;
+}
+
+.is-unavailable:hover::after,
+.is-unavailable:focus-visible::after,
+.is-unavailable.is-hinting::after {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) translateY(0);
+}
+
+.is-unavailable:has(.tip)::after { display: none; }
+
+/* 木框弹窗打开时，底层独立文章先退出渲染，避免半透明遮罩下两层文字互相穿透。 */
+/* 导航切换或木框弹窗打开时，底层独立文章先退出渲染，避免半透明遮罩下两层文字互相穿透。 */
+body.panel-switching .menu-wrap:has(.panel.letter),
+body.has-modal .menu-wrap:has(.panel.letter) { visibility: hidden; }
 
 .hint {
   margin-top: calc(2 * var(--px));
@@ -3539,12 +3635,14 @@ html[data-phase="night"]:not([data-theme="farm"]) .board .pwa-tools .hint {
 .game-backdrop {
   position: fixed;
   inset: 0;
-  z-index: 8;
+  z-index: 1008;
   display: grid;
   place-items: center;
   padding: calc(8 * var(--px)) calc(4 * var(--px));
   overflow-y: auto;
-  background: rgba(18, 14, 10, 0.42);
+  background: rgba(18, 14, 10, 0.72);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
   animation: game-fade-in 200ms ease-out both;
 }
 
@@ -3733,12 +3831,14 @@ html[data-phase="night"]:not([data-theme="farm"]) .board .pwa-tools .hint {
 .guestbook-backdrop {
   position: fixed;
   inset: 0;
-  z-index: 9;
+  z-index: 1009;
   display: grid;
   place-items: center;
   padding: calc(6 * var(--px)) calc(4 * var(--px));
   overflow-y: auto;
-  background: rgba(18, 14, 10, 0.42);
+  background: rgba(18, 14, 10, 0.72);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
   animation: game-fade-in 200ms ease-out both;
 }
 
@@ -4104,10 +4204,11 @@ html[data-phase="night"]:not([data-theme="farm"]) .board .pwa-tools .hint {
   .cal { position: relative; }
 }
 
-/* 夜间落地页：深蓝天幕上的栏目标题与「全部 →」链接提亮为奶油色。
-   不限定 .clean-section 直系：首页的笔记/日常区块没有这个类，夜间同样要亮。 */
-html[data-phase="night"] .clean-section-head h2,
-html[data-phase="night"] .clean-section-head .clean-more {
+/* 傍晚与夜间落地页：深色天幕上的栏目标题与「全部 →」链接提亮为奶油色，卡片内部保持深棕字。 */
+html[data-phase="dusk"] .clean-section > .clean-section-head h2,
+html[data-phase="dusk"] .clean-section > .clean-section-head .clean-more,
+html[data-phase="night"] .clean-section > .clean-section-head h2,
+html[data-phase="night"] .clean-section > .clean-section-head .clean-more {
   color: var(--cream);
   text-shadow: 0 1px 3px rgba(10, 14, 28, 0.75);
 }

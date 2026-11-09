@@ -1416,11 +1416,11 @@
     var waiting = state.queue.length ? "，" + state.queue.length + " 处等着推上去" : "";
     var pk = passkeyValue();
     if (storageProblem) syncLine.textContent = storageProblem;
-    else if (busy) syncLine.textContent = "同步中…";
-    else if (cloud) syncLine.textContent = (state.synced ? "已同步云端 " + clock(state.synced) : "云端已连") + waiting;
-    else if (problem) syncLine.textContent = "没同步上：" + problem + waiting;
-    else if (key) syncLine.textContent = (state.synced ? "已同步 " + clock(state.synced) : "还没同步") + waiting;
-    else syncLine.textContent = pk ? "口令已存，云端不可达时只存这台设备" : "本地沙盒（只存这台设备）";
+    else if (busy) syncLine.textContent = "云端同步模式 · 同步中…";
+    else if (cloud) syncLine.textContent = "云端同步模式 · " + (state.synced ? "已同步云端 " + clock(state.synced) : "云端已连") + waiting;
+    else if (problem) syncLine.textContent = "云端同步模式 · 没同步上：" + problem + waiting;
+    else if (key) syncLine.textContent = "云端同步模式 · " + (state.synced ? "已同步 " + clock(state.synced) : "还没同步") + waiting;
+    else syncLine.textContent = pk ? "云端同步模式待确认（云端不可达时只存这台设备）" : "本地沙盒模式（数据仅保存在你的浏览器，可自由试用）";
     keyState.textContent = cloud ? "云端" : key ? "连着 " + key.repo : pk ? "有口令" : "还没连";
     keyForm.hidden = !!key;
     keyOn.hidden = !key;

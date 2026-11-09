@@ -1458,11 +1458,11 @@ class Farm:
         return self.img
 
     def collision(self):
-        """56×32 的走不进位图，每行 56 bit 写成 14 个 hex。树冠的上一格也挡住，
-        免得小人叠在树冠上。"""
+        """56×32 的走不进位图，每行 56 bit 写成 14 个 hex。林地内树冠上一格若仍在林地内也挡住，
+        但不向林地外圈的可走草地溢出空气墙。"""
         solid = set(self.solid)
         for c, r in self.canopy:
-            if r > 0:
+            if r > 0 and (c, r - 1) in self.busy:
                 solid.add((c, r - 1))
         rows = []
         for r in range(ROWS):
@@ -1546,9 +1546,10 @@ def build(season):
     for r in range(ROWS):
         for c in range(COLS):
             if wood(c, r):
-                farm.take(c, r, 1, 1)
+                farm.mark(c, r, 1, 1)
                 if wood(c, r - 1) and wood(c, r + 1) and wood(c - 1, r) and wood(c + 1, r):
                     farm.ground(floor, c, r)
+                    farm.take(c, r, 1, 1)
     # 树排成错位的行：行距 11px，株距 14px，奇数行错开半株。只在林地格里种。
     for k, y in enumerate(range(-20, ROWS * T, 11)):
         for x in range(-12 + (7 if k % 2 else 0), COLS * T, 14):
@@ -1561,6 +1562,8 @@ def build(season):
             else:
                 farm.put(tall, x, y, "leaf2" if roll < 0.45 else "leaf")
             farm.canopy.add((c, r))
+            if 0 <= c < COLS and 0 <= r < ROWS:
+                farm.take(c, r, 1, 1)
 
     # 小屋：红瓦、木墙、门在山墙下面。
     hc, hr = 22, 8
@@ -1609,7 +1612,7 @@ def build(season):
     farm.take(33, 12, 1, 1)
     farm.put(shavings(), 32 * T, 13 * T)  # 老木脚边的刨花
     farm.mark(32, 13, 1, 1)
-    farm.take(21, 13, 1, 1)  # 锄头斜靠着，占一格
+    farm.mark(21, 13, 1, 1)  # 锄头斜靠在栅栏前，仅标 busy 不封死栅栏北侧过道
     farm.put(harvest(), 25 * T, 18 * T - 1)  # 阿荞收下来的一筐菜
     farm.take(25, 18, 1, 1)
     farm.put(mailbag(), 21 * T, 22 * T - 6)  # 小满的邮袋
@@ -1687,12 +1690,17 @@ def build(season):
     if season == "summer":
         for i in range(0, fw + 2, 2):
             farm.put(agri.tile(83), (fc + i) * T, (fr - 1) * T + 2)
-        farm.take(fc, fr - 1, fw + 2, 1)
+        farm.mark(fc, fr - 1, fw + 2, 1)
 
-    # 池塘。
+    # 池塘：外围 9×5 标 busy 免生杂草，仅把椭圆水面真正覆盖的 6×4 内核格标为 solid（四角浅滩可踩）。
     px0, py0 = 35 * T + 4, 13 * T + 6
     pond(farm, px0, py0, 6 * T, 4 * T - 4)
-    farm.take(34, 13, 9, 5)
+    farm.mark(34, 13, 9, 5)
+    for r in range(13, 17):
+        for c in range(35, 41):
+            if (c in (35, 40)) and (r in (13, 16)):
+                continue
+            farm.take(c, r, 1, 1)
     # 阿涟的钓线：从竿梢垂进池塘，和 walk-npcs-busy 里她举的竿对上。冬天凿冰眼。
     tx, ty = 33 * T + 14, 15 * T - 1 + 3
     line = rgb("#2c2224")
@@ -1736,7 +1744,11 @@ def build(season):
     for img, kind, h, (c, r) in scatter:
         if all(farm.free(c, r - k) for k in range(h)):
             farm.put(img, c * T, (r - h + 1) * T, kind)
-            farm.take(c, r - h + 1, 1, h)
+            if (c, r) == (25, 15):
+                # 石板路与陈伯之间的低矮小蘑菇只作地面点缀，不堵住通道
+                farm.mark(c, r - h + 1, 1, h)
+            else:
+                farm.take(c, r - h + 1, 1, h)
     if autumn:
         for c, r in ((16, 21), (30, 24), (44, 15)):
             farm.put(town.tile(29), c * T, r * T)

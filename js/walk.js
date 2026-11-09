@@ -31,7 +31,7 @@
     { name: "井", badge: "✦ 古井抽签", col: 20, row: 9, w: 1, h: 2, face: -1, icon: "img/item-bucket.png", game: "well", gameLabel: "摇动辘轳打水抽签（每日黄历）", gameTag: "小程序", bubbleText: "✦ 古井在此！摇动辘轳即可打水抽今日签文 🪣", notePage: "notes/pixel-cabin/", noteLabel: "零依赖像素木屋架构笔记", line: "井水凉，打上来要慢一点。木桶里时常浮着竹签筒。" },
     { name: "菜地", badge: "✦ 菜地番茄钟", col: 13, row: 14, w: 9, h: 6, face: -1, icon: "img/item-seeds.png", game: "crop", gameLabel: "播下种子（农田番茄钟）", gameTag: "小程序", bubbleText: "✦ 菜地在此！定个番茄钟专注生长庄稼 🍅", line: "四垄黑土翻得松软，定下心来专注一阵，庄稼就能熟一茬。" },
     { name: "矿车街机", badge: "✦ 矿车街机", col: 30, row: 10, w: 1, h: 1, face: -1, icon: "img/icon-arcade.png", game: "cart", gameLabel: "投币开局（矿车历险）", gameTag: "小游戏", bubbleText: "✦ 矿车街机在此！投币即可进入洞穴历险 🕹️", line: "谷仓边立着一台复古木壳街机，屏幕还亮着。" },
-    { name: "池塘", badge: "✦ 池塘垂钓", col: 34, row: 13, w: 9, h: 5, face: -1, icon: "img/icon-pond.png", game: "fish", gameLabel: "抛竿垂钓", gameTag: "小游戏", bubbleText: "✦ 池塘在此！抛竿静候水波垂钓 🐟", notePage: "notes/sample/", noteLabel: "Canvas 打造像素农场复盘", line: "水面平的时候，能照见天。" },
+    { name: "池塘", badge: "✦ 池塘垂钓", col: 35, row: 13, w: 6, h: 4, face: -1, icon: "img/icon-pond.png", game: "fish", gameLabel: "抛竿垂钓", gameTag: "小游戏", bubbleText: "✦ 池塘在此！抛竿静候水波垂钓 🐟", notePage: "notes/sample/", noteLabel: "Canvas 打造像素农场复盘", line: "水面平的时候，能照见天。" },
     { name: "牲口", badge: "牲口棚", col: 36, row: 8, w: 5, h: 3, face: -1, icon: "img/item-hay.png", line: "牲口吃饱了就不理人，下雪天躲进棚里。" },
   ];
 
@@ -115,12 +115,12 @@
   }
 
   function freeAt(x, y) {
-    // 脚底的盒子：宽 8、高 4，四角都不在实心格里才算能站。
+    // 脚底中心的小盒子：宽 4、高 2，贴合小人双脚中心，过单格窄道与拐角不卡顿。
     return !(
-      solid(Math.floor((x - 4) / TILE), Math.floor((y - 3) / TILE)) ||
-      solid(Math.floor((x + 4) / TILE), Math.floor((y - 3) / TILE)) ||
-      solid(Math.floor((x - 4) / TILE), Math.floor(y / TILE)) ||
-      solid(Math.floor((x + 4) / TILE), Math.floor(y / TILE))
+      solid(Math.floor((x - 2) / TILE), Math.floor((y - 2) / TILE)) ||
+      solid(Math.floor((x + 2) / TILE), Math.floor((y - 2) / TILE)) ||
+      solid(Math.floor((x - 2) / TILE), Math.floor((y - 1) / TILE)) ||
+      solid(Math.floor((x + 2) / TILE), Math.floor((y - 1) / TILE))
     );
   }
 
@@ -155,6 +155,7 @@
     walkOn = on;
     document.body.classList.toggle("is-walking", on);
     if (peep) peep.hidden = !on || !!talking;
+    syncPad();
   }
 
   // 招呼对话只在第一次挂载时记一次；和村民说过话以后，点「和 Ricardo 说话」照原样恢复。
@@ -350,16 +351,30 @@
       window.addEventListener("resize", function () {
         if (!btn.hidden) placeFarmExit(btn);
       });
+      var relayout = function () {
+        if (!btn.hidden) window.requestAnimationFrame(function () { placeFarmExit(btn); });
+      };
+      document.addEventListener("pointerdown", relayout, true);
+      document.addEventListener("keydown", relayout, true);
     }
     return btn;
   }
 
-  // 顶行高度随时辰和屏宽变：按钮永远贴在 HUD 面板正下方，别压住日期框。
+  // 顶行高度随时辰、声音提示签和屏宽变：按钮永远贴在右上角浮层正下方，别压住日期框或声音提示。
   function placeFarmExit(btn) {
-    var hud = document.querySelector(".hud");
+    var hud = document.querySelector(".hud-box") || document.querySelector(".hud");
     if (!hud) return;
-    var top = hud.getBoundingClientRect().bottom + 8;
-    btn.style.top = Math.max(8, top) + "px";
+    var bottom = hud.getBoundingClientRect().bottom;
+    var cue = document.querySelector(".sound-cue:not(.is-dismissed)");
+    if (cue && cue.offsetParent !== null) {
+      bottom = Math.max(bottom, cue.getBoundingClientRect().bottom);
+    }
+    var top = Math.max(8, Math.round(bottom + 8));
+    btn.style.top = top + "px";
+    var tip = document.querySelector(".farm-exit-tip");
+    if (tip) {
+      tip.style.top = Math.max(8, Math.round(btn.getBoundingClientRect().bottom + 10)) + "px";
+    }
   }
 
   function hideFarmTip() {
@@ -414,6 +429,9 @@
     if (isFarm) {
       placeFarmExit(exitBtn);
       showFarmTip();
+      window.requestAnimationFrame(function () {
+        if (!exitBtn.hidden) placeFarmExit(exitBtn);
+      });
     } else {
       hideFarmTip();
     }
@@ -691,6 +709,24 @@
       if (okX) pos.x += stepX;
       var okY = freeAt(pos.x, pos.y + stepY);
       if (okY) pos.y += stepY;
+      // 拐角顺滑辅助：单轴移动擦到障碍物边缘时，若垂直方向几像素内畅通，自动顺着拐角滑过去。
+      if (!okX && stepX && !stepY) {
+        for (var sy = 2; sy <= 7; sy++) {
+          var dirY = freeAt(pos.x + stepX, pos.y + sy) ? 1 : freeAt(pos.x + stepX, pos.y - sy) ? -1 : 0;
+          if (dirY) {
+            pos.y += dirY * Math.min(Math.abs(stepX), sy);
+            break;
+          }
+        }
+      } else if (!okY && stepY && !stepX) {
+        for (var sxSlide = 2; sxSlide <= 7; sxSlide++) {
+          var dirX = freeAt(pos.x + sxSlide, pos.y + stepY) ? 1 : freeAt(pos.x - sxSlide, pos.y + stepY) ? -1 : 0;
+          if (dirX) {
+            pos.x += dirX * Math.min(Math.abs(stepY), sxSlide);
+            break;
+          }
+        }
+      }
       if (!okX && !okY) {
         if (target && target.route && target.route.length) {
           // 顶死在凸角：朝上一个路标退一步，换个方向再绕。
@@ -889,7 +925,8 @@
 
   function syncPad() {
     if (!pad) return;
-    var show = touchScreen && touchScreen.matches && farmMode() && walking() && !talking && !leaving && !modalOpen();
+    // 触屏进入漫游视图就能看到十字键；对话和小游戏弹窗打开时收起，避免挡住面板。
+    var show = touchScreen && touchScreen.matches && farmMode() && !talking && !leaving && !modalOpen();
     pad.hidden = !show;
     if (!show) resetPad();
   }
@@ -897,15 +934,22 @@
   function steerPad(event) {
     if (event.pointerId !== padPointer) return;
     event.preventDefault();
+    if (event.target && event.target.closest && event.target.closest('[data-direction="interact"]')) {
+      padDirection = "";
+      pad.removeAttribute("data-direction");
+      return;
+    }
     var rect = pad.getBoundingClientRect();
     var x = event.clientX - rect.left;
     var y = event.clientY - rect.top;
-    var dx = x - rect.width / 2;
+    var padW = Math.min(rect.width, 136);
+    var dx = x - padW / 2;
     var dy = y - rect.height / 2;
     // 中间一格是停步区；滑出控制盘也停，滑回来可继续转向。
-    var outside = x < 0 || y < 0 || x > rect.width || y > rect.height;
-    var center = Math.abs(dx) < rect.width / 6 && Math.abs(dy) < rect.height / 6;
+    var outside = x < 0 || y < 0 || x > padW || y > rect.height;
+    var center = Math.abs(dx) < padW / 6 && Math.abs(dy) < rect.height / 6;
     padDirection = outside || center ? "" : Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? "right" : "left") : (dy > 0 ? "down" : "up");
+    if (padDirection && !walking()) setWalking(true);
     pad.setAttribute("data-direction", padDirection);
   }
 
@@ -915,24 +959,39 @@
     pad.hidden = true;
     pad.setAttribute("role", "group");
     pad.setAttribute("aria-label", "农场方向键，按住移动，滑动转向，松手停止");
-    [["up", "上"], ["left", "左"], ["right", "右"], ["down", "下"]].forEach(function (item) {
+    [["up", "上"], ["left", "左"], ["right", "右"], ["down", "下"], ["interact", "互动"]].forEach(function (item) {
       var button = document.createElement("button");
       button.type = "button";
       button.className = "walk-pad-key";
       button.setAttribute("data-direction", item[0]);
-      button.setAttribute("aria-label", "向" + item[1] + "走");
-      // 键盘或辅助技术的单次激活走一格，触控连续移动由指针事件负责。
-      button.addEventListener("click", function (event) {
-        if (event.detail || pad.hidden) return;
-        resetPad();
-        var dx = item[0] === "left" ? -TILE : item[0] === "right" ? TILE : 0;
-        var dy = item[0] === "up" ? -TILE : item[0] === "down" ? TILE : 0;
-        target = { x: pos.x + dx, y: pos.y + dy, talk: null, route: null };
-      });
+      button.setAttribute("aria-label", item[0] === "interact" ? "和附近的人或设施互动" : "向" + item[1] + "走");
+      if (item[0] === "interact") {
+        button.textContent = "A";
+        button.addEventListener("click", function () {
+          var near = nearest();
+          if (!near || modalOpen() || talking) return;
+          if (!walking()) setWalking(true);
+          triggerEasterEgg(near);
+          openTalk(near);
+        });
+      } else {
+        // 键盘或辅助技术的单次激活走一格，触控连续移动由指针事件负责。
+        button.addEventListener("click", function (event) {
+          if (event.detail || pad.hidden) return;
+          resetPad();
+          if (!walking()) setWalking(true);
+          var dx = item[0] === "left" ? -TILE : item[0] === "right" ? TILE : 0;
+          var dy = item[0] === "up" ? -TILE : item[0] === "down" ? TILE : 0;
+          target = { x: pos.x + dx, y: pos.y + dy, talk: null, route: null };
+        });
+      }
       pad.appendChild(button);
     });
     pad.addEventListener("pointerdown", function (event) {
       if (pad.hidden || padPointer !== null || event.button !== 0) return;
+      if (event.target && event.target.closest && event.target.closest('[data-direction="interact"]')) {
+        return;
+      }
       event.preventDefault();
       release();
       padPointer = event.pointerId;

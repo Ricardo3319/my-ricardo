@@ -130,6 +130,39 @@
     stopTyping = finish;
   }
 
+  // 待开放入口：鼠标、键盘和触屏点击都给一句轻量提示；提示由 CSS 的 data-tooltip 渲染。
+  var hintTimer = 0;
+  function unavailableHints() {
+    var nodes = document.querySelectorAll(".is-unavailable[data-tooltip]");
+    Array.prototype.forEach.call(nodes, function (node) {
+      if (node.dataset.hintBound) return;
+      node.dataset.hintBound = "1";
+      if (node.tagName === "A") node.setAttribute("aria-disabled", "true");
+      node.addEventListener("click", function (event) {
+        event.preventDefault();
+        Array.prototype.forEach.call(nodes, function (other) {
+          if (other !== node) other.classList.remove("is-hinting");
+        });
+        node.classList.add("is-hinting");
+        var tip = node.querySelector(".tip");
+        if (tip) {
+          tip.dataset.pendingHidden = "";
+          tip.hidden = false;
+          tip.style.display = "block";
+        }
+        window.clearTimeout(hintTimer);
+        hintTimer = window.setTimeout(function () {
+          node.classList.remove("is-hinting");
+          if (tip) {
+            delete tip.dataset.pendingHidden;
+            tip.hidden = true;
+            tip.style.display = "";
+          }
+        }, 2400);
+      });
+    });
+  }
+
   // 信箱复制。没有地址时按钮是 disabled，不绑定。
   function copying() {
     var copy = document.querySelector("[data-copy]");
@@ -168,6 +201,7 @@
   function page() {
     typing();
     copying();
+    unavailableHints();
   }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", page);
   else page();
